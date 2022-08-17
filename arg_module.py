@@ -4,7 +4,7 @@ import re
 
 import numpy as np
 
-from protocol_configs import CodeGenerationStrategy
+from protocol_configs import CodeGenerationStrategy, PruningStrategy
 
 
 def parseIntRange(string):
@@ -53,6 +53,8 @@ def parse_args():
     parser.add_argument('--success_rate_range', type=parseFloatRange,
                         help='The success rate values.')
     parser.add_argument('--radius', type=int, help='The fixed radius.')
+    parser.add_argument('--pruning_strategy', type=PruningStrategy, help='The pruning strategy.')
+    parser.add_argument('--upper_threshold', type=int, help='The upper threshold for the list size, from which the list should be reduced when reached.')
     parser.add_argument('--raw_results_file_path', required=True, type=str,
                         help='csv path for saving the raw results. If exists, the new results are appended to the existing ones.')
     parser.add_argument('--agg_results_file_path', required=True, type=str,
@@ -75,13 +77,13 @@ def create_args(key_size_list, block_size_range, p_err_range, success_rate_range
                     agg_results_file_path, run_mode='series', sample_size=1, q=3, hash_base_list=None,
                     code_generation_strategy_list=[CodeGenerationStrategy.LINEAR_CODE], sparsity_range=None,
                     max_candidates_num=None, fixed_number_of_encodings=False,
-                    max_num_indices_to_encode_range=[math.inf], radius=None, cfg_timeout=None, verbosity=False):
+                    max_num_indices_to_encode_range=[math.inf], radius=None, pruning_strategy=PruningStrategy.RADII_PROBABILITIES, upper_threshold=None, cfg_timeout=None, verbosity=False):
     class Args(object):
         def __init__(self, key_size_list, block_size_range, p_err_range, success_rate_range, raw_results_file_path,
                      agg_results_file_path, run_mode='series', sample_size=1, q=3, hash_base_list=None,
                      code_generation_strategy_list=[CodeGenerationStrategy.LINEAR_CODE], sparsity_range=None,
                      max_candidates_num=None, fixed_number_of_encodings=False,
-                     max_num_indices_to_encode_range=[math.inf], radius=None, cfg_timeout=None, verbosity=False):
+                     max_num_indices_to_encode_range=[math.inf], radius=None, pruning_strategy=PruningStrategy.RADII_PROBABILITIES, upper_threshold=None, cfg_timeout=None, verbosity=False):
             self.run_mode = run_mode
             self.sample_size = sample_size
             self.q = q
@@ -102,6 +104,8 @@ def create_args(key_size_list, block_size_range, p_err_range, success_rate_range
             self.p_err_range = p_err_range
             self.success_rate_range = success_rate_range
             self.radius = radius
+            self.pruning_strategy = pruning_strategy
+            self.upper_threshold = upper_threshold
             self.raw_results_file_path = raw_results_file_path
             self.agg_results_file_path = agg_results_file_path
             self.cfg_timeout = cfg_timeout
@@ -109,4 +113,4 @@ def create_args(key_size_list, block_size_range, p_err_range, success_rate_range
 
     return Args(key_size_list, block_size_range, p_err_range, success_rate_range, raw_results_file_path, agg_results_file_path,
                 run_mode, sample_size, q, hash_base_list, code_generation_strategy_list, sparsity_range, max_candidates_num, fixed_number_of_encodings,
-                max_num_indices_to_encode_range, radius, cfg_timeout, verbosity)
+                max_num_indices_to_encode_range, radius, pruning_strategy, upper_threshold, cfg_timeout, verbosity)

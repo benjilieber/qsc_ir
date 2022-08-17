@@ -27,9 +27,9 @@ class Result(object):
             self.sample_size = len(result_list)
 
     def get_cfg_row(self):
-        return [self.cfg.key_length, self.cfg.block_length, self.cfg.num_blocks, self.cfg.p_err, self.cfg.success_rate,
+        return [self.cfg.base, self.cfg.key_length, self.cfg.block_length, self.cfg.num_blocks, self.cfg.p_err, self.cfg.success_rate,
                 self.cfg.max_candidates_num,
-                self.cfg.max_num_indices_to_encode, self.cfg.code_generation_strategy.value, self.cfg.sparsity, self.cfg.theoretic_key_rate]
+                self.cfg.max_num_indices_to_encode, self.cfg.code_generation_strategy.value, self.cfg.pruning_strategy, self.cfg.upper_threshold, self.cfg.sparsity, self.cfg.theoretic_key_rate]
 
     def __str__(self):
         cfg_string = "cfg: "
@@ -55,8 +55,8 @@ def get_header():
     return get_cfg_header() + get_output_header()
 
 def get_cfg_header():
-    return ["key_length", "block_length", "num_blocks", "p_err", "success_rate", "max_candidates_num",
-            "max_num_indices_to_encode", "code_generation_strategy", "sparsity", "theoretic_key_rate"]
+    return ["base", "key_length", "block_length", "num_blocks", "p_err", "success_rate", "max_candidates_num",
+            "max_num_indices_to_encode", "code_generation_strategy", "pruning_strategy", "upper_threshold", "sparsity", "theoretic_key_rate"]
 
 def get_output_header():
     return ["sample_size", "is_success", "key_rate",

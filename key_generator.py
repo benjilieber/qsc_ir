@@ -3,8 +3,8 @@ import numpy as np
 
 class KeyGenerator(object):
 
-    def __init__(self, p_err, key_length, m=3):
-        self.m = m
+    def __init__(self, p_err, key_length, base=3):
+        self.m = base
         self.p_err = float(p_err)
         self.key_length = key_length
 

@@ -13,6 +13,27 @@ from protocol_configs import ProtocolConfigs
 
 
 class StatsTest(unittest.TestCase):
+    def test_radius_success_rate(self):
+        sample_size = 100000
+        base = 3
+        p_err = 0.02
+        success_rate = 0.9
+        block_length = 10
+        num_blocks = 30
+        n = block_length * num_blocks
+        cfg = ProtocolConfigs(base=base, block_length=block_length, num_blocks=num_blocks, p_err=p_err, success_rate=success_rate, fixed_number_of_encodings=True)
+        actual_success_num = 0
+        for _ in range(sample_size):
+            keygen = KeyGenerator(p_err, n)
+            a, b = keygen.generate_keys()
+            a = np.array_split(a, num_blocks)
+            b = np.array_split(b, num_blocks)
+            errors_per_block = [sum(a_block == b_block) for a_block, b_block in zip(a, b)]
+            if sum([err > radius for err, radius in zip(errors_per_block, cfg.max_block_error)]) == 0:
+                actual_success_num += 1
+        print(actual_success_num / sample_size)
+
+
     def test_solution_distribution(self):
         block_size = 22
         n = block_size
@@ -230,7 +251,7 @@ def get_solution_list_size_dist_list2(q, k, t, p_eq, sample_size, max_radius=Non
     b = np.zeros(k, dtype=int)
 
     for i in range(sample_size):
-        a = KeyGenerator(p_eq, k, m=3).generate_complement_key(b)
+        a = KeyGenerator(p_eq, k, base=3).generate_complement_key(b)
         matrix = draw_matrix(q, k, t)
         a_img = np.matmul(a, matrix) % q
         a_candidates_num = 0

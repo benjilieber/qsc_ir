@@ -49,7 +49,7 @@ def write_results(result_list, verbosity=False):
 def single_run(cfg):
     # print(f"I'm process {os.getpid()}")
     np.random.seed([os.getppid(), int(str(time.time() % 1)[2:10])])
-    key_generator = KeyGenerator(p_err=cfg.p_err, key_length=cfg.key_length)
+    key_generator = KeyGenerator(p_err=cfg.p_err, key_length=cfg.key_length, base=cfg.base)
     a, b = key_generator.generate_keys()
     protocol = MultiBlockProtocol(cfg, a, b)
     return protocol.run()
@@ -104,10 +104,12 @@ def multi_run(args):
                                                           max_candidates_num=max_candidates_num,
                                                           indices_to_encode_strategy=IndicesToEncodeStrategy.MOST_CANDIDATE_BLOCKS,
                                                           code_generation_strategy=code_generation_strategy,
+                                                          pruning_strategy=args.pruning_strategy,
                                                           sparsity=sparsity,
                                                           fixed_number_of_encodings=args.fixed_number_of_encodings,
                                                           max_num_indices_to_encode=max_num_indices_to_encode,
                                                           radius=args.radius,
+                                                          upper_threshold=args.upper_threshold,
                                                           raw_results_file_path=args.raw_results_file_path,
                                                           agg_results_file_path=args.agg_results_file_path,
                                                           timeout=args.cfg_timeout)

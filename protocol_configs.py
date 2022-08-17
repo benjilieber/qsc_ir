@@ -17,6 +17,20 @@ class CodeGenerationStrategy(Enum):
     def __str__(self):
         return self.value
 
+class PruningStrategy(Enum):
+    RADII_PROBABILITIES = 'radii_probabilities'
+    RELATIVE_WEIGHTS = 'relative_weights'
+
+    def __str__(self):
+        return self.value
+
+class LinearCodeFormat(Enum):
+    MATRIX = 'matrix'
+    AFFINE_SUBSPACE = 'affine_subspace'
+
+    def __str__(self):
+        return self.value
+
 class ProtocolConfigs(object):
     """
        m = base field size
@@ -26,20 +40,23 @@ class ProtocolConfigs(object):
        max_candidates_num = number of max candidates we aim to have left at each iteration
        """
 
-    def __init__(self, base, block_length, num_blocks, p_err=0, success_rate=1.0, prefix_radii=None, radius=None, full_rank_encoding=True,
+    def __init__(self, base, block_length, num_blocks, hash_base=None, p_err=0, success_rate=1.0, prefix_radii=None, radius=None, full_rank_encoding=True,
                  use_zeroes_in_encoding_matrix=True,
                  max_candidates_num=None,
                  indices_to_encode_strategy=IndicesToEncodeStrategy.ALL_MULTI_CANDIDATE_BLOCKS,
                  code_generation_strategy=CodeGenerationStrategy.LINEAR_CODE,
+                 pruning_strategy=PruningStrategy.RADII_PROBABILITIES,
                  sparsity=None,
                  fixed_number_of_encodings=None,
                  max_num_indices_to_encode=None,
+                 upper_threshold=None,
                  raw_results_file_path=None,
                  agg_results_file_path=None,
                  timeout=None):
         self.base = base  # basis field size
+        self.hash_base = hash_base
         self.block_length = block_length  # block length
-        self.block_length_base_m = math.ceil(block_length * math.log(3, base))  # l in base m
+        self.block_length_hash_base = block_length if (hash_base is None) else math.ceil(block_length * math.log(hash_base, base))  # l in base m
         self.num_blocks = num_blocks  # number of blocks in private key
         self.key_length = num_blocks * block_length
         self.p_err = p_err
@@ -49,8 +66,10 @@ class ProtocolConfigs(object):
         self.max_candidates_num = max_candidates_num or block_length ** 2
         self.indices_to_encode_strategy = indices_to_encode_strategy
         self.code_generation_strategy = code_generation_strategy
+        self.pruning_strategy = pruning_strategy
         self.sparsity = sparsity
         self.max_num_indices_to_encode = max_num_indices_to_encode or num_blocks
+        self.upper_threshold = upper_threshold
         self.theoretic_key_rate = self._theoretic_key_rate()
 
         if radius is not None:
@@ -75,7 +94,7 @@ class ProtocolConfigs(object):
         self.agg_results_file_path = agg_results_file_path
 
     def _radius_for_max_block_error(self):
-        use_product = False
+        use_product = True
 
         total_success_prob = (1.0 + self.success_rate) / 2
         # total_success_prob = self.success_rate
@@ -90,7 +109,10 @@ class ProtocolConfigs(object):
         floor_cdf = binom.cdf(floor_k, self.block_length, self.p_err)
 
         if use_product:
-            ceil_m = math.ceil(math.log(total_success_prob, ceil_cdf/floor_cdf) - self.num_blocks * math.log(floor_cdf, ceil_cdf/floor_cdf))
+            if floor_cdf == 0.0:
+                ceil_m = self.num_blocks
+            else:
+                ceil_m = math.ceil(math.log(total_success_prob, ceil_cdf/floor_cdf) - self.num_blocks * math.log(floor_cdf, ceil_cdf/floor_cdf))
         else:
             ceil_m = math.ceil(self.num_blocks + total_success_prob - 1 - self.num_blocks * floor_cdf)
 
@@ -152,8 +174,8 @@ class ProtocolConfigs(object):
 
     def _theoretic_key_rate(self):
         if self.p_err in [0.0, 1.0]:
-            return math.log(3/2, 2)
-        return math.log(3, 2) + self.p_err * math.log(self.p_err, 2) + (1-self.p_err) * math.log((1-self.p_err)/2, 2)
+            return math.log(self.base/(self.base-1), 2)
+        return math.log(self.base, 2) + self.p_err * math.log(self.p_err, 2) + (1-self.p_err) * math.log((1-self.p_err)/(self.base-1), 2)
 
 
     # def determine_cur_radius(self, min_candidate_error, last_block_index):
