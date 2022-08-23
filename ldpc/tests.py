@@ -19,7 +19,7 @@ class Tests(unittest.TestCase):
         cfg = ProtocolConfigs(base=3, block_length=n, num_blocks=1, sparsity=sparsity)
         code_gen = LdpcGenerator(cfg)
         encoding_matrix = code_gen.generate_gallagher_matrix(num_encoding_columns)
-        key_generator = KeyGenerator(p_err=0.01, key_length=n, m=3)
+        key_generator = KeyGenerator(p_err=0.01, key_length=n, base=3)
         a, b = key_generator.generate_keys()
         encoded_a = encoding_matrix * a
         forked_index = 6

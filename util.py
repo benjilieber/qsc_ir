@@ -45,3 +45,12 @@ def calculate_rank(matrix, base):
     matrix = GF(matrix)
     matrix.row_reduce()
     return np.linalg.matrix_rank(matrix)
+
+def logminexp(x, y):
+    if x < y:
+        raise "Can't compute log of negative number!"
+    elif x == y:
+        return -math.inf
+    elif y == -math.inf:
+        return x
+    return y + math.log(math.exp(x-y)-1)

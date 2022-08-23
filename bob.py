@@ -293,12 +293,12 @@ class Bob(object):
                 else:
                     weight_delta = len(a_candidates_per_err_cnt[err]) * probs_per_err_cnt[err] / total_prob
                 if use_log:
-                    should_split = weight_delta > log_subtract(math.log(per_block_fail_prob), cur_pruned_weight)
+                    should_split = weight_delta > util.logminexp(math.log(per_block_fail_prob), cur_pruned_weight)
                 else:
                     should_split = weight_delta > per_block_fail_prob - cur_pruned_weight
                 if should_split:
                     if use_log:
-                        delta_split_part = math.floor(math.exp(math.log(len(a_candidates_per_err_cnt[err])) + log_subtract(math.log(per_block_fail_prob), cur_pruned_weight) - weight_delta))
+                        delta_split_part = math.floor(math.exp(math.log(len(a_candidates_per_err_cnt[err])) + util.logminexp(math.log(per_block_fail_prob), cur_pruned_weight) - weight_delta))
                     else:
                         delta_split_part = math.floor(len(a_candidates_per_err_cnt[err]) * (per_block_fail_prob - cur_pruned_weight) / weight_delta)
                     split_indices = random.sample(a_candidates_per_err_cnt[err], delta_split_part)
@@ -324,15 +324,6 @@ class Bob(object):
 
         else:
             pass
-
-def log_subtract(x, y):
-    if x < y:
-        raise "Can't compute log of negative number!"
-    elif x == y:
-        return -math.inf
-    elif y == -math.inf:
-        return x
-    return y + math.log(math.exp(x-y)-1)
 
 # cfg = ProtocolConfigs(m=3, n=3, num_blocks=10, p_err=0.01, goal_p_bad=0.03)
 # b = [0, 1, 2, 0, 0, 2, 2, 0, 1, 1, 1, 1, 0, 1, 2, 0, 1, 2, 0, 0, 2, 2, 0, 1, 1, 1, 1, 0, 1, 2]
