@@ -4,12 +4,12 @@ import run_module
 from protocol_configs import CodeGenerationStrategy, RoundingStrategy, PruningStrategy
 
 is_slurm = True
-verbosity = True
+verbosity = False
 
-block_size_range = [8]  # list(range(3, 20))
-key_size_list = [1000]
-p_err_range = [0.01]  # [0.0, 0.01, 0.02, 0.05, 0.11]
-success_rate_range = None
+block_size_range = list(range(3, 20))
+key_size_list = [128, 256, 512, 1024, 2048, 4096, 8192]
+p_err_range = [0.0, 0.0001, 0.001, 0.01, 0.02, 0.05, 0.1]
+success_rate_range = [0.9, 0.99, 0.999, 0.9999]
 raw_results_file_path = "raw_results1.csv"
 agg_results_file_path = "agg_results1.csv"
 run_mode = "series"
@@ -17,10 +17,10 @@ sample_size = 10
 q_list = [3]
 code_generation_strategy_list = [CodeGenerationStrategy.LINEAR_CODE]
 sparsity_range = None
-goal_candidates_num = 1000
-max_candidates_num = 10_000
-max_num_indices_to_encode_range = [None]  # [1, 2, 4, 8, None]
-fixed_number_of_encodings = True
+goal_candidates_num = None
+max_candidates_num = 100_000
+max_num_indices_to_encode_range = [2, 4, 8, None]
+fixed_number_of_encodings = False
 radius_picking = False
 rounding_strategy_list = [RoundingStrategy.FLOOR, RoundingStrategy.CEIL]
 pruning_strategy = PruningStrategy.RELATIVE_WEIGHTS

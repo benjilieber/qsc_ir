@@ -99,19 +99,16 @@ def multi_run(args):
     for code_generation_strategy in args.code_generation_strategy_list:
         assert (code_generation_strategy == CodeGenerationStrategy.LINEAR_CODE)
         for q in args.q_list:
-            for key_size in args.key_size_list:
-                for block_size in args.block_size_range:
-                    num_blocks = key_size // block_size
-                    actual_key_size = num_blocks * block_size
-                    for p_err in args.p_err_range:
+            for p_err in args.p_err_range:
+                for key_size in args.key_size_list:
+                    for block_size in args.block_size_range:
+                        num_blocks = key_size // block_size
+                        actual_key_size = num_blocks * block_size
                         success_rate_range = args.success_rate_range or [1.0 - 1.0/actual_key_size]
                         for success_rate in success_rate_range:
                             for rounding_strategy in args.rounding_strategy_list:
                                 # goal_candidates_num_range = [args.goal_candidates_num] or [2 ** i for i in range(math.ceil(math.log(actual_key_size, 2))+2)]
-                                if args.fixed_number_of_encodings:
-                                    goal_candidates_num_range = [None]
-                                else:
-                                    goal_candidates_num_range = [args.goal_candidates_num] if (args.goal_candidates_num is not None) else [math.ceil(math.sqrt(key_size))]
+                                goal_candidates_num_range = [args.goal_candidates_num] if (args.goal_candidates_num is not None) else [3, 9, 27, 81, 243, 729, 2187, math.ceil(math.sqrt(key_size))]
                                 for goal_candidates_num in goal_candidates_num_range:
                                     for max_num_indices_to_encode in args.max_num_indices_to_encode_range:
                                         for sparsity in args.sparsity_range or [0]:
