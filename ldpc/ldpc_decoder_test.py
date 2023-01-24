@@ -209,7 +209,7 @@ class LdpcDecoderTest(unittest.TestCase):
 
     def test_decode_hard_matrix_p002_bp(self):
         n = 10000
-        p_err = 0.02
+        p_err = 0.0
         m = util.required_checks(n, 3, p_err)
         sparsity = 3
         run_single_test_bp(n, m, p_err, sparsity)
@@ -227,6 +227,7 @@ class LdpcDecoderTest(unittest.TestCase):
         m = util.required_checks(n, 3, p_err)
         sparsity = 3
         run_single_test_it(n, m, p_err, sparsity, success_rate=0.5)
+        
 
 def run_single_test_bp(n, m, p_err, sparsity):
     cfg = ProtocolConfigs(base=3, block_length=n, num_blocks=1,

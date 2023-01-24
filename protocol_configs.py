@@ -17,6 +17,13 @@ class CodeGenerationStrategy(Enum):
     def __str__(self):
         return self.value
 
+class RoundingStrategy(Enum):
+    FLOOR = 'floor'
+    CEIL = 'ceil'
+
+    def __str__(self):
+        return self.value
+
 class PruningStrategy(Enum):
     RADII_PROBABILITIES = 'radii_probabilities'
     RELATIVE_WEIGHTS = 'relative_weights'
@@ -37,53 +44,59 @@ class ProtocolConfigs(object):
        p_err = probability of error in single index
        n = block size
        radius = max number of errors to check during decoding
-       max_candidates_num = number of max candidates we aim to have left at each iteration
+       goal_candidates_num = number of max candidates we aim to have left at each iteration
        """
 
-    def __init__(self, base, block_length, num_blocks, hash_base=None, p_err=0, success_rate=1.0, prefix_radii=None, radius=None, full_rank_encoding=True,
+    def __init__(self, base, block_length, num_blocks, p_err=0, success_rate=1.0, prefix_radii=None, radius_picking=None, full_rank_encoding=True,
                  use_zeroes_in_encoding_matrix=True,
+                 goal_candidates_num=None,
                  max_candidates_num=None,
                  indices_to_encode_strategy=IndicesToEncodeStrategy.ALL_MULTI_CANDIDATE_BLOCKS,
+                 rounding_strategy=RoundingStrategy.CEIL,
                  code_generation_strategy=CodeGenerationStrategy.LINEAR_CODE,
                  pruning_strategy=PruningStrategy.RADII_PROBABILITIES,
                  sparsity=None,
                  fixed_number_of_encodings=None,
                  max_num_indices_to_encode=None,
-                 upper_threshold=None,
+                 encoding_sample_size=1,
                  raw_results_file_path=None,
                  agg_results_file_path=None,
-                 timeout=None):
+                 verbosity=False):
+        self.verbosity = verbosity
         self.base = base  # basis field size
-        self.hash_base = hash_base
         self.block_length = block_length  # block length
-        self.block_length_hash_base = block_length if (hash_base is None) else math.ceil(block_length * math.log(hash_base, base))  # l in base m
         self.num_blocks = num_blocks  # number of blocks in private key
         self.key_length = num_blocks * block_length
         self.p_err = p_err
         self.success_rate = success_rate
         self.full_rank_encoding = full_rank_encoding
         self.use_zeroes_in_encoding_matrix = use_zeroes_in_encoding_matrix if base > 2 else True  # Whether to enable zeroes in encoding matrix
-        self.max_candidates_num = max_candidates_num or block_length ** 2
+        self.goal_candidates_num = goal_candidates_num or block_length ** 2
         self.indices_to_encode_strategy = indices_to_encode_strategy
+        self.rounding_strategy = rounding_strategy
         self.code_generation_strategy = code_generation_strategy
         self.pruning_strategy = pruning_strategy
         self.sparsity = sparsity
         self.max_num_indices_to_encode = max_num_indices_to_encode or num_blocks
-        self.upper_threshold = upper_threshold
+        self.max_candidates_num = max_candidates_num
+        self.encoding_sample_size = encoding_sample_size
         self.theoretic_key_rate = self._theoretic_key_rate()
-
-        if radius is not None:
-            self.fixed_radius = True
-            self.radius = radius
-        elif p_err == 0.0:
+        self.radius_picking = radius_picking
+        if p_err == 0.0:
             self.fixed_radius = True
             self.radius = 0
             self.max_block_error = [0 for _ in range(num_blocks)]
             self.prefix_radii = [0 for _ in range(num_blocks)]
+            self.pruning_success_rate = 1.0
+        elif radius_picking is False:
+            self.fixed_radius = True
+            self.radius = self.block_length
+            self.pruning_success_rate = success_rate
         else:
             self.fixed_radius = False
             self.max_block_error = self._radius_for_max_block_error()
             self.prefix_radii = prefix_radii or self._determine_prefix_radii()
+            self.pruning_success_rate = math.sqrt(success_rate)
             # self.prefix_radii = prefix_radii or self._determine_prefix_radii(timeout)
 
         self.fixed_number_of_encodings = fixed_number_of_encodings
@@ -92,6 +105,13 @@ class ProtocolConfigs(object):
 
         self.raw_results_file_path = raw_results_file_path
         self.agg_results_file_path = agg_results_file_path
+
+    def round(self, number):
+        if self.rounding_strategy == RoundingStrategy.FLOOR:
+            return math.floor(number)
+        elif self.rounding_strategy == RoundingStrategy.CEIL:
+            return math.ceil(number)
+        raise "Bad rounding strategy"
 
     def _radius_for_max_block_error(self):
         use_product = True
@@ -167,14 +187,24 @@ class ProtocolConfigs(object):
 
     def _determine_num_encodings_list(self):
         total_checks = util.required_checks(self.key_length, self.base, self.p_err)
-        checks_per_block_ceil = math.ceil(total_checks / self.num_blocks)
-        checks_per_block_floor = checks_per_block_ceil - 1
-        m_ceil = total_checks - self.num_blocks * checks_per_block_floor
-        return [checks_per_block_ceil] * m_ceil + [checks_per_block_floor] * (self.num_blocks - m_ceil)
+        num_encodings_list = []
+        tot_num_encodings = 0
+        for i in range(self.num_blocks):
+            cur_num_encodings = math.floor(total_checks * (i+1) / self.num_blocks - tot_num_encodings)
+            num_encodings_list.append(cur_num_encodings)
+            tot_num_encodings += cur_num_encodings
+        return num_encodings_list
+        # Old way:
+        # checks_per_block_ceil = math.ceil(total_checks / self.num_blocks)
+        # checks_per_block_floor = checks_per_block_ceil - 1
+        # m_ceil = total_checks - self.num_blocks * checks_per_block_floor
+        # return [checks_per_block_floor] * (self.num_blocks - m_ceil) + [checks_per_block_ceil] * m_ceil
 
     def _theoretic_key_rate(self):
-        if self.p_err in [0.0, 1.0]:
+        if self.p_err == 0.0:
             return math.log(self.base/(self.base-1), 2)
+        if self.p_err == 1.0:
+            return math.log(self.base, 2)
         return math.log(self.base, 2) + self.p_err * math.log(self.p_err, 2) + (1-self.p_err) * math.log((1-self.p_err)/(self.base-1), 2)
 
 

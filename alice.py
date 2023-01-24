@@ -15,32 +15,28 @@ class Alice(object):
         self.a = np.array_split(a, protocol_configs.num_blocks)  # Alice's private key, partitioned into blocks
         self.a_base_m = np.array(list(map(self.encoder.hash_base_to_base, self.a)))  # A in base m
 
-    def encode_blocks(self, blocks_indices, number_of_encodings, format):
+    def encode_blocks(self, encode_new_block, blocks_indices, number_of_encodings, encoding_matrix_prefix, encoding_format):
         """
         Alice encodes A.
         Picks a nonzero random encoding matrix M of size n_m*k*m.
         Encode A using M, A'.
         Return M and A'.
         """
-        if format == LinearCodeFormat.MATRIX:
-            encoding_matrices_delta = np.zeros([len(blocks_indices), self.cfg.block_length_hash_base, number_of_encodings], dtype=int)
-            for i, block_index in enumerate(blocks_indices):
-                cur_encoding_matrix_delta = self.linear_code_generator.generate_encoding_matrix(number_of_encodings)
-                encoding_matrices_delta[i] = cur_encoding_matrix_delta
+        if encoding_format == LinearCodeFormat.MATRIX:
+            encoding_matrices_delta = np.zeros([len(blocks_indices), self.cfg.block_length, number_of_encodings], dtype=int)
+            encoding_matrices_delta[:len(blocks_indices)-encode_new_block] = encoding_matrix_prefix
+            if encode_new_block:
+                encoding_matrices_delta[-1] = self.linear_code_generator.generate_encoding_matrix(number_of_encodings)
 
             # Alice returns M and A'.
             encoded_a = self.encoder.encode_multi_block(encoding_matrices_delta,
                                                         np.take(self.a, blocks_indices, axis=0))
             return MatrixFormat(encoding_matrices_delta, encoded_a)
 
-        elif format == LinearCodeFormat.AFFINE_SUBSPACE:
+        elif encoding_format == LinearCodeFormat.AFFINE_SUBSPACE:
             # Encoding matrix for the prefix
             if len(blocks_indices) > 1:
-                prefix_encoding_matrices = np.zeros([len(blocks_indices) - 1, self.cfg.block_length_hash_base, number_of_encodings],
-                                                    dtype=int)
-                for i, block_index in enumerate(blocks_indices[:-1]):
-                    cur_encoding_matrix_delta = self.linear_code_generator.generate_encoding_matrix(number_of_encodings)
-                    prefix_encoding_matrices[i] = cur_encoding_matrix_delta
+                prefix_encoding_matrices = encoding_matrix_prefix
                 prefix_encoded_a = self.encoder.encode_multi_block(prefix_encoding_matrices,
                                                             np.take(self.a, blocks_indices[:-1], axis=0))
             else:

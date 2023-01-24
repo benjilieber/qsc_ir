@@ -4,7 +4,7 @@ import re
 
 import numpy as np
 
-from protocol_configs import CodeGenerationStrategy, PruningStrategy
+from protocol_configs import CodeGenerationStrategy, RoundingStrategy, PruningStrategy
 
 
 def parseIntRange(string):
@@ -34,16 +34,14 @@ def parse_args():
     parser.add_argument('--series', dest='run_mode', action='store_const', const='series', default='parallel',
                         help='Run in series (default is parallel).')
     parser.add_argument('--sample_size', default=1, type=int, help='The number of runs per configuration.')
-    parser.add_argument('--q', type=int, default=3, help='The size of the symbol field (default: 3).')
-    parser.add_argument('--hash_base_list', default=[], nargs="+", type=int,
-                        help='The bases for the hashing (default: the key space base).')
+    parser.add_argument('--q_list', type=int, default=[], nargs="+", help='The bases of the symbol field (default: 3).')
     parser.add_argument('--code_generation_strategy_list', choices=list(CodeGenerationStrategy),
                         default=[CodeGenerationStrategy.LINEAR_CODE], nargs="+", type=CodeGenerationStrategy,
                         help='The code types.')
     parser.add_argument('--key_size_list', required=True, nargs="+", type=int, help='The key sizes.')
     parser.add_argument('--block_size_range', required=True, type=parseIntRange, help='The block sizes.')
     parser.add_argument('--sparsity_range', type=parseIntRange, help='The LDPC code sparsity range.')
-    parser.add_argument('--max_candidates_num', type=int, nargs="+",
+    parser.add_argument('--goal_candidates_num', type=int, nargs="+",
                         help='The max candidates list size during decoding (default: ranges over powers of 2 until key size).')
     parser.add_argument('--fixed_number_of_encodings', default=False, type=bool,
                         help='Whether the number of encodings should be fixed (otherwise based on list size requirements). By default False.')
@@ -52,65 +50,61 @@ def parse_args():
     parser.add_argument('--p_err_range', required=True, type=parseFloatRange, help='The error probability values.')
     parser.add_argument('--success_rate_range', type=parseFloatRange,
                         help='The success rate values.')
-    parser.add_argument('--radius', type=int, help='The fixed radius.')
+    parser.add_argument('--radius_picking', default=False, type=bool, help='Whether to use single-block radius-picking pruning.')
+    parser.add_argument('--rounding_strategy_list', default=[RoundingStrategy.CEIL], type=list(RoundingStrategy), help='Which rounding function to use (for encoding-number picking).')
     parser.add_argument('--pruning_strategy', type=PruningStrategy, help='The pruning strategy.')
-    parser.add_argument('--upper_threshold', type=int, help='The upper threshold for the list size, from which the list should be reduced when reached.')
+    parser.add_argument('--max_candidates_num', type=int, help='The upper threshold for the list size, from which the list should be reduced when reached.')
+    parser.add_argument('--encoding_sample_size', type=int, help='The number of encodings sampled to pick the best one.')
+    parser.add_argument('--is_slurm', type=bool, required=True, help='Whether we are running on slurm.')
     parser.add_argument('--raw_results_file_path', required=True, type=str,
                         help='csv path for saving the raw results. If exists, the new results are appended to the existing ones.')
     parser.add_argument('--agg_results_file_path', required=True, type=str,
                         help='csv path for saving the aggregated results. If exists, the new results are appended to the existing ones.')
-    parser.add_argument("--cfg_timeout", type=int,
-                        help='Timeout (in seconds) for calculating a config. If time is up, skipping to next configuration.')
     parser.add_argument("--verbosity", default=False, type=bool, help='Verbosity.')
 
     args = parser.parse_args()
-
-    if not args.hash_base_list:
-        args.hash_base_list = [args.base]
     if CodeGenerationStrategy.LDPC_CODE in args.code_generation_strategy_list:
         assert args.sparsity_range is not None
 
     return args
 
 
-def create_args(key_size_list, block_size_range, p_err_range, success_rate_range, raw_results_file_path,
-                    agg_results_file_path, run_mode='series', sample_size=1, q=3, hash_base_list=None,
+def create_args(key_size_list, block_size_range, p_err_range, success_rate_range, is_slurm, raw_results_file_path,
+                    agg_results_file_path, run_mode='series', sample_size=1, q_list=[3],
                     code_generation_strategy_list=[CodeGenerationStrategy.LINEAR_CODE], sparsity_range=None,
-                    max_candidates_num=None, fixed_number_of_encodings=False,
-                    max_num_indices_to_encode_range=[math.inf], radius=None, pruning_strategy=PruningStrategy.RADII_PROBABILITIES, upper_threshold=None, cfg_timeout=None, verbosity=False):
+                    goal_candidates_num=None, max_candidates_num=None, fixed_number_of_encodings=False,
+                    max_num_indices_to_encode_range=[math.inf], radius_picking=False, rounding_strategy_list=[RoundingStrategy.CEIL], pruning_strategy=PruningStrategy.RADII_PROBABILITIES, encoding_sample_size=1, verbosity=False):
     class Args(object):
-        def __init__(self, key_size_list, block_size_range, p_err_range, success_rate_range, raw_results_file_path,
-                     agg_results_file_path, run_mode='series', sample_size=1, q=3, hash_base_list=None,
+        def __init__(self, key_size_list, block_size_range, p_err_range, success_rate_range, is_slurm, raw_results_file_path,
+                     agg_results_file_path, run_mode='series', sample_size=1, q_list=3,
                      code_generation_strategy_list=[CodeGenerationStrategy.LINEAR_CODE], sparsity_range=None,
-                     max_candidates_num=None, fixed_number_of_encodings=False,
-                     max_num_indices_to_encode_range=[math.inf], radius=None, pruning_strategy=PruningStrategy.RADII_PROBABILITIES, upper_threshold=None, cfg_timeout=None, verbosity=False):
+                     goal_candidates_num=None, max_candidates_num=None, fixed_number_of_encodings=False,
+                     max_num_indices_to_encode_range=[math.inf], radius_picking=False, rounding_strategy_list=[RoundingStrategy.CEIL], pruning_strategy=PruningStrategy.RADII_PROBABILITIES, encoding_sample_size=1, verbosity=False):
             self.run_mode = run_mode
             self.sample_size = sample_size
-            self.q = q
-            if hash_base_list is not None:
-                self.hash_base_list = hash_base_list
-            else:
-                self.hash_base_list = [q]
+            self.q_list = q_list
             self.code_generation_strategy_list = code_generation_strategy_list
             self.sparsity_range = sparsity_range
             if CodeGenerationStrategy.LDPC_CODE in self.code_generation_strategy_list:
                 assert self.sparsity_range is not None
             self.key_size_list = key_size_list
             self.block_size_range = block_size_range
-            assert(not (max_candidates_num and fixed_number_of_encodings))
+            self.goal_candidates_num = goal_candidates_num
             self.max_candidates_num = max_candidates_num
             self.fixed_number_of_encodings = fixed_number_of_encodings
             self.max_num_indices_to_encode_range = max_num_indices_to_encode_range
             self.p_err_range = p_err_range
             self.success_rate_range = success_rate_range
-            self.radius = radius
+            self.radius_picking = radius_picking
+            self.rounding_strategy_list = rounding_strategy_list
             self.pruning_strategy = pruning_strategy
-            self.upper_threshold = upper_threshold
+            self.encoding_sample_size = encoding_sample_size
+            self.is_slurm = is_slurm
             self.raw_results_file_path = raw_results_file_path
             self.agg_results_file_path = agg_results_file_path
-            self.cfg_timeout = cfg_timeout
             self.verbosity = verbosity
 
-    return Args(key_size_list, block_size_range, p_err_range, success_rate_range, raw_results_file_path, agg_results_file_path,
-                run_mode, sample_size, q, hash_base_list, code_generation_strategy_list, sparsity_range, max_candidates_num, fixed_number_of_encodings,
-                max_num_indices_to_encode_range, radius, pruning_strategy, upper_threshold, cfg_timeout, verbosity)
+    return Args(key_size_list, block_size_range, p_err_range, success_rate_range, is_slurm, raw_results_file_path, agg_results_file_path,
+                run_mode, sample_size, q_list, code_generation_strategy_list, sparsity_range, goal_candidates_num, max_candidates_num, fixed_number_of_encodings,
+                max_num_indices_to_encode_range, radius_picking, rounding_strategy_list, pruning_strategy, encoding_sample_size, verbosity)
+

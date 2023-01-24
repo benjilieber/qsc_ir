@@ -24,11 +24,13 @@ class Bob(object):
         self.a_candidates = np.array([])
         self.a_candidates_errors = np.array([])
         self.a_candidates_per_block = []
+        self.cur_success_prob = 1.0
         # self.a_candidates_per_err_cnt = {}
         # self.min_candidate_error = 0
         self.candidates_buckets_num_history = []
         self.avg_candidates_per_img_history = []
         self.pruning_rate_history = []
+        self.pruning_fail_prob_history = []
 
     def decode_multi_block(self, block_indices, encoding):
         """
@@ -56,11 +58,15 @@ class Bob(object):
                         [prefix_a_candidate_error + latest_block_candidate_error for prefix_a_candidate_error in
                          self.a_candidates_errors for
                          latest_block_candidate_error in latest_block_candidates_errors])
-                    pruned_candidates, pruned_candidates_errors = self.prune_candidates(new_candidates_raw,
-                                                                                        new_candidates_raw_errors,
-                                                                                        latest_block_index)
-                    self.a_candidates = pruned_candidates
-                    self.a_candidates_errors = pruned_candidates_errors
+                    if self.cfg.pruning_success_rate != 1.0:
+                        pruned_candidates, pruned_candidates_errors = self.prune_candidates(new_candidates_raw,
+                                                                                            new_candidates_raw_errors,
+                                                                                            latest_block_index)
+                        self.a_candidates = pruned_candidates
+                        self.a_candidates_errors = pruned_candidates_errors
+                    else:
+                        self.a_candidates = new_candidates_raw
+                        self.a_candidates_errors = new_candidates_raw_errors
                 else:
                     self.a_candidates = np.array(
                         [[latest_block_candidate] for latest_block_candidate in latest_block_candidates])
@@ -112,11 +118,15 @@ class Bob(object):
                      latest_block_candidates_errors_per_prefix_encoding[tuple(cur_prefix_encoding)]])
 
                 # print(new_candidates_raw)
-                pruned_candidates, pruned_candidates_errors = self.prune_candidates(new_candidates_raw,
-                                                                                    new_candidates_raw_errors,
-                                                                                    latest_block_index)
-                self.a_candidates = pruned_candidates
-                self.a_candidates_errors = pruned_candidates_errors
+                if self.cfg.pruning_success_rate != 1.0:
+                    pruned_candidates, pruned_candidates_errors = self.prune_candidates(new_candidates_raw,
+                                                                                        new_candidates_raw_errors,
+                                                                                        latest_block_index)
+                    self.a_candidates = pruned_candidates
+                    self.a_candidates_errors = pruned_candidates_errors
+                else:
+                    self.a_candidates = new_candidates_raw
+                    self.a_candidates_errors = new_candidates_raw_errors
 
         else:  # else, just reduce the current candidates
             if encoding.format != LinearCodeFormat.MATRIX:
@@ -250,6 +260,9 @@ class Bob(object):
             yield np.mod(base_solution_raw + np.matmul(coefficients, kernel_base), self.cfg.base)
 
     def prune_candidates(self, new_candidates_raw, new_candidates_raw_errors, latest_block_index):
+        if len(new_candidates_raw) == 0:
+            return np.array([]), np.array([])
+
         if self.cfg.pruning_strategy == PruningStrategy.RADII_PROBABILITIES:
             total_radius = self.cfg.prefix_radii[latest_block_index]
             pruned_candidates_indices = np.where(new_candidates_raw_errors <= total_radius)[0]
@@ -265,10 +278,13 @@ class Bob(object):
             for i, err in enumerate(new_candidates_raw_errors):
                 a_candidates_per_err_cnt.setdefault(err, []).append(i)
             if use_log:
-                probs_per_err_cnt = {err: err * math.log(self.cfg.p_err) + (
-                            len(new_candidates_raw[0]) * self.cfg.block_length - err) * math.log(
-                    (1 - self.cfg.p_err) / (self.cfg.base - 1))
-                                     for err in a_candidates_per_err_cnt.keys()}
+                if self.cfg.p_err == 0.0:
+                    probs_per_err_cnt = {0: 0.0}
+                else:
+                    probs_per_err_cnt = {err: err * math.log(self.cfg.p_err) + (
+                                len(new_candidates_raw[0]) * self.cfg.block_length - err) * math.log(
+                        (1 - self.cfg.p_err) / (self.cfg.base - 1))
+                                         for err in a_candidates_per_err_cnt.keys()}
                 total_prob = scipy.special.logsumexp(
                     [prob + math.log(len(a_candidates_per_err_cnt[err])) for err, prob in probs_per_err_cnt.items()])
             else:
@@ -276,10 +292,11 @@ class Bob(object):
                                      for err in a_candidates_per_err_cnt.keys()}
                 total_prob = sum([prob * len(a_candidates_per_err_cnt[err]) for err, prob in probs_per_err_cnt.items()])
 
-            total_success_prob = (1.0 + self.cfg.success_rate) / 2
-            # per_block_fail_prob = (1 - total_success_prob) / self.cfg.num_blocks
-            per_block_fail_prob = 1 - total_success_prob ** (1 / self.cfg.num_blocks)
-            if per_block_fail_prob == 0.0:
+            remaining_success_prob = self.cfg.pruning_success_rate / self.cur_success_prob
+            cur_block_success_prob = remaining_success_prob ** (1 / (self.cfg.num_blocks - latest_block_index))
+            cur_block_fail_prob = 1 - cur_block_success_prob
+            if cur_block_fail_prob == 0.0:
+                self.pruning_fail_prob_history.append(cur_block_fail_prob)
                 return new_candidates_raw, new_candidates_raw_errors
 
             if use_log:
@@ -293,21 +310,23 @@ class Bob(object):
                 else:
                     weight_delta = len(a_candidates_per_err_cnt[err]) * probs_per_err_cnt[err] / total_prob
                 if use_log:
-                    should_split = weight_delta > util.logminexp(math.log(per_block_fail_prob), cur_pruned_weight)
+                    should_split = weight_delta > util.logminexp(math.log(cur_block_fail_prob), cur_pruned_weight)
                 else:
-                    should_split = weight_delta > per_block_fail_prob - cur_pruned_weight
+                    should_split = weight_delta > cur_block_fail_prob - cur_pruned_weight
                 if should_split:
                     if use_log:
-                        delta_split_part = math.floor(math.exp(math.log(len(a_candidates_per_err_cnt[err])) + util.logminexp(math.log(per_block_fail_prob), cur_pruned_weight) - weight_delta))
+                        delta_split_part = math.floor(math.exp(math.log(len(a_candidates_per_err_cnt[err])) + util.logminexp(math.log(cur_block_fail_prob), cur_pruned_weight) - weight_delta))
+                        if delta_split_part != 0:
+                            cur_pruned_weight = scipy.special.logsumexp([cur_pruned_weight, math.log(delta_split_part) + probs_per_err_cnt[err] - total_prob])
                     else:
-                        delta_split_part = math.floor(len(a_candidates_per_err_cnt[err]) * (per_block_fail_prob - cur_pruned_weight) / weight_delta)
+                        delta_split_part = math.floor(len(a_candidates_per_err_cnt[err]) * (cur_block_fail_prob - cur_pruned_weight) / weight_delta)
+                        cur_pruned_weight += delta_split_part * probs_per_err_cnt[err] / total_prob
                     split_indices = random.sample(a_candidates_per_err_cnt[err], delta_split_part)
                     post_pruning_mask[split_indices] = False
                     # if use_log:
                     #     cur_pruned_weight = scipy.special.logsumexp([cur_pruned_weight, math.log(delta_split_part) + probs_per_err_cnt[err] - total_prob])
                     # else:
                     #     cur_pruned_weight += delta_split_part * probs_per_err_cnt[err] / total_prob
-
                     break
                 else:
                     post_pruning_mask[a_candidates_per_err_cnt[err]] = False
@@ -317,6 +336,13 @@ class Bob(object):
                         cur_pruned_weight += weight_delta
             # print(1-per_block_fail_prob)
             # print(sum([probs_per_err_cnt[new_candidates_raw_errors[i]] for i, flag in enumerate(post_pruning_mask) if flag]) / total_prob)
+            if use_log:
+                self.pruning_fail_prob_history.append(math.exp(cur_pruned_weight))
+                cur_block_success_prob = 1-math.exp(cur_pruned_weight)
+            else:
+                self.pruning_fail_prob_history.append(cur_pruned_weight)
+                cur_block_success_prob = 1-cur_pruned_weight
+            self.cur_success_prob = self.cur_success_prob * cur_block_success_prob
             pruning_rate = 1 - sum(post_pruning_mask) / (len(new_candidates_raw) or 1)
             self.pruning_rate_history.append(pruning_rate)
             # print(pruning_rate)

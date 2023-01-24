@@ -8,9 +8,12 @@ import scipy
 import util
 from alice import Alice
 from bob import Bob
+from encoder import Encoder
 from protocol_configs import IndicesToEncodeStrategy, LinearCodeFormat
 from result import Result
 from timeit import default_timer as timer
+from scipy.stats import entropy
+from linear_code_generator import LinearCodeGenerator
 
 
 class MultiBlockProtocol(object):
@@ -23,12 +26,15 @@ class MultiBlockProtocol(object):
 
         np.random.seed([os.getpid(), int(str(time.time() % 1)[2:10])])
 
+        self.linear_code_generator = LinearCodeGenerator(protocol_cfg)
+        self.encoder = Encoder(protocol_cfg.base, protocol_cfg.block_length)
+
         self.total_encoding_size = 0
         self.matrix_communication_size = 0
         self.bob_communication_size = 0
         self.total_communication_size = 0
 
-        self.cur_candidates_num = 1
+        self.cur_candidates_num = 1  # must be initialized to 1 for encoding-picking function to work as expected, if I change this ensure it doesn't break
         self.num_candidates_per_block = []
 
         self.candidates_num_history = []
@@ -44,22 +50,27 @@ class MultiBlockProtocol(object):
             if self.cur_candidates_num == 0:
                 break
 
-            if self.cfg.upper_threshold and (self.cur_candidates_num > self.cfg.upper_threshold):
-                self.run_single_round(encode_new_block=False)
+            if self.cfg.max_candidates_num and (self.cur_candidates_num > self.cfg.max_candidates_num):
+                self.run_single_round(encode_new_block=False, goal_list_size=self.cfg.goal_candidates_num)
+
+        if self.cfg.verbosity:
+            print("hamming distance x and most probable x', pre-reducing: " + str(util.hamming_multi_block(self.bob.a_candidates[np.argmin(self.bob.a_candidates_errors)], self.alice.a)))
 
         while self.cur_candidates_num > 1:
             self.run_single_round(encode_new_block=False)
 
         end = timer()
 
-        print("error_blocks_indices: " + str([sum(a_block == b_block) for a_block, b_block in zip(self.alice.a, self.bob.b)]))
-        print("candidates_num_history: " + str(self.candidates_num_history))
-        print("candidates_buckets_num_history: " + str(self.bob.candidates_buckets_num_history))
-        print("mean_avg_candidates_per_img: " + str(sum(self.bob.avg_candidates_per_img_history)/len(self.bob.avg_candidates_per_img_history)) + ", avg_candidates_per_img_history: " + str(self.bob.avg_candidates_per_img_history))
-        print("mean_pruning_rate: " + str(1-np.product([1 - pr for pr in self.bob.pruning_rate_history])**(1/(len(self.bob.pruning_rate_history) or 1))) + ", pruning_rate_history: " + str(self.bob.pruning_rate_history))
-        print("radii_list: " + str(self.r_list))
-        print("num_encodings_history: " + str(self.num_encodings_history) + ", total: " + str(sum(self.num_encodings_history)) + " (theoretic: " + str(util.required_checks(self.cfg.key_length, self.cfg.base, self.cfg.p_err)) + ")")
-        print("num_encoded_blocks_history: " + str(self.num_encoded_blocks_history))
+        if self.cfg.verbosity:
+            print("error_blocks_indices: " + str([sum(a_block == b_block) for a_block, b_block in zip(self.alice.a, self.bob.b)]))
+            print("candidates_num_history: " + str(self.candidates_num_history))
+            print("candidates_buckets_num_history: " + str(self.bob.candidates_buckets_num_history))
+            print("mean_avg_candidates_per_img: " + str(sum(self.bob.avg_candidates_per_img_history)/len(self.bob.avg_candidates_per_img_history)) + ", avg_candidates_per_img_history: " + str(self.bob.avg_candidates_per_img_history))
+            print("mean_pruning_rate: " + str(1-np.product([1 - pr for pr in self.bob.pruning_rate_history])**(1/(len(self.bob.pruning_rate_history) or 1))) + ", pruning_rate_history: " + str(self.bob.pruning_rate_history))
+            print("pruning_fail_prob_history: " + str(self.bob.pruning_fail_prob_history))
+            print("radii_list: " + str(self.r_list))
+            print("num_encodings_history: " + str(self.num_encodings_history) + ", total: " + str(sum(self.num_encodings_history)) + " (theoretic: " + str(util.required_checks(self.cfg.key_length, self.cfg.base, self.cfg.p_err)) + ")")
+            print("num_encoded_blocks_history: " + str(self.num_encoded_blocks_history))
 
         return Result(cfg=self.cfg, is_success=self.is_success(), key_rate=self.calculate_key_rate(),
                       encoding_size_rate=self.total_encoding_size / self.cfg.key_length,
@@ -68,14 +79,16 @@ class MultiBlockProtocol(object):
                       total_communication_rate=self.total_communication_size / self.cfg.key_length,
                       time_rate=(end - start) / self.cfg.key_length)
 
-    def run_single_round(self, encode_new_block):
+    def run_single_round(self, encode_new_block, goal_list_size=None):
         encoded_blocks_indices = self.pick_indices_to_encode(self.num_candidates_per_block, encode_new_block)
         number_of_encodings = self.determine_number_of_encodings(self.cur_candidates_num, encode_new_block,
-                                                                 encoded_blocks_indices[-1])
+                                                                 encoded_blocks_indices[-1], goal_list_size=goal_list_size)
         encoding_format = self.determine_encoding_format(encode_new_block, encoded_blocks_indices, number_of_encodings)
-        # print(encoding_format)
+        if self.cfg.verbosity:
+            print(encoding_format)
 
-        encoding = self.alice.encode_blocks(encoded_blocks_indices, number_of_encodings, encoding_format)
+        encoding_matrix_prefix = self.pick_encoding_matrix_prefix(encode_new_block, encoded_blocks_indices, number_of_encodings, encoding_format)
+        encoding = self.alice.encode_blocks(encode_new_block, encoded_blocks_indices, number_of_encodings, encoding_matrix_prefix, encoding_format)
         [self.cur_candidates_num, self.num_candidates_per_block] = self.bob.decode_multi_block(encoded_blocks_indices, encoding)
 
         self.update_communication_stats(encoding)
@@ -102,22 +115,44 @@ class MultiBlockProtocol(object):
             return sorted(range(len(num_candidates_per_block)), key=lambda sub: num_candidates_per_block[sub])[
                    -num_indices_to_encode:]
 
-    def determine_number_of_encodings(self, cur_candidates_num, encode_new_block, last_block_index):
+    def determine_number_of_encodings(self, cur_candidates_num, encode_new_block, last_block_index, goal_list_size=None):
         if encode_new_block:
             r = self.cfg.determine_cur_radius(last_block_index)
             self.r_list.append(r)
             if self.cfg.fixed_number_of_encodings:
                 return self.cfg.number_of_encodings_list[last_block_index]
-            complement_space_size = sum(
-                [scipy.special.comb(self.cfg.block_length, i) * (self.cfg.base-1) ** (self.cfg.block_length - i) for i in range(r + 1)])
-            required_number_of_encodings_raw = max(math.ceil(
-                math.log(complement_space_size, self.cfg.base) - math.log(self.cfg.max_candidates_num,
+            if r == 0:
+                complement_space_size = (self.cfg.base - 1)**self.cfg.block_length
+            elif r == self.cfg.block_length:
+                complement_space_size = self.cfg.base ** self.cfg.block_length
+            else:
+                complement_space_size = sum(
+                    [scipy.special.comb(self.cfg.block_length, i) * (self.cfg.base-1) ** (self.cfg.block_length - i) for i in range(r + 1)])
+
+            # old version of encoding-number picking
+            required_number_of_encodings_raw = max(self.cfg.round(
+                math.log(complement_space_size, self.cfg.base) - math.log(self.cfg.goal_candidates_num,
                                                                           self.cfg.base) + math.log(
                     self.cur_candidates_num, self.cfg.base)), 1)
-            return min(required_number_of_encodings_raw, self.cfg.block_length_hash_base)
+            required_number_of_encodings = min(required_number_of_encodings_raw, self.cfg.block_length)
+            return required_number_of_encodings
+
+            # new version of encoding-number picking
+            # if cur_candidates_num == 1:
+            #     required_number_of_encodings_raw = math.log(complement_space_size, self.cfg.base) - math.log(self.cfg.goal_candidates_num-1, self.cfg.base)
+            # else:
+            #     expected_candidate_space_size = complement_space_size * cur_candidates_num
+            #     required_number_of_encodings_raw = math.log(expected_candidate_space_size, self.cfg.base) + math.log(1+math.sqrt(1+4*self.cfg.goal_candidates_num/expected_candidate_space_size), self.cfg.base) - math.log(2, self.cfg.base) - math.log(
+            #         self.cfg.goal_candidates_num - 1, self.cfg.base)
+            # required_number_of_encodings = min(max(self.cfg.round(required_number_of_encodings_raw), 1), self.cfg.block_length)
+            #
+            # return required_number_of_encodings
 
         else:
-            return min(max(math.floor(math.log(cur_candidates_num, self.cfg.base)), 1), self.cfg.block_length_hash_base)
+            goal_list_size = goal_list_size or 1
+            return min(max(self.cfg.round(math.log(cur_candidates_num/goal_list_size, self.cfg.base)), 1), self.cfg.block_length)
+            # old version of encoding-number picking
+            # return min(max(math.floor(math.log(cur_candidates_num, self.cfg.base)), 1), self.cfg.block_length_hash_base)
 
     def determine_encoding_format(self, encode_new_block, indices_to_encode, number_of_encodings):
         if not encode_new_block:
@@ -125,7 +160,12 @@ class MultiBlockProtocol(object):
 
         else:
             latest_block_index = indices_to_encode[-1]
-            expected_matrix_complexity = sum([scipy.special.binom(self.cfg.block_length, err) * (self.cfg.base - 1)**(self.cfg.block_length - err) for err in range(self.cfg.determine_cur_radius(latest_block_index) + 1)])
+            if self.cfg.determine_cur_radius(latest_block_index) == self.cfg.block_length:
+                return LinearCodeFormat.AFFINE_SUBSPACE
+            if self.cfg.determine_cur_radius(latest_block_index) == 0:
+                expected_matrix_complexity = (self.cfg.base-1) ** self.cfg.block_length
+            else:
+                expected_matrix_complexity = sum([scipy.special.binom(self.cfg.block_length, err) * (self.cfg.base - 1)**(self.cfg.block_length - err) for err in range(self.cfg.determine_cur_radius(latest_block_index) + 1)])
             # expected_num_buckets = np.unique([candidate[indices_to_encode] for candidate in self.bob.a_candidates], axis=0)
             expected_prefix_num_buckets = min(self.cur_candidates_num, np.product([self.num_candidates_per_block[i] for i in indices_to_encode[:-1]]), self.cfg.base ** number_of_encodings)
             expected_affine_subspace_complexity = expected_prefix_num_buckets * (self.cfg.base ** (self.cfg.block_length - number_of_encodings))
@@ -135,6 +175,77 @@ class MultiBlockProtocol(object):
             else:
                 return LinearCodeFormat.AFFINE_SUBSPACE
 
+    def pick_encoding_matrix_prefix(self, encode_new_block, blocks_indices, number_of_encodings, encoding_format):
+        prefix_length = len(blocks_indices) - (encode_new_block or encoding_format == LinearCodeFormat.AFFINE_SUBSPACE)
+
+        # encoding_matrix_prefix = np.zeros(
+        #     [prefix_length, self.cfg.block_length_hash_base, number_of_encodings], dtype=int)
+        # for i, block_index in enumerate(blocks_indices[:prefix_length]):
+        #     if self.cfg.encoding_sample_size == 1:
+        #         cur_encoding_matrix_delta = self.linear_code_generator.generate_encoding_matrix(number_of_encodings)
+        #         encoding_matrix_prefix[i] = cur_encoding_matrix_delta
+        #     else:
+        #         cur_encoding_matrix_delta_options = [
+        #             self.linear_code_generator.generate_encoding_matrix(number_of_encodings) for _ in
+        #             range(self.cfg.encoding_sample_size)]
+        #         cur_encoding_matrix_delta_unique_counts = [np.unique(
+        #             [self.encoder.encode_single_block(cur_encoding_matrix_delta, a_block_candidate) for
+        #              a_block_candidate in self.bob.a_candidates_per_block[block_index]], axis=0, return_counts=True)[1]
+        #                                                    for cur_encoding_matrix_delta in
+        #                                                    cur_encoding_matrix_delta_options]
+        #         cur_encoding_matrix_delta_entropies = [entropy(unique_counts) for unique_counts in
+        #                                                cur_encoding_matrix_delta_unique_counts]
+        #         encoding_matrix_prefix[i] = cur_encoding_matrix_delta_options[
+        #             np.argmax(cur_encoding_matrix_delta_entropies)]
+        # unique_count = np.unique(
+        #         [self.encoder.encode_multi_block(encoding_matrix_prefix, np.take(a_candidate, blocks_indices[:prefix_length], axis=0)) for
+        #          a_candidate in self.bob.a_candidates], axis=0, return_counts=True)[1]
+        # print(unique_count)
+        # print(entropy(unique_count))
+
+        encoding_matrix_prefix_options = []
+        for _ in range(self.cfg.encoding_sample_size):
+            cur_encoding_matrix_prefix_option = np.zeros([prefix_length, self.cfg.block_length, number_of_encodings], dtype=int)
+            for i, block_index in enumerate(blocks_indices[:prefix_length]):
+                cur_encoding_matrix_delta_option = self.linear_code_generator.generate_encoding_matrix(number_of_encodings)
+                cur_encoding_matrix_prefix_option[i] = cur_encoding_matrix_delta_option
+            encoding_matrix_prefix_options.append(cur_encoding_matrix_prefix_option)
+        if self.cfg.encoding_sample_size == 1:
+            return encoding_matrix_prefix_options[0]
+        else:
+            cur_encoding_matrix_prefix_unique_counts = [np.unique(
+                [self.encoder.encode_multi_block(cur_encoding_matrix_prefix, np.take(a_candidate, blocks_indices[:prefix_length], axis=0)) for
+                 a_candidate in self.bob.a_candidates], axis=0, return_counts=True)[1]
+                                                       for cur_encoding_matrix_prefix in
+                                                       encoding_matrix_prefix_options]
+            # print(cur_encoding_matrix_prefix_unique_counts)
+            cur_encoding_matrix_prefix_entropies = [entropy(unique_counts) for unique_counts in
+                                                   cur_encoding_matrix_prefix_unique_counts]
+            # print(cur_encoding_matrix_prefix_entropies)
+            return encoding_matrix_prefix_options[np.argmax(cur_encoding_matrix_prefix_entropies)]
+
+        # encoding_matrix_prefix = np.zeros(
+        #     [prefix_length, self.cfg.block_length_hash_base, number_of_encodings], dtype=int)
+        # for i, block_index in enumerate(blocks_indices[:prefix_length]):
+        #     if self.cfg.encoding_sample_size == 1:
+        #         cur_encoding_matrix_delta = self.linear_code_generator.generate_encoding_matrix(number_of_encodings)
+        #         encoding_matrix_prefix[i] = cur_encoding_matrix_delta
+        #     else:
+        #         cur_encoding_matrix_delta_options = [
+        #             self.linear_code_generator.generate_encoding_matrix(number_of_encodings) for _ in
+        #             range(self.cfg.encoding_sample_size)]
+        #         cur_encoding_matrix_delta_unique_counts = [np.unique(
+        #             [self.encoder.encode_single_block(cur_encoding_matrix_delta, a_block_candidate) for
+        #              a_block_candidate in self.bob.a_candidates_per_block[block_index]], axis=0, return_counts=True)[1]
+        #                                                    for cur_encoding_matrix_delta in
+        #                                                    cur_encoding_matrix_delta_options]
+        #         print(cur_encoding_matrix_delta_unique_counts)
+        #         cur_encoding_matrix_delta_entropies = [entropy(unique_counts) for unique_counts in
+        #                                                cur_encoding_matrix_delta_unique_counts]
+        #         print(cur_encoding_matrix_delta_entropies)
+        #         encoding_matrix_prefix[i] = cur_encoding_matrix_delta_options[
+        #             np.argmax(cur_encoding_matrix_delta_entropies)]
+        return encoding_matrix_prefix
 
     def update_communication_stats(self, encoding):
         if encoding.format == LinearCodeFormat.MATRIX:
