@@ -11,22 +11,22 @@ class IndicesToEncodeStrategy(Enum):
     MOST_CANDIDATE_BLOCKS = 2
 
 class CodeGenerationStrategy(Enum):
-    LINEAR_CODE = 'linear'
-    LDPC_CODE = 'ldpc'
+    linear = 'linear'
+    ldpc = 'ldpc'
 
     def __str__(self):
         return self.value
 
 class RoundingStrategy(Enum):
-    FLOOR = 'floor'
-    CEIL = 'ceil'
+    floor = 'floor'
+    ceil = 'ceil'
 
     def __str__(self):
         return self.value
 
 class PruningStrategy(Enum):
-    RADII_PROBABILITIES = 'radii_probabilities'
-    RELATIVE_WEIGHTS = 'relative_weights'
+    radii_probabilities = 'radii_probabilities'
+    relative_weights = 'relative_weights'
 
     def __str__(self):
         return self.value
@@ -52,9 +52,9 @@ class ProtocolConfigs(object):
                  goal_candidates_num=None,
                  max_candidates_num=None,
                  indices_to_encode_strategy=IndicesToEncodeStrategy.ALL_MULTI_CANDIDATE_BLOCKS,
-                 rounding_strategy=RoundingStrategy.CEIL,
-                 code_generation_strategy=CodeGenerationStrategy.LINEAR_CODE,
-                 pruning_strategy=PruningStrategy.RADII_PROBABILITIES,
+                 rounding_strategy=RoundingStrategy.ceil,
+                 code_generation_strategy=CodeGenerationStrategy.linear,
+                 pruning_strategy=PruningStrategy.radii_probabilities,
                  sparsity=None,
                  fixed_number_of_encodings=None,
                  max_num_indices_to_encode=None,
@@ -107,9 +107,9 @@ class ProtocolConfigs(object):
         self.agg_results_file_path = agg_results_file_path
 
     def round(self, number):
-        if self.rounding_strategy == RoundingStrategy.FLOOR:
+        if self.rounding_strategy == RoundingStrategy.floor:
             return math.floor(number)
-        elif self.rounding_strategy == RoundingStrategy.CEIL:
+        elif self.rounding_strategy == RoundingStrategy.ceil:
             return math.ceil(number)
         raise "Bad rounding strategy"
 

@@ -263,7 +263,7 @@ class Bob(object):
         if len(new_candidates_raw) == 0:
             return np.array([]), np.array([])
 
-        if self.cfg.pruning_strategy == PruningStrategy.RADII_PROBABILITIES:
+        if self.cfg.pruning_strategy == PruningStrategy.radii_probabilities:
             total_radius = self.cfg.prefix_radii[latest_block_index]
             pruned_candidates_indices = np.where(new_candidates_raw_errors <= total_radius)[0]
             pruning_rate = 1 - len(pruned_candidates_indices) / len(new_candidates_raw)
@@ -271,7 +271,7 @@ class Bob(object):
             # print(pruning_rate)
             return new_candidates_raw[pruned_candidates_indices], new_candidates_raw_errors[pruned_candidates_indices]
 
-        elif self.cfg.pruning_strategy == PruningStrategy.RELATIVE_WEIGHTS:
+        elif self.cfg.pruning_strategy == PruningStrategy.relative_weights:
             use_log = True
 
             a_candidates_per_err_cnt = {}

@@ -26,7 +26,7 @@ class MultiBlockProtocolTest(unittest.TestCase):
         cfg = ProtocolConfigs(base=3, block_length=6, num_blocks=100, p_err=p_err,
                               success_rate=1.0, max_candidates_num=10,
                               indices_to_encode_strategy=IndicesToEncodeStrategy.MOST_CANDIDATE_BLOCKS,
-                              code_generation_strategy=CodeGenerationStrategy.LINEAR_CODE,
+                              code_generation_strategy=CodeGenerationStrategy.linear,
                               max_num_indices_to_encode=3)
         key_generator = KeyGenerator(p_err=p_err, key_length=600)
         a, b = key_generator.generate_keys()
@@ -38,7 +38,7 @@ class MultiBlockProtocolTest(unittest.TestCase):
         cfg = ProtocolConfigs(base=3, block_length=6, num_blocks=100, p_err=p_err,
                               success_rate=0.99, max_candidates_num=10,
                               indices_to_encode_strategy=IndicesToEncodeStrategy.MOST_CANDIDATE_BLOCKS,
-                              code_generation_strategy=CodeGenerationStrategy.LINEAR_CODE,
+                              code_generation_strategy=CodeGenerationStrategy.linear,
                               max_num_indices_to_encode=10)
         key_generator = KeyGenerator(p_err=p_err, key_length=600)
         a, b = key_generator.generate_keys()

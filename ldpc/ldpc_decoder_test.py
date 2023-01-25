@@ -231,7 +231,7 @@ class LdpcDecoderTest(unittest.TestCase):
 
 def run_single_test_bp(n, m, p_err, sparsity):
     cfg = ProtocolConfigs(base=3, block_length=n, num_blocks=1,
-                          code_generation_strategy=CodeGenerationStrategy.LDPC_CODE, sparsity=sparsity)
+                          code_generation_strategy=CodeGenerationStrategy.ldpc, sparsity=sparsity)
     code_gen = LdpcGenerator(cfg)
     np.random.seed([os.getppid(), int(str(time.time() % 1)[2:10])])
     encoding_matrix = code_gen.generate_gallagher_matrix(m)
@@ -246,7 +246,7 @@ def run_single_test_bp(n, m, p_err, sparsity):
 
 def run_single_test_it(n, m, p_err, sparsity, max_candidates_num=None, success_rate=None):
     cfg = ProtocolConfigs(base=3, block_length=n, num_blocks=1,
-                          code_generation_strategy=CodeGenerationStrategy.LDPC_CODE, sparsity=sparsity)
+                          code_generation_strategy=CodeGenerationStrategy.ldpc, sparsity=sparsity)
     code_gen = LdpcGenerator(cfg)
     np.random.seed([os.getppid(), int(str(time.time() % 1)[2:10])])
     encoding_matrix = code_gen.generate_gallagher_matrix(m)

@@ -471,7 +471,7 @@ class LdpcDecoderTest(unittest.TestCase):
         p_err = 0.0
         num_rounds = 100
         cfg = ProtocolConfigs(base=3, block_length=block_length, num_blocks=1,
-                              code_generation_strategy=CodeGenerationStrategy.LDPC_CODE, sparsity=sparsity)
+                              code_generation_strategy=CodeGenerationStrategy.ldpc, sparsity=sparsity)
         code_gen = LdpcGenerator(cfg, use_sparse=True, use_extended=True)
         for i in range(10):
             encoding_matrix = code_gen.generate_encoding_matrix(num_encoding_columns)

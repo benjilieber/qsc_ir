@@ -3,7 +3,7 @@ import unittest
 
 import result
 from protocol_configs import ProtocolConfigs, CodeGenerationStrategy
-from result import Result
+from result import Result, str_to_result
 
 
 class ResultTest(unittest.TestCase):
@@ -15,7 +15,7 @@ class ResultTest(unittest.TestCase):
         success_rate = 0.99
         max_candidates_num = 50
         max_num_indices_to_encode = 3
-        code_generation_strategy = CodeGenerationStrategy.LINEAR_CODE
+        code_generation_strategy = CodeGenerationStrategy.linear
         sparsity = 2
         cfg = ProtocolConfigs(base=3, block_length=block_length, num_blocks=num_blocks, p_err=p_err,
                               success_rate=success_rate, max_candidates_num = max_candidates_num,
@@ -47,7 +47,7 @@ class ResultTest(unittest.TestCase):
         success_rate = 0.99
         max_candidates_num = 50
         max_num_indices_to_encode = 3
-        code_generation_strategy = CodeGenerationStrategy.LINEAR_CODE
+        code_generation_strategy = CodeGenerationStrategy.linear
         sparsity = 2
         cfg = ProtocolConfigs(base=3, block_length=block_length, num_blocks=num_blocks, p_err=p_err,
                               success_rate=success_rate, max_candidates_num = max_candidates_num,
@@ -72,6 +72,32 @@ class ResultTest(unittest.TestCase):
         expected_row = expected_cfg_row + expected_output_row
 
         self.assertEqual(expected_row, Result(cfg, result_list=r_list).get_row())
+
+    def test_single_result_from_string(self):
+        n = 1000
+        block_length = 8
+        num_blocks = math.ceil(n / block_length)
+        p_err = 0.05
+        success_rate = 0.99
+        max_candidates_num = 50
+        max_num_indices_to_encode = 3
+        code_generation_strategy = CodeGenerationStrategy.linear
+        sparsity = 2
+        cfg = ProtocolConfigs(base=3, block_length=block_length, num_blocks=num_blocks, p_err=p_err,
+                              success_rate=success_rate, max_candidates_num = max_candidates_num,
+                              max_num_indices_to_encode=max_num_indices_to_encode, code_generation_strategy=code_generation_strategy,
+                              sparsity=sparsity)
+        is_success = True
+        key_rate = 0.6
+        communication_rate = 42
+        time = 56
+        r = Result(cfg, is_success=is_success, key_rate=key_rate, encoding_size_rate=communication_rate,
+                      matrix_size_rate=communication_rate, bob_communication_rate=communication_rate,
+                      total_communication_rate=communication_rate, time_rate=time)
+
+        r_clone = str_to_result(str(r.get_row()))
+
+        self.assertEqual(r.get_row(), r_clone.get_row())
 
 
 if __name__ == '__main__':

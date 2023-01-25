@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument('--sample_size', default=1, type=int, help='The number of runs per configuration.')
     parser.add_argument('--q_list', type=int, default=[], nargs="+", help='The bases of the symbol field (default: 3).')
     parser.add_argument('--code_generation_strategy_list', choices=list(CodeGenerationStrategy),
-                        default=[CodeGenerationStrategy.LINEAR_CODE], nargs="+", type=CodeGenerationStrategy,
+                        default=[CodeGenerationStrategy.linear], nargs="+", type=CodeGenerationStrategy,
                         help='The code types.')
     parser.add_argument('--key_size_list', required=True, nargs="+", type=int, help='The key sizes.')
     parser.add_argument('--block_size_range', required=True, type=parseIntRange, help='The block sizes.')
@@ -51,7 +51,7 @@ def parse_args():
     parser.add_argument('--success_rate_range', type=parseFloatRange,
                         help='The success rate values.')
     parser.add_argument('--radius_picking', default=False, type=bool, help='Whether to use single-block radius-picking pruning.')
-    parser.add_argument('--rounding_strategy_list', default=[RoundingStrategy.CEIL], type=list(RoundingStrategy), help='Which rounding function to use (for encoding-number picking).')
+    parser.add_argument('--rounding_strategy_list', default=[RoundingStrategy.ceil], type=list(RoundingStrategy), help='Which rounding function to use (for encoding-number picking).')
     parser.add_argument('--pruning_strategy', type=PruningStrategy, help='The pruning strategy.')
     parser.add_argument('--max_candidates_num', type=int, help='The upper threshold for the list size, from which the list should be reduced when reached.')
     parser.add_argument('--encoding_sample_size', type=int, help='The number of encodings sampled to pick the best one.')
@@ -63,29 +63,29 @@ def parse_args():
     parser.add_argument("--verbosity", default=False, type=bool, help='Verbosity.')
 
     args = parser.parse_args()
-    if CodeGenerationStrategy.LDPC_CODE in args.code_generation_strategy_list:
+    if CodeGenerationStrategy.ldpc in args.code_generation_strategy_list:
         assert args.sparsity_range is not None
 
     return args
 
 
 def create_args(key_size_list, block_size_range, p_err_range, success_rate_range, is_slurm, raw_results_file_path,
-                    agg_results_file_path, run_mode='series', sample_size=1, q_list=[3],
-                    code_generation_strategy_list=[CodeGenerationStrategy.LINEAR_CODE], sparsity_range=None,
-                    goal_candidates_num=None, max_candidates_num=None, fixed_number_of_encodings=False,
-                    max_num_indices_to_encode_range=[math.inf], radius_picking=False, rounding_strategy_list=[RoundingStrategy.CEIL], pruning_strategy=PruningStrategy.RADII_PROBABILITIES, encoding_sample_size=1, verbosity=False):
+                agg_results_file_path, run_mode='series', sample_size=1, q_list=[3],
+                code_generation_strategy_list=[CodeGenerationStrategy.linear], sparsity_range=None,
+                goal_candidates_num=None, max_candidates_num=None, fixed_number_of_encodings=False,
+                max_num_indices_to_encode_range=[math.inf], radius_picking=False, rounding_strategy_list=[RoundingStrategy.ceil], pruning_strategy=PruningStrategy.radii_probabilities, encoding_sample_size=1, verbosity=False):
     class Args(object):
         def __init__(self, key_size_list, block_size_range, p_err_range, success_rate_range, is_slurm, raw_results_file_path,
                      agg_results_file_path, run_mode='series', sample_size=1, q_list=3,
-                     code_generation_strategy_list=[CodeGenerationStrategy.LINEAR_CODE], sparsity_range=None,
+                     code_generation_strategy_list=[CodeGenerationStrategy.linear], sparsity_range=None,
                      goal_candidates_num=None, max_candidates_num=None, fixed_number_of_encodings=False,
-                     max_num_indices_to_encode_range=[math.inf], radius_picking=False, rounding_strategy_list=[RoundingStrategy.CEIL], pruning_strategy=PruningStrategy.RADII_PROBABILITIES, encoding_sample_size=1, verbosity=False):
+                     max_num_indices_to_encode_range=[math.inf], radius_picking=False, rounding_strategy_list=[RoundingStrategy.ceil], pruning_strategy=PruningStrategy.radii_probabilities, encoding_sample_size=1, verbosity=False):
             self.run_mode = run_mode
             self.sample_size = sample_size
             self.q_list = q_list
             self.code_generation_strategy_list = code_generation_strategy_list
             self.sparsity_range = sparsity_range
-            if CodeGenerationStrategy.LDPC_CODE in self.code_generation_strategy_list:
+            if CodeGenerationStrategy.ldpc in self.code_generation_strategy_list:
                 assert self.sparsity_range is not None
             self.key_size_list = key_size_list
             self.block_size_range = block_size_range

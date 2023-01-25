@@ -97,7 +97,7 @@ def multi_run(args):
             print('starting computations in series')
 
     for code_generation_strategy in args.code_generation_strategy_list:
-        assert (code_generation_strategy == CodeGenerationStrategy.LINEAR_CODE)
+        assert (code_generation_strategy == CodeGenerationStrategy.linear)
         for q in args.q_list:
             for p_err in args.p_err_range:
                 for key_size in args.key_size_list:
