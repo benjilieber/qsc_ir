@@ -84,8 +84,8 @@ class MultiBlockProtocol(object):
         number_of_encodings = self.determine_number_of_encodings(self.cur_candidates_num, encode_new_block,
                                                                  encoded_blocks_indices[-1], goal_list_size=goal_list_size)
         encoding_format = self.determine_encoding_format(encode_new_block, encoded_blocks_indices, number_of_encodings)
-        if self.cfg.verbosity:
-            print(encoding_format)
+        # if self.cfg.verbosity:
+        #     print(encoding_format)
 
         encoding_matrix_prefix = self.pick_encoding_matrix_prefix(encode_new_block, encoded_blocks_indices, number_of_encodings, encoding_format)
         encoding = self.alice.encode_blocks(encode_new_block, encoded_blocks_indices, number_of_encodings, encoding_matrix_prefix, encoding_format)

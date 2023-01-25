@@ -8,11 +8,11 @@ verbosity = False
 
 block_size_range = list(range(3, 20))
 key_size_list = [128, 256, 512, 1024, 2048, 4096, 8192]
-p_err_range = [0.0, 0.0001, 0.001, 0.01, 0.02, 0.05, 0.1]
+p_err_range = [0.1] #  [0.0, 0.0001, 0.001, 0.01, 0.02, 0.05, 0.1]
 success_rate_range = [0.9, 0.99, 0.999, 0.9999]
 raw_results_file_path = "raw_results1.csv"
 agg_results_file_path = "agg_results1.csv"
-run_mode = "series"
+run_mode = "parallel"
 sample_size = 10
 q_list = [3]
 code_generation_strategy_list = [CodeGenerationStrategy.linear]

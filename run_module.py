@@ -17,6 +17,7 @@ from key_generator import KeyGenerator
 from multi_block_protocol import MultiBlockProtocol
 from result import Result
 import math
+from functools import partial
 
 
 def write_header(file_name):
@@ -38,7 +39,7 @@ def write_results(result_list, is_slurm=False, verbosity=False):
     if is_slurm:
         for single_result in result_list:
             print(single_result.get_row())
-        print(Result(result_list[0].cfg, result_list=result_list).get_row())
+        print(Result(result_list[0].cfg, result_list=result_list).get_row(), flush=True)
         return
     raw_results_file_name = result_list[0].cfg.raw_results_file_path
     with open(raw_results_file_name, 'a', newline='') as f1:
@@ -52,12 +53,14 @@ def write_results(result_list, is_slurm=False, verbosity=False):
         writer.writerow(Result(result_list[0].cfg, result_list=result_list).get_row())
 
 def single_run(cfg):
-    # print(f"I'm process {os.getpid()}")
+    # print(f"Started process {os.getpid()}", flush=True)
     np.random.seed([os.getppid(), int(str(time.time() % 1)[2:10])])
     key_generator = KeyGenerator(p_err=cfg.p_err, key_length=cfg.key_length, base=cfg.base)
     a, b = key_generator.generate_keys()
     protocol = MultiBlockProtocol(cfg, a, b)
-    return protocol.run()
+    result = protocol.run()
+    # print(f"Ended process {os.getpid()}", flush=True)
+    return result
 
 def multi_run_series(cfg, sample_size, is_slurm, verbosity=False):
     result_list = []
@@ -73,11 +76,13 @@ def multi_run_series(cfg, sample_size, is_slurm, verbosity=False):
 
 def multi_run_parallel(cfg, sample_size, is_slurm, verbosity=False):
     values = [cfg] * sample_size
+    # partial_write_results = partial(write_results, is_slurm=is_slurm, verbosity=verbosity)
     with multiprocessing.Pool(sample_size) as pool:
     # with multiprocessing.Pool() as pool:
         write_results(pool.map(single_run, values), is_slurm=is_slurm, verbosity=verbosity)
-        # print("starting to run")\
-        # return pool.map_async(single_run, values, callback=write_results)
+        if verbosity:
+            print("starting to run")
+        # return pool.map_async(single_run, values, callback=partial_write_results)
 
 
 def multi_run(args):
@@ -105,6 +110,8 @@ def multi_run(args):
                         num_blocks = key_size // block_size
                         actual_key_size = num_blocks * block_size
                         success_rate_range = args.success_rate_range or [1.0 - 1.0/actual_key_size]
+                        if p_err == 0.0:
+                            success_rate_range = [1.0]
                         for success_rate in success_rate_range:
                             for rounding_strategy in args.rounding_strategy_list:
                                 # goal_candidates_num_range = [args.goal_candidates_num] or [2 ** i for i in range(math.ceil(math.log(actual_key_size, 2))+2)]

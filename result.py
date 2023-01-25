@@ -80,6 +80,7 @@ def get_output_header():
 def str_to_result(row_string):
     list_of_strings = row_string[1:-1].split(", ")
 
+    # print(list_of_strings[0])
     base = int(list_of_strings[0])
     block_length = int(list_of_strings[2])
     num_blocks = int(list_of_strings[3])
