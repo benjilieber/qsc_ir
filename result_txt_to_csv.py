@@ -1,9 +1,8 @@
 import csv
-import sys
+# import sys
 
 import result
 import run_module
-
 
 def convert_txt_to_csv(input_txt_file_name):
     # args = sys.argv[1:]
@@ -11,8 +10,8 @@ def convert_txt_to_csv(input_txt_file_name):
     # output_csv_file_name = args[1]
     # output_agg_csv_file_name = args[1]
     # input_txt_file_name = "slurm-13884535.out"
-    output_csv_file_name = "first_results.csv"
-    output_agg_csv_file_name = "first_results_agg.csv"
+    output_csv_file_name = "history.csv"
+    output_agg_csv_file_name = "history_agg.csv"
     run_module.write_header(output_csv_file_name)
     run_module.write_header(output_agg_csv_file_name)
     input_txt_file = open(input_txt_file_name, 'r')

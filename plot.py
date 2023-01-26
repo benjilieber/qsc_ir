@@ -192,3 +192,16 @@ def plot_results4(file_name):
         plt.ylabel('key rate / theoretic key rate')
         # plt.legend()
         plt.show()
+
+def sanity_checks(file_name):
+    df = pd.read_csv(file_name)
+    grouped_by_success_rate = df.groupby("success_rate")
+    for success_rate in grouped_by_success_rate.groups.keys():
+        cur_success_rate_group = grouped_by_success_rate.get_group(success_rate)
+        print("sample size: " + str(len(cur_success_rate_group)))
+        print("desired success rate: " + str(success_rate))
+        print("actual success rate: " + str(cur_success_rate_group["is_success"].mean()))
+        print("----------------------------------")
+
+
+sanity_checks("fake_results.csv")

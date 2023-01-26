@@ -3,7 +3,7 @@ import unittest
 
 import result
 from protocol_configs import ProtocolConfigs, CodeGenerationStrategy
-from result import Result, str_to_result
+from result import Result, str_to_result, result_str_to_cfg_str
 
 
 class ResultTest(unittest.TestCase):
@@ -99,6 +99,34 @@ class ResultTest(unittest.TestCase):
 
         self.assertEqual(r.get_row(), r_clone.get_row())
 
+    def test_cfg_string_from_row_string(self):
+        n = 1000
+        block_length = 8
+        num_blocks = math.ceil(n / block_length)
+        p_err = 0.05
+        success_rate = 0.99
+        max_candidates_num = 50
+        max_num_indices_to_encode = 3
+        code_generation_strategy = CodeGenerationStrategy.linear
+        sparsity = 2
+        cfg = ProtocolConfigs(base=3, block_length=block_length, num_blocks=num_blocks, p_err=p_err,
+                              success_rate=success_rate, max_candidates_num = max_candidates_num,
+                              max_num_indices_to_encode=max_num_indices_to_encode, code_generation_strategy=code_generation_strategy,
+                              sparsity=sparsity)
+        is_success = True
+        key_rate = 0.6
+        communication_rate = 42
+        time = 56
+        r = Result(cfg, is_success=is_success, key_rate=key_rate, encoding_size_rate=communication_rate,
+                      matrix_size_rate=communication_rate, bob_communication_rate=communication_rate,
+                      total_communication_rate=communication_rate, time_rate=time)
+
+        cfg_string = result_str_to_cfg_str(str(r.get_row()))
+
+        self.assertEqual(str(r.get_cfg_row()), cfg_string)
+
+    def test_convert_output_files_to_cfg_string_list(self):
+        print(result.convert_output_files_to_cfg_string_list(["fake_results.csv"], "csv"))
 
 if __name__ == '__main__':
     unittest.main()

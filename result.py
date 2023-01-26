@@ -1,7 +1,7 @@
 import numpy as np
 
 from protocol_configs import CodeGenerationStrategy, PruningStrategy, RoundingStrategy, ProtocolConfigs
-
+import pandas as pd
 
 class Result(object):
     def __init__(self, cfg, is_success=None, key_rate=None, key_rate_success_only=None, encoding_size_rate=None, encoding_size_rate_success_only=None, matrix_size_rate=None, matrix_size_rate_success_only=None, bob_communication_rate=None,
@@ -126,3 +126,44 @@ def str_to_result(row_string):
     return Result(cfg=cfg, is_success=is_success, key_rate=key_rate, key_rate_success_only=key_rate_success_only, encoding_size_rate=encoding_size_rate, encoding_size_rate_success_only=encoding_size_rate_success_only,
                   matrix_size_rate=matrix_size_rate, matrix_size_rate_success_only=matrix_size_rate_success_only, bob_communication_rate=bob_communication_rate, bob_communication_rate_success_only=bob_communication_rate_success_only,
                  total_communication_rate=total_communication_rate, total_communication_rate_success_only=total_communication_rate_success_only, time_rate=time_rate, time_rate_success_only=time_rate_success_only, result_list=None, sample_size=sample_size)
+
+def result_str_to_cfg_str(result_str):
+    list_of_strings = result_str[1:-1].split(", ")
+    cfg_strings = list_of_strings[:len(get_cfg_header())-1]
+    return "[" + ", ".join(cfg_strings) + "]"
+
+def result_csv_to_cfg_str(result_csv):
+    cfg_csv = result_csv[:len(get_cfg_header())-1]
+    return str(cfg_csv.tolist())
+
+def convert_output_file_to_cfg_string_list(input_file_name, input_format):
+    if input_format == "str":
+        input_txt_file = open(input_file_name, 'r')
+        input_txt_rows = input_txt_file.read().splitlines()
+        assert (input_txt_rows[0] == str(get_header()))
+
+        cfg_string_list = []
+        for input_txt_row in input_txt_rows[1:]:
+            if input_txt_row[0] != "[":
+                continue
+            cur_cfg_string = result_str_to_cfg_str(input_txt_row)
+            cfg_string_list.append(cur_cfg_string)
+
+        cfg_string_set = set(cfg_string_list)
+
+        return cfg_string_set
+
+    if input_format == "csv":
+        df = pd.read_csv(input_file_name)
+        assert (list(df) == get_header())
+
+        cfg_str_list = df.apply(func=result_csv_to_cfg_str, axis=1, raw=True).values.tolist()
+        cfg_str_set = set(cfg_str_list)
+
+        return cfg_str_set
+
+    raise "Unknown output file format"
+
+def convert_output_files_to_cfg_string_list(input_file_names, input_format):
+    list_of_cfg_sets = [convert_output_file_to_cfg_string_list(input_file_name, input_format) for input_file_name in input_file_names]
+    return set().union(*list_of_cfg_sets)

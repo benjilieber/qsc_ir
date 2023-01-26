@@ -56,6 +56,10 @@ def parse_args():
     parser.add_argument('--max_candidates_num', type=int, help='The upper threshold for the list size, from which the list should be reduced when reached.')
     parser.add_argument('--encoding_sample_size', type=int, help='The number of encodings sampled to pick the best one.')
     parser.add_argument('--is_slurm', type=bool, required=True, help='Whether we are running on slurm.')
+    parser.add_argument('--previous_run_files', required=False, type=str,
+                        help='Paths of raw results of previous runs. If they exist, the new run will start where the previous ones left off.')
+    parser.add_argument('--previous_run_file_format', default="str", required=False, type=str,
+                        help='Format of raw results of previous run. Default is sample text.')
     parser.add_argument('--raw_results_file_path', required=True, type=str,
                         help='csv path for saving the raw results. If exists, the new results are appended to the existing ones.')
     parser.add_argument('--agg_results_file_path', required=True, type=str,
@@ -69,13 +73,13 @@ def parse_args():
     return args
 
 
-def create_args(key_size_list, block_size_range, p_err_range, success_rate_range, is_slurm, raw_results_file_path,
+def create_args(key_size_list, block_size_range, p_err_range, success_rate_range, is_slurm, previous_run_files, previous_run_file_format, raw_results_file_path,
                 agg_results_file_path, run_mode='series', sample_size=1, q_list=[3],
                 code_generation_strategy_list=[CodeGenerationStrategy.linear], sparsity_range=None,
                 goal_candidates_num=None, max_candidates_num=None, fixed_number_of_encodings=False,
                 max_num_indices_to_encode_range=[math.inf], radius_picking=False, rounding_strategy_list=[RoundingStrategy.ceil], pruning_strategy=PruningStrategy.radii_probabilities, encoding_sample_size=1, verbosity=False):
     class Args(object):
-        def __init__(self, key_size_list, block_size_range, p_err_range, success_rate_range, is_slurm, raw_results_file_path,
+        def __init__(self, key_size_list, block_size_range, p_err_range, success_rate_range, is_slurm, previous_run_files, previous_run_file_format, raw_results_file_path,
                      agg_results_file_path, run_mode='series', sample_size=1, q_list=3,
                      code_generation_strategy_list=[CodeGenerationStrategy.linear], sparsity_range=None,
                      goal_candidates_num=None, max_candidates_num=None, fixed_number_of_encodings=False,
@@ -100,11 +104,13 @@ def create_args(key_size_list, block_size_range, p_err_range, success_rate_range
             self.pruning_strategy = pruning_strategy
             self.encoding_sample_size = encoding_sample_size
             self.is_slurm = is_slurm
+            self.previous_run_files = previous_run_files
+            self.previous_run_file_format = previous_run_file_format
             self.raw_results_file_path = raw_results_file_path
             self.agg_results_file_path = agg_results_file_path
             self.verbosity = verbosity
 
-    return Args(key_size_list, block_size_range, p_err_range, success_rate_range, is_slurm, raw_results_file_path, agg_results_file_path,
+    return Args(key_size_list, block_size_range, p_err_range, success_rate_range, is_slurm, previous_run_files, previous_run_file_format, raw_results_file_path, agg_results_file_path,
                 run_mode, sample_size, q_list, code_generation_strategy_list, sparsity_range, goal_candidates_num, max_candidates_num, fixed_number_of_encodings,
                 max_num_indices_to_encode_range, radius_picking, rounding_strategy_list, pruning_strategy, encoding_sample_size, verbosity)
 

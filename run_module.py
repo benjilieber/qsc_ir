@@ -101,6 +101,11 @@ def multi_run(args):
         if args.verbosity:
             print('starting computations in series')
 
+    if args.previous_run_files is not None:
+        previous_cfg_string_list = result.convert_output_files_to_cfg_string_list(args.previous_run_files, args.previous_run_file_format)
+    else:
+        previous_cfg_string_list = []
+
     for code_generation_strategy in args.code_generation_strategy_list:
         assert (code_generation_strategy == CodeGenerationStrategy.linear)
         for q in args.q_list:
@@ -137,6 +142,10 @@ def multi_run(args):
                                                                   raw_results_file_path=args.raw_results_file_path,
                                                                   agg_results_file_path=args.agg_results_file_path,
                                                                   verbosity=args.verbosity)
+                                                if str(Result(cfg).get_cfg_row()[:-1]) in previous_cfg_string_list:
+                                                    if args.verbosity:
+                                                        print("skip cfg (previously run)")
+                                                    continue
                                                 if args.verbosity:
                                                     print(result.Result(cfg))
                                                 if args.run_mode == 'parallel':
