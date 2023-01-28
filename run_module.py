@@ -17,7 +17,6 @@ from key_generator import KeyGenerator
 from multi_block_protocol import MultiBlockProtocol
 from result import Result
 import math
-from functools import partial
 
 
 def write_header(file_name):

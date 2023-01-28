@@ -2,6 +2,8 @@ import math
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib import ticker
+
 pd.options.mode.chained_assignment = None  # default='warn'
 import numpy as np
 import seaborn as sns
@@ -192,7 +194,73 @@ def plot_results4(file_name):
         plt.ylabel('key rate / theoretic key rate')
         # plt.legend()
         plt.show()
+def plot_vs_qser(file_name, y_name, q_filter=None, n_filter=None):
+    df = pd.read_csv(file_name)
+    df["q"] = df.base
+    df["qer"] = df.p_err * (-1) + 1
+    df["n"] = np.ceil(np.log2(df.key_length))
+    df["N"] = np.exp2(df.n)
 
+    if n_filter is not None:
+        df = df[df.n.isin(n_filter)]
+
+    grouped_by_q = df.groupby("q")
+    for q in grouped_by_q.groups.keys():
+        if q_filter is not None and q not in q_filter:
+            continue
+        cur_q_group = grouped_by_q.get_group(q)
+        grouped_by_N = cur_q_group.groupby("N")
+        for N in grouped_by_N.groups.keys():
+            cur_group = grouped_by_N.get_group(N)
+
+            fig, ax = plt.subplots()
+
+            Q = cur_group.p_err
+            Q_range_non_zero = np.logspace(-4, -1, 100)
+            Q_range = np.concatenate(([0], Q_range_non_zero))
+            if y_name == "keyRate":
+                keyRate = cur_group.key_rate_success_only
+                # ax.scatter(np.log(Q), keyRate)
+                ax.scatter(Q + 0.000001, keyRate)
+                # theoretic_key_rate_zero = math.log2(q/(q-1))
+                # theoretic_key_rate_non_zero = Q_range_non_zero * np.log2(Q_range_non_zero) + (1 - Q_range_non_zero) * np.log2(
+                #     (1 - Q_range_non_zero) / (q - 1)) + math.log2(q)
+                # theoretic_key_rate = np.concatenate(([theoretic_key_rate_zero], theoretic_key_rate_non_zero))
+                # plt.plot(np.log(Q_range+1), theoretic_key_rate, 'r')
+            elif y_name == "yield":
+                keyRate = cur_group.success_rate * cur_group.key_rate_success_only
+                plt.scatter(Q, keyRate)
+                theoretic_key_rate_zero = math.log2(q / (q - 1))
+                theoretic_key_rate_non_zero = Q_range_non_zero * np.log2(Q_range_non_zero) + (
+                            1 - Q_range_non_zero) * np.log2(
+                    (1 - Q_range_non_zero) / (q - 1)) + math.log2(q)
+                theoretic_key_rate = np.concatenate(([theoretic_key_rate_zero], theoretic_key_rate_non_zero))
+                plt.plot(Q_range, theoretic_key_rate, 'r')
+            elif y_name == "efficiency":
+                efficiency = cur_group.encoding_size_rate / (-Q_range * np.log2(Q_range) - (1 - Q_range) * np.log2(
+                    (1 - Q_range) / (q - 1)))
+                plt.scatter(Q, efficiency)
+            else:
+                raise "bad y_name!"
+
+            ax.set_xscale("log")
+            # plt.xticks(Q.unique()+0.00001)
+            # ax.set_xscale("log")
+            # ax.set_xlim(Q.min()+1, Q.max()+1)
+            ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x - 0.000001)))
+            ax.xaxis.set_major_locator(ticker.FixedLocator(Q+0.000001))
+            # plt.xlabel('Q')
+            # plt.ylabel('key_rate')
+            # # plt.legend()
+            # plt.title('q=' + str(q) + ', N=' + str(N))  # + ', max_block_length=' + str(grouped_by_N.block_length.max()))
+            plt.show()
+
+def plot_key_rate_vs_qser(file_name):
+    return plot_vs_qser(file_name, "keyRate")
+def plot_yield_vs_qser(file_name):
+    return plot_vs_qser(file_name, "yield")
+def plot_efficiency_vs_qser(file_name):
+    return plot_vs_qser(file_name, "efficiency")
 def sanity_checks(file_name):
     df = pd.read_csv(file_name)
     grouped_by_success_rate = df.groupby("success_rate")
@@ -204,4 +272,7 @@ def sanity_checks(file_name):
         print("----------------------------------")
 
 
-sanity_checks("fake_results.csv")
+# sanity_checks("fake_results.csv")
+
+# plot_key_rate_vs_qser("history_agg.csv")
+# plot_yield_vs_qser("history_agg.csv")

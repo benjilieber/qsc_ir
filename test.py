@@ -3,12 +3,12 @@ import plot
 import run_module
 from protocol_configs import CodeGenerationStrategy, RoundingStrategy, PruningStrategy
 
-is_slurm = False
-verbosity = False
-previous_run_files = ["/tmp/history/history_agg.csv"]
-previous_run_file_format = "csv"
-# previous_run_files = None
-# previous_run_file_format = None
+is_slurm = True
+verbosity = True
+# previous_run_files = ["/tmp/history/history_agg.csv"]
+# previous_run_file_format = "csv"
+previous_run_files = None
+previous_run_file_format = None
 
 block_size_range = list(range(3, 20))
 key_size_list = [128, 256, 512, 1024, 2048, 4096, 8192]

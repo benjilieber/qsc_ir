@@ -122,16 +122,16 @@ class MultiBlockProtocol(object):
             if self.cfg.fixed_number_of_encodings:
                 return self.cfg.number_of_encodings_list[last_block_index]
             if r == 0:
-                complement_space_size = (self.cfg.base - 1)**self.cfg.block_length
+                complement_space_size_log = self.cfg.block_length * math.log(self.cfg.base - 1, self.cfg.base)
             elif r == self.cfg.block_length:
-                complement_space_size = self.cfg.base ** self.cfg.block_length
+                complement_space_size_log = self.cfg.block_length * math.log(self.cfg.base, self.cfg.base)
             else:
-                complement_space_size = sum(
-                    [scipy.special.comb(self.cfg.block_length, i) * (self.cfg.base-1) ** (self.cfg.block_length - i) for i in range(r + 1)])
+                complement_space_size_log = math.log(sum(
+                    [scipy.special.comb(self.cfg.block_length, i) * (self.cfg.base-1) ** (self.cfg.block_length - i) for i in range(r + 1)]), self.cfg.base)
 
             # old version of encoding-number picking
             required_number_of_encodings_raw = max(self.cfg.round(
-                math.log(complement_space_size, self.cfg.base) - math.log(self.cfg.goal_candidates_num,
+                complement_space_size_log - math.log(self.cfg.goal_candidates_num,
                                                                           self.cfg.base) + math.log(
                     self.cur_candidates_num, self.cfg.base)), 1)
             required_number_of_encodings = min(required_number_of_encodings_raw, self.cfg.block_length)
@@ -163,14 +163,14 @@ class MultiBlockProtocol(object):
             if self.cfg.determine_cur_radius(latest_block_index) == self.cfg.block_length:
                 return LinearCodeFormat.AFFINE_SUBSPACE
             if self.cfg.determine_cur_radius(latest_block_index) == 0:
-                expected_matrix_complexity = (self.cfg.base-1) ** self.cfg.block_length
+                expected_matrix_complexity_log = self.cfg.block_length * math.log(self.cfg.base-1)
             else:
-                expected_matrix_complexity = sum([scipy.special.binom(self.cfg.block_length, err) * (self.cfg.base - 1)**(self.cfg.block_length - err) for err in range(self.cfg.determine_cur_radius(latest_block_index) + 1)])
+                expected_matrix_complexity_log = math.log(sum([scipy.special.binom(self.cfg.block_length, err) * (self.cfg.base - 1)**(self.cfg.block_length - err) for err in range(self.cfg.determine_cur_radius(latest_block_index) + 1)]))
             # expected_num_buckets = np.unique([candidate[indices_to_encode] for candidate in self.bob.a_candidates], axis=0)
-            expected_prefix_num_buckets = min(self.cur_candidates_num, np.product([self.num_candidates_per_block[i] for i in indices_to_encode[:-1]]), self.cfg.base ** number_of_encodings)
-            expected_affine_subspace_complexity = expected_prefix_num_buckets * (self.cfg.base ** (self.cfg.block_length - number_of_encodings))
+            expected_prefix_num_buckets_log = min(math.log(self.cur_candidates_num), np.sum([math.log(self.num_candidates_per_block[i]) for i in indices_to_encode[:-1]]), number_of_encodings * math.log(self.cfg.base))
+            expected_affine_subspace_complexity_log = expected_prefix_num_buckets_log + (self.cfg.block_length - number_of_encodings) * math.log(self.cfg.base)
 
-            if expected_matrix_complexity < expected_affine_subspace_complexity:
+            if expected_matrix_complexity_log < expected_affine_subspace_complexity_log:
                 return LinearCodeFormat.MATRIX
             else:
                 return LinearCodeFormat.AFFINE_SUBSPACE
