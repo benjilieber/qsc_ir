@@ -1,18 +1,21 @@
 import arg_module
-import plot
 import run_module
 from protocol_configs import CodeGenerationStrategy, RoundingStrategy, PruningStrategy
 
 is_slurm = True
-verbosity = True
+verbosity = False
+
+p_err = 0.0
+previous_run_files = [r'/tmp/history/{p_err}/slurm-*.out'.format(p_err=p_err)]
+previous_run_file_format = "str"
 # previous_run_files = ["/tmp/history/history_agg.csv"]
-# previous_run_file_format = "csv"
-previous_run_files = None
-previous_run_file_format = None
+# previous_run_file_format = "txt"
+# previous_run_files = None
+# previous_run_file_format = None
 
 block_size_range = list(range(3, 20))
 key_size_list = [128, 256, 512, 1024, 2048, 4096, 8192]
-p_err_range = [0.0]  # [0.0, 0.0001, 0.001, 0.01, 0.02, 0.05, 0.1]
+p_err_range = [p_err]  # [0.0, 0.0001, 0.001, 0.01, 0.02, 0.05, 0.1]
 success_rate_range = [0.9, 0.99, 0.999, 0.9999]
 raw_results_file_path = "fake_results.csv"
 agg_results_file_path = "fake_results_agg.csv"
@@ -35,6 +38,7 @@ args = arg_module.create_args(key_size_list, block_size_range, p_err_range, succ
                               max_num_indices_to_encode_range, radius_picking, rounding_strategy_list, pruning_strategy, encoding_sample_size, verbosity)
 run_module.multi_run(args)
 
+# import plot
 # plot.plot_results1("agg_results2.csv", q_filter=[2], qer_filter=None)
 # plot.plot_results4("agg_results.csv")
 # plot.plot_results4("agg_results1.csv")

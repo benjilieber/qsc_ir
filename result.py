@@ -2,6 +2,7 @@ import numpy as np
 
 from protocol_configs import CodeGenerationStrategy, PruningStrategy, RoundingStrategy, ProtocolConfigs
 import pandas as pd
+import glob
 
 class Result(object):
     def __init__(self, cfg, is_success=None, key_rate=None, key_rate_success_only=None, encoding_size_rate=None, encoding_size_rate_success_only=None, matrix_size_rate=None, matrix_size_rate_success_only=None, bob_communication_rate=None,
@@ -164,6 +165,11 @@ def convert_output_file_to_cfg_string_list(input_file_name, input_format):
 
     raise "Unknown output file format"
 
-def convert_output_files_to_cfg_string_list(input_file_names, input_format):
+def convert_output_glob_to_cfg_string_list(input_files_glob, input_format):
+    input_file_names = glob.glob(input_files_glob)
     list_of_cfg_sets = [convert_output_file_to_cfg_string_list(input_file_name, input_format) for input_file_name in input_file_names]
+    return set().union(*list_of_cfg_sets)
+
+def convert_output_files_to_cfg_string_list(input_files_globs, input_format):
+    list_of_cfg_sets = [convert_output_glob_to_cfg_string_list(input_files_glob, input_format) for input_files_glob in input_files_globs]
     return set().union(*list_of_cfg_sets)

@@ -31,6 +31,6 @@ def convert_txt_to_csv(input_txt_file_name):
                     writer_agg.writerow(result.str_to_result(input_txt_row).get_row())
 
 
-input_txt_file_name_list = ["slurm-13894838.out", "slurm-13894839.out", "slurm-13894842.out", "slurm-13894843.out", "slurm-13894846.out", "slurm-13894850.out", "slurm-13894866.out"]
-for input_txt_file_name in input_txt_file_name_list:
-    convert_txt_to_csv(input_txt_file_name)
+# input_txt_file_name_list = ["slurm-13894838.out", "slurm-13894839.out", "slurm-13894842.out", "slurm-13894843.out", "slurm-13894846.out", "slurm-13894850.out", "slurm-13894866.out"]
+# for input_txt_file_name in input_txt_file_name_list:
+#     convert_txt_to_csv(input_txt_file_name)
