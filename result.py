@@ -88,6 +88,12 @@ def get_output_header():
 def str_to_result(row_string):
     list_of_strings = row_string[1:-1].split(", ")
 
+    if len(list_of_strings) == 31:
+        # Old format -> populate the new fields
+        list_of_strings.insert(18, "False")
+        list_of_strings.insert(20, None)
+        list_of_strings.insert(21, None)
+
     # print(list_of_strings[0])
     base = int(list_of_strings[0])
     block_length = int(list_of_strings[2])
@@ -120,8 +126,8 @@ def str_to_result(row_string):
     sample_size = int(list_of_strings[17])
     with_ml = list_of_strings[18] in ["'True'", "True"]
     is_success = (list_of_strings[19] in ["'True'", "True"]) if (list_of_strings[19] in ["'True'", "True", "'False'", "False"]) else float(list_of_strings[19])
-    ser = float(list_of_strings[20])
-    ser_fail_only = float(list_of_strings[21])
+    ser = list_of_strings[20] or float(list_of_strings[20])
+    ser_fail_only = list_of_strings[21] or float(list_of_strings[21])
     key_rate = float(list_of_strings[22])
     key_rate_success_only = float(list_of_strings[23])
     encoding_size_rate = float(list_of_strings[24])
@@ -134,7 +140,7 @@ def str_to_result(row_string):
     total_communication_rate_success_only = float(list_of_strings[31])
     time_rate = float(list_of_strings[32])
     time_rate_success_only = float(list_of_strings[33])
-    return Result(cfg=cfg, is_success=is_success, ser=ser, ser_fail_only=ser_fail_only, key_rate=key_rate, key_rate_success_only=key_rate_success_only, encoding_size_rate=encoding_size_rate, encoding_size_rate_success_only=encoding_size_rate_success_only,
+    return Result(cfg=cfg, with_ml=with_ml, is_success=is_success, ser=ser, ser_fail_only=ser_fail_only, key_rate=key_rate, key_rate_success_only=key_rate_success_only, encoding_size_rate=encoding_size_rate, encoding_size_rate_success_only=encoding_size_rate_success_only,
                   matrix_size_rate=matrix_size_rate, matrix_size_rate_success_only=matrix_size_rate_success_only, bob_communication_rate=bob_communication_rate, bob_communication_rate_success_only=bob_communication_rate_success_only,
                  total_communication_rate=total_communication_rate, total_communication_rate_success_only=total_communication_rate_success_only, time_rate=time_rate, time_rate_success_only=time_rate_success_only, result_list=None, sample_size=sample_size)
 
