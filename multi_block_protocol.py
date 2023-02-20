@@ -53,6 +53,23 @@ class MultiBlockProtocol(object):
             if self.cfg.max_candidates_num and (self.cur_candidates_num > self.cfg.max_candidates_num):
                 self.run_single_round(encode_new_block=False, goal_list_size=self.cfg.goal_candidates_num)
 
+        ml_a_guess = self.bob.a_candidates[np.argmin(self.bob.a_candidates_errors)]
+        ml_end = timer()
+        # ml_is_success = self.is_success(ml_a_guess)
+        # ml_ser = self.get_ser(ml_a_guess)
+        # ml_key_rate = self.calculate_key_rate(final=False)
+        # ml_encoding_size_rate = self.total_encoding_size / self.cfg.key_length,
+        # ml_matrix_size_rate = self.matrix_communication_size / self.cfg.key_length,
+        # ml_bob_communication_rate = self.bob_communication_size / self.cfg.key_length,
+        # ml_total_communication_rate = self.total_communication_size / self.cfg.key_length,
+        # ml_time_rate = (ml_end - start) / self.cfg.key_length
+        ml_result = Result(cfg=self.cfg, with_ml=True, is_success=self.is_success(ml_a_guess), ser=self.get_ser(ml_a_guess), key_rate=self.calculate_key_rate(final=False),
+                      encoding_size_rate=self.total_encoding_size / self.cfg.key_length,
+                      matrix_size_rate=self.matrix_communication_size / self.cfg.key_length,
+                      bob_communication_rate=self.bob_communication_size / self.cfg.key_length,
+                      total_communication_rate=self.total_communication_size / self.cfg.key_length,
+                      time_rate=(ml_end - start) / self.cfg.key_length)
+
         if self.cfg.verbosity:
             print("hamming distance x and most probable x', pre-reducing: " + str(util.hamming_multi_block(self.bob.a_candidates[np.argmin(self.bob.a_candidates_errors)], self.alice.a)))
 
@@ -60,6 +77,8 @@ class MultiBlockProtocol(object):
             self.run_single_round(encode_new_block=False)
 
         end = timer()
+
+        ser = self.get_ser(self.bob.a_candidates[0])
 
         if self.cfg.verbosity:
             print("error_blocks_indices: " + str([sum(a_block == b_block) for a_block, b_block in zip(self.alice.a, self.bob.b)]))
@@ -71,13 +90,14 @@ class MultiBlockProtocol(object):
             print("radii_list: " + str(self.r_list))
             print("num_encodings_history: " + str(self.num_encodings_history) + ", total: " + str(sum(self.num_encodings_history)) + " (theoretic: " + str(util.required_checks(self.cfg.key_length, self.cfg.base, self.cfg.p_err)) + ")")
             print("num_encoded_blocks_history: " + str(self.num_encoded_blocks_history))
-
-        return Result(cfg=self.cfg, is_success=self.is_success(), key_rate=self.calculate_key_rate(),
+        non_ml_result = Result(cfg=self.cfg, with_ml=False, is_success=self.is_success(), ser=ser, key_rate=self.calculate_key_rate(),
                       encoding_size_rate=self.total_encoding_size / self.cfg.key_length,
                       matrix_size_rate=self.matrix_communication_size / self.cfg.key_length,
                       bob_communication_rate=self.bob_communication_size / self.cfg.key_length,
                       total_communication_rate=self.total_communication_size / self.cfg.key_length,
                       time_rate=(end - start) / self.cfg.key_length)
+
+        return [non_ml_result, ml_result]
 
     def run_single_round(self, encode_new_block, goal_list_size=None):
         encoded_blocks_indices = self.pick_indices_to_encode(self.num_candidates_per_block, encode_new_block)
@@ -262,12 +282,17 @@ class MultiBlockProtocol(object):
         self.total_communication_size = self.matrix_communication_size + self.total_encoding_size * math.log(self.cfg.base, 2) + \
                                         self.bob_communication_size
 
-    def calculate_key_rate(self):
-        if self.cur_candidates_num == 0 or not self.is_success():
+    def calculate_key_rate(self, final=True):
+        if final and (self.cur_candidates_num == 0 or not self.is_success()):
             return 0
         key_size = (self.cfg.key_length - self.total_encoding_size) * math.log(self.cfg.base, 2)
         return key_size / self.cfg.key_length
 
-    def is_success(self):
-        return (len(self.bob.a_candidates) == 1) and (
-                util.hamming_multi_block(self.bob.a_candidates[0], self.alice.a) == 0)
+    def get_ser(self, a_guess):
+        return util.hamming_multi_block(a_guess, self.alice.a) / self.cfg.key_length
+
+    def is_success(self, a_guess=None):
+        if a_guess is None:
+            return (len(self.bob.a_candidates) == 1) and (self.get_ser(self.bob.a_candidates[0]) == 0.0)
+        else:
+            return self.get_ser(a_guess) == 0.0

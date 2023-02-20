@@ -10,8 +10,8 @@ previous_run_files = [r'/tmp/history/{p_err}/slurm-*.out'.format(p_err=p_err)]
 previous_run_file_format = "str"
 # previous_run_files = ["/tmp/history/history_agg.csv"]
 # previous_run_file_format = "txt"
-# previous_run_files = None
-# previous_run_file_format = None
+previous_run_files = None
+previous_run_file_format = None
 
 block_size_range = list(range(3, 20))
 key_size_list = [128, 256, 512, 1024, 2048, 4096, 8192]

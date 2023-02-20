@@ -32,24 +32,30 @@ def write_header(file_name):
     except AssertionError:
         raise AssertionError(f"Header of {file_name} is bad.")
 
-def write_results(result_list, is_slurm=False, verbosity=False):
+def write_results(result_pair_list, is_slurm=False, verbosity=False):
+    non_ml_result_list = [result_pair[0] for result_pair in result_pair_list]
+    ml_result_list = [result_pair[1] for result_pair in result_pair_list]
     if verbosity:
         print("writing results")
     if is_slurm:
-        for single_result in result_list:
-            print(single_result.get_row())
-        print(Result(result_list[0].cfg, result_list=result_list).get_row(), flush=True)
+        for single_result_pair in result_pair_list:
+            print(single_result_pair[0].get_row())
+            print(single_result_pair[1].get_row())
+        print(Result(non_ml_result_list[0].cfg, with_ml=False, result_list=non_ml_result_list).get_row(), flush=True)
+        print(Result(ml_result_list[0].cfg, with_ml=True, result_list=ml_result_list).get_row(), flush=True)
         return
-    raw_results_file_name = result_list[0].cfg.raw_results_file_path
+    raw_results_file_name = result_pair_list[0][0].cfg.raw_results_file_path
     with open(raw_results_file_name, 'a', newline='') as f1:
         writer = csv.writer(f1)
-        for single_result in result_list:
-            writer.writerow(single_result.get_row())
+        for single_result_pair in result_pair_list:
+            writer.writerow(single_result_pair[0].get_row())
+            writer.writerow(single_result_pair[1].get_row())
 
-    agg_results_file_name = result_list[0].cfg.agg_results_file_path
+    agg_results_file_name = result_pair_list[0][0].cfg.agg_results_file_path
     with open(agg_results_file_name, 'a', newline='') as f2:
         writer = csv.writer(f2)
-        writer.writerow(Result(result_list[0].cfg, result_list=result_list).get_row())
+        writer.writerow(Result(non_ml_result_list[0].cfg, with_ml=False, result_list=non_ml_result_list).get_row())
+        writer.writerow(Result(ml_result_list[0].cfg, with_ml=True, result_list=ml_result_list).get_row())
 
 def single_run(cfg):
     # print(f"Started process {os.getpid()}", flush=True)
@@ -57,20 +63,20 @@ def single_run(cfg):
     key_generator = KeyGenerator(p_err=cfg.p_err, key_length=cfg.key_length, base=cfg.base)
     a, b = key_generator.generate_keys()
     protocol = MultiBlockProtocol(cfg, a, b)
-    result = protocol.run()
+    result_pair = protocol.run()
     # print(f"Ended process {os.getpid()}", flush=True)
-    return result
+    return result_pair
 
 def multi_run_series(cfg, sample_size, is_slurm, verbosity=False):
-    result_list = []
+    result_pair_list = []
     for single_sample_run in range(sample_size):
-        result = single_run(cfg)
+        result_pair = single_run(cfg)
         if verbosity:
-            print(result)
-        result_list.append(result)
+            print(result_pair)
+        result_pair_list.append(result_pair)
     if verbosity:
-        print(Result(cfg, result_list=result_list))
-    write_results(result_list, is_slurm=is_slurm, verbosity=verbosity)
+        print(Result(cfg, result_list=result_pair_list))
+    write_results(result_pair_list, is_slurm=is_slurm, verbosity=verbosity)
 
 
 def multi_run_parallel(cfg, sample_size, is_slurm, verbosity=False):
