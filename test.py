@@ -5,7 +5,7 @@ from protocol_configs import CodeGenerationStrategy, RoundingStrategy, PruningSt
 is_slurm = True
 verbosity = False
 
-p_err = 0.0
+p_err = 0.05
 previous_run_files = [r'/tmp/history/{p_err}/slurm-*.out'.format(p_err=p_err)]
 previous_run_file_format = "str"
 # previous_run_files = ["/tmp/history/history_agg.csv"]

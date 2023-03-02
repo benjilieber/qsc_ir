@@ -14,7 +14,15 @@ from result import Result
 from timeit import default_timer as timer
 from scipy.stats import entropy
 from linear_code_generator import LinearCodeGenerator
+from enum import Enum
 
+class Status(Enum):
+    success = 'success'
+    fail = 'fail'
+    abort = 'abort'
+
+    def __str__(self):
+        return self.value
 
 class MultiBlockProtocol(object):
     def __init__(self, protocol_cfg, a, b):
@@ -53,8 +61,11 @@ class MultiBlockProtocol(object):
             if self.cfg.max_candidates_num and (self.cur_candidates_num > self.cfg.max_candidates_num):
                 self.run_single_round(encode_new_block=False, goal_list_size=self.cfg.goal_candidates_num)
 
-        ml_a_guess = self.bob.a_candidates[np.argmin(self.bob.a_candidates_errors)]
+        ml_a_guess = self.bob.a_candidates[np.argmin(self.bob.a_candidates_errors)] if self.cur_candidates_num else None
         ml_end = timer()
+        ml_is_success = self.is_success(ml_a_guess)
+        ml_ser = self.get_ser(ml_a_guess) if (ml_a_guess is not None) else 1.0
+
         # ml_is_success = self.is_success(ml_a_guess)
         # ml_ser = self.get_ser(ml_a_guess)
         # ml_key_rate = self.calculate_key_rate(final=False)
@@ -63,7 +74,7 @@ class MultiBlockProtocol(object):
         # ml_bob_communication_rate = self.bob_communication_size / self.cfg.key_length,
         # ml_total_communication_rate = self.total_communication_size / self.cfg.key_length,
         # ml_time_rate = (ml_end - start) / self.cfg.key_length
-        ml_result = Result(cfg=self.cfg, with_ml=True, is_success=self.is_success(ml_a_guess), ser=self.get_ser(ml_a_guess), key_rate=self.calculate_key_rate(final=False),
+        ml_result = Result(cfg=self.cfg, with_ml=True, is_success=ml_is_success, ser=ml_ser, key_rate=self.calculate_key_rate(final=False),
                       encoding_size_rate=self.total_encoding_size / self.cfg.key_length,
                       matrix_size_rate=self.matrix_communication_size / self.cfg.key_length,
                       bob_communication_rate=self.bob_communication_size / self.cfg.key_length,
@@ -78,7 +89,7 @@ class MultiBlockProtocol(object):
 
         end = timer()
 
-        ser = self.get_ser(self.bob.a_candidates[0])
+        ser = self.get_ser(self.bob.a_candidates[0]) if self.cur_candidates_num else 1.0
 
         if self.cfg.verbosity:
             print("error_blocks_indices: " + str([sum(a_block == b_block) for a_block, b_block in zip(self.alice.a, self.bob.b)]))
@@ -283,7 +294,7 @@ class MultiBlockProtocol(object):
                                         self.bob_communication_size
 
     def calculate_key_rate(self, final=True):
-        if final and (self.cur_candidates_num == 0 or not self.is_success()):
+        if final and (not self.is_success()):
             return 0
         key_size = (self.cfg.key_length - self.total_encoding_size) * math.log(self.cfg.base, 2)
         return key_size / self.cfg.key_length
@@ -291,8 +302,15 @@ class MultiBlockProtocol(object):
     def get_ser(self, a_guess):
         return util.hamming_multi_block(a_guess, self.alice.a) / self.cfg.key_length
 
-    def is_success(self, a_guess=None):
-        if a_guess is None:
-            return (len(self.bob.a_candidates) == 1) and (self.get_ser(self.bob.a_candidates[0]) == 0.0)
+    def get_status(self, a_guess=None):
+        if (a_guess is None) and (self.cur_candidates_num == 0):
+            return Status.abort
+        assert ((a_guess is not None) or (len(self.bob.a_candidates) == 1))
+        a_guess = a_guess if (a_guess is not None) else self.bob.a_candidates[0]
+        if self.get_ser(a_guess) == 0.0:
+            return Status.success
         else:
-            return self.get_ser(a_guess) == 0.0
+            return Status.fail
+
+    def is_success(self, a_guess=None):
+        return self.get_status(a_guess=a_guess) == Status.success

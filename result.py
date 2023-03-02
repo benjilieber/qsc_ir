@@ -77,9 +77,14 @@ class Result(object):
 def get_header():
     return get_cfg_header() + get_output_header()
 
+def get_old_header():
+    header = get_header()
+    return header[:18] + [header[19]] + header[22:]
+
 def get_cfg_header():
     return ["base", "key_length", "block_length", "num_blocks", "p_err", "success_rate", "goal_candidates_num", "max_candidates_num",
             "max_num_indices_to_encode", "predetermined_number_of_encodings", "code_generation_strategy", "rounding_strategy", "pruning_strategy", "radius_picking", "encoding_sample_size", "sparsity", "theoretic_key_rate"]
+
 
 def get_output_header():
     return ["sample_size", "with_ml", "is_success", "ser", "ser_fail_only", "key_rate", "key_rate_success_only",
@@ -126,8 +131,8 @@ def str_to_result(row_string):
     sample_size = int(list_of_strings[17])
     with_ml = list_of_strings[18] in ["'True'", "True"]
     is_success = (list_of_strings[19] in ["'True'", "True"]) if (list_of_strings[19] in ["'True'", "True", "'False'", "False"]) else float(list_of_strings[19])
-    ser = list_of_strings[20] or float(list_of_strings[20])
-    ser_fail_only = list_of_strings[21] or float(list_of_strings[21])
+    ser = list_of_strings[20] if list_of_strings[20] is None else float(list_of_strings[20])
+    ser_fail_only = list_of_strings[21] if list_of_strings[21] is None else float(list_of_strings[21])
     key_rate = float(list_of_strings[22])
     key_rate_success_only = float(list_of_strings[23])
     encoding_size_rate = float(list_of_strings[24])
@@ -157,7 +162,7 @@ def convert_output_file_to_cfg_string_list(input_file_name, input_format):
     if input_format == "str":
         input_txt_file = open(input_file_name, 'r')
         input_txt_rows = input_txt_file.read().splitlines()
-        assert (input_txt_rows[0] == str(get_header()))
+        assert (input_txt_rows[0] in [str(get_header()), str(get_old_header())])
 
         cfg_string_list = []
         for input_txt_row in input_txt_rows[1:]:
