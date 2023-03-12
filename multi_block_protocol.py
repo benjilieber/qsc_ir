@@ -10,19 +10,10 @@ from alice import Alice
 from bob import Bob
 from encoder import Encoder
 from protocol_configs import IndicesToEncodeStrategy, LinearCodeFormat
-from result import Result
+from result import Result, Status
 from timeit import default_timer as timer
 from scipy.stats import entropy
 from linear_code_generator import LinearCodeGenerator
-from enum import Enum
-
-class Status(Enum):
-    success = 'success'
-    fail = 'fail'
-    abort = 'abort'
-
-    def __str__(self):
-        return self.value
 
 class MultiBlockProtocol(object):
     def __init__(self, protocol_cfg, a, b):
@@ -37,7 +28,7 @@ class MultiBlockProtocol(object):
         self.linear_code_generator = LinearCodeGenerator(protocol_cfg)
         self.encoder = Encoder(protocol_cfg.base, protocol_cfg.block_length)
 
-        self.total_encoding_size = 0
+        self.total_leak = 0
         self.matrix_communication_size = 0
         self.bob_communication_size = 0
         self.total_communication_size = 0
@@ -60,36 +51,15 @@ class MultiBlockProtocol(object):
 
             if self.cfg.max_candidates_num and (self.cur_candidates_num > self.cfg.max_candidates_num):
                 self.run_single_round(encode_new_block=False, goal_list_size=self.cfg.goal_candidates_num)
+        end = timer()
 
-        ml_a_guess = self.bob.a_candidates[np.argmin(self.bob.a_candidates_errors)] if self.cur_candidates_num else None
-        ml_end = timer()
-        ml_is_success = self.is_success(ml_a_guess)
-        ml_ser = self.get_ser(ml_a_guess) if (ml_a_guess is not None) else 1.0
-
-        # ml_is_success = self.is_success(ml_a_guess)
-        # ml_ser = self.get_ser(ml_a_guess)
-        # ml_key_rate = self.calculate_key_rate(final=False)
-        # ml_encoding_size_rate = self.total_encoding_size / self.cfg.key_length,
-        # ml_matrix_size_rate = self.matrix_communication_size / self.cfg.key_length,
-        # ml_bob_communication_rate = self.bob_communication_size / self.cfg.key_length,
-        # ml_total_communication_rate = self.total_communication_size / self.cfg.key_length,
-        # ml_time_rate = (ml_end - start) / self.cfg.key_length
-        ml_result = Result(cfg=self.cfg, with_ml=True, is_success=ml_is_success, ser=ml_ser, key_rate=self.calculate_key_rate(final=False),
-                      encoding_size_rate=self.total_encoding_size / self.cfg.key_length,
-                      matrix_size_rate=self.matrix_communication_size / self.cfg.key_length,
-                      bob_communication_rate=self.bob_communication_size / self.cfg.key_length,
-                      total_communication_rate=self.total_communication_size / self.cfg.key_length,
-                      time_rate=(ml_end - start) / self.cfg.key_length)
+        ml_result = self.get_result(time=end-start, is_ml=True)
 
         if self.cfg.verbosity:
             print("hamming distance x and most probable x', pre-reducing: " + str(util.hamming_multi_block(self.bob.a_candidates[np.argmin(self.bob.a_candidates_errors)], self.alice.a)))
 
         while self.cur_candidates_num > 1:
             self.run_single_round(encode_new_block=False)
-
-        end = timer()
-
-        ser = self.get_ser(self.bob.a_candidates[0]) if self.cur_candidates_num else 1.0
 
         if self.cfg.verbosity:
             print("error_blocks_indices: " + str([sum(a_block == b_block) for a_block, b_block in zip(self.alice.a, self.bob.b)]))
@@ -101,12 +71,7 @@ class MultiBlockProtocol(object):
             print("radii_list: " + str(self.r_list))
             print("num_encodings_history: " + str(self.num_encodings_history) + ", total: " + str(sum(self.num_encodings_history)) + " (theoretic: " + str(util.required_checks(self.cfg.key_length, self.cfg.base, self.cfg.p_err)) + ")")
             print("num_encoded_blocks_history: " + str(self.num_encoded_blocks_history))
-        non_ml_result = Result(cfg=self.cfg, with_ml=False, is_success=self.is_success(), ser=ser, key_rate=self.calculate_key_rate(),
-                      encoding_size_rate=self.total_encoding_size / self.cfg.key_length,
-                      matrix_size_rate=self.matrix_communication_size / self.cfg.key_length,
-                      bob_communication_rate=self.bob_communication_size / self.cfg.key_length,
-                      total_communication_rate=self.total_communication_size / self.cfg.key_length,
-                      time_rate=(end - start) / self.cfg.key_length)
+        non_ml_result = self.get_result(time=end-start, is_ml=False)
 
         return [non_ml_result, ml_result]
 
@@ -281,22 +246,62 @@ class MultiBlockProtocol(object):
     def update_communication_stats(self, encoding):
         if encoding.format == LinearCodeFormat.MATRIX:
             self.matrix_communication_size += encoding.encoding_matrix.size * math.log(self.cfg.base, 2)
-            self.total_encoding_size += len(encoding.encoded_vector)
+            self.total_leak += len(encoding.encoded_vector)
         elif encoding.format == LinearCodeFormat.AFFINE_SUBSPACE:
             self.matrix_communication_size += (encoding.prefix_encoding_matrix.size + encoding.image_base_source.size + encoding.kernel_base.size) * math.log(self.cfg.base, 2)
-            self.total_encoding_size += len(encoding.image_base_source)
+            self.total_leak += len(encoding.image_base_source)
         else:
             pass
         self.bob_communication_size += math.log(self.cur_candidates_num or 1, 2) + \
                                        sum([math.log(i or 1, 2) + math.log(num or 1, 2) for i, num in
                                             enumerate(self.num_candidates_per_block)])
-        self.total_communication_size = self.matrix_communication_size + self.total_encoding_size * math.log(self.cfg.base, 2) + \
+        self.total_communication_size = self.matrix_communication_size + self.total_leak * math.log(self.cfg.base, 2) + \
                                         self.bob_communication_size
+
+    def get_result(self, time, is_ml):
+        if self.cur_candidates_num:
+            assert ((self.cur_candidates_num == 1) or is_ml)
+            a_guess = self.bob.a_candidates[np.argmin(self.bob.a_candidates_errors)]
+            ser = self.get_ser(a_guess)
+            if ser == 0.0:
+                return Result(cfg=self.cfg, with_ml=is_ml, result_status=Status.success, ser_completed_only=0.0,
+                                   key_rate=self.calculate_key_rate(final=False),
+                                   key_rate_success_only=self.calculate_key_rate(final=False),
+                                   key_rate_completed_only=self.calculate_key_rate(final=False),
+                                   leak_rate=self.calculate_key_rate(final=False),
+                                   leak_rate_completed_only=self.total_leak / self.cfg.key_length,
+                                   leak_rate_success_only=self.total_leak / self.cfg.key_length,
+                                   matrix_size_rate=self.matrix_communication_size / self.cfg.key_length,
+                                   matrix_size_rate_success_only=self.matrix_communication_size / self.cfg.key_length,
+                                   bob_communication_rate=self.bob_communication_size / self.cfg.key_length,
+                                   bob_communication_rate_success_only=self.bob_communication_size / self.cfg.key_length,
+                                   total_communication_rate=self.total_communication_size / self.cfg.key_length,
+                                   total_communication_rate_success_only=self.total_communication_size / self.cfg.key_length,
+                                   time_rate=time / self.cfg.key_length)
+            else:
+                return Result(cfg=self.cfg, with_ml=is_ml, result_status=Status.fail, ser_completed_only=ser,
+                                   ser_fail_only=ser,
+                                   key_rate=self.calculate_key_rate(final=False),
+                                   key_rate_completed_only=self.calculate_key_rate(final=False),
+                                   leak_rate=self.calculate_key_rate(final=False),
+                                   leak_rate_completed_only=self.total_leak / self.cfg.key_length,
+                                   matrix_size_rate=self.matrix_communication_size / self.cfg.key_length,
+                                   bob_communication_rate=self.bob_communication_size / self.cfg.key_length,
+                                   total_communication_rate=self.total_communication_size / self.cfg.key_length,
+                                   time_rate=time / self.cfg.key_length)
+        else:
+            return Result(cfg=self.cfg, with_ml=is_ml, result_status=Status.abort,
+                               key_rate=self.calculate_key_rate(final=False),
+                               leak_rate=self.calculate_key_rate(final=False),
+                               matrix_size_rate=self.matrix_communication_size / self.cfg.key_length,
+                               bob_communication_rate=self.bob_communication_size / self.cfg.key_length,
+                               total_communication_rate=self.total_communication_size / self.cfg.key_length,
+                               time_rate=time / self.cfg.key_length)
 
     def calculate_key_rate(self, final=True):
         if final and (not self.is_success()):
             return 0
-        key_size = (self.cfg.key_length - self.total_encoding_size) * math.log(self.cfg.base, 2)
+        key_size = (self.cfg.key_length - self.total_leak) * math.log(self.cfg.base, 2)
         return key_size / self.cfg.key_length
 
     def get_ser(self, a_guess):

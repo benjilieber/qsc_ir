@@ -1,11 +1,13 @@
 import arg_module
 import run_module
 from protocol_configs import CodeGenerationStrategy, RoundingStrategy, PruningStrategy
+import sys
 
 is_slurm = True
 verbosity = False
 
-p_err = 0.05
+p_err = float(sys.argv[1])
+# p_err = 0.0
 previous_run_files = [r'/tmp/history/{p_err}/slurm-*.out'.format(p_err=p_err)]
 previous_run_file_format = "str"
 # previous_run_files = ["/tmp/history/history_agg.csv"]
@@ -21,7 +23,7 @@ raw_results_file_path = "fake_results.csv"
 agg_results_file_path = "fake_results_agg.csv"
 run_mode = "parallel"
 sample_size = 10
-q_list = [3]
+q_list = [5]
 code_generation_strategy_list = [CodeGenerationStrategy.linear]
 sparsity_range = None
 goal_candidates_num = None

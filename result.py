@@ -3,26 +3,45 @@ import numpy as np
 from protocol_configs import CodeGenerationStrategy, PruningStrategy, RoundingStrategy, ProtocolConfigs
 import pandas as pd
 import glob
+from enum import Enum
+
+class Status(Enum):
+    success = 'success'
+    fail = 'fail'
+    abort = 'abort'
+
+    def __str__(self):
+        return self.value
 
 class Result(object):
-    def __init__(self, cfg, with_ml=None, is_success=None, ser=None, ser_fail_only=None, key_rate=None, key_rate_success_only=None, encoding_size_rate=None, encoding_size_rate_success_only=None, matrix_size_rate=None, matrix_size_rate_success_only=None, bob_communication_rate=None,
+    def __init__(self, cfg, with_ml=None, result_status=None, is_success=None, is_fail=None, is_abort=None, ser_completed_only=None, ser_fail_only=None, key_rate=None, key_rate_completed_only=None, key_rate_success_only=None, leak_rate=None, leak_rate_completed_only=None, leak_rate_success_only=None, matrix_size_rate=None, matrix_size_rate_success_only=None, bob_communication_rate=None,
                  bob_communication_rate_success_only=None, total_communication_rate=None, total_communication_rate_success_only=None, time_rate=None, time_rate_success_only=None, result_list=None, sample_size=None):
         self.cfg = cfg
         self.with_ml = with_ml
         if result_list is None:
-            self.is_success = is_success
-            self.ser = ser
-            self.ser_fail_only = ser_fail_only or ser
+            if result_status is not None:
+                self.is_success = result_status == Status.success
+                self.is_fail = result_status == Status.fail
+                self.is_abort = result_status == Status.abort
+            else:
+                self.is_success = is_success
+                self.is_fail = is_fail
+                self.is_abort = is_abort
+
+            self.ser_completed_only = ser_completed_only
+            self.ser_fail_only = ser_fail_only
             self.key_rate = key_rate
-            self.key_rate_success_only = key_rate_success_only or key_rate
-            self.encoding_size_rate = encoding_size_rate
-            self.encoding_size_rate_success_only = encoding_size_rate_success_only or encoding_size_rate
+            self.key_rate_completed_only = key_rate_completed_only
+            self.key_rate_success_only = key_rate_success_only
+            self.leak_rate = leak_rate
+            self.leak_rate_completed_only = leak_rate_completed_only
+            self.leak_rate_success_only = leak_rate_success_only
             self.matrix_size_rate = matrix_size_rate
-            self.matrix_size_rate_success_only = matrix_size_rate_success_only or matrix_size_rate
+            self.matrix_size_rate_success_only = matrix_size_rate_success_only
             self.bob_communication_rate = bob_communication_rate
-            self.bob_communication_rate_success_only = bob_communication_rate_success_only or bob_communication_rate
+            self.bob_communication_rate_success_only = bob_communication_rate_success_only
             self.total_communication_rate = total_communication_rate
-            self.total_communication_rate_success_only = total_communication_rate_success_only or total_communication_rate
+            self.total_communication_rate_success_only = total_communication_rate_success_only
             self.time_rate = time_rate
             self.time_rate_success_only = time_rate_success_only or time_rate
             self.sample_size = sample_size or 1
@@ -31,22 +50,40 @@ class Result(object):
             assert ([with_ml == result_list[i].with_ml for i in range(len(result_list))])
 
             self.is_success = np.mean([result.is_success for result in result_list])
+            self.is_fail = np.mean([result.is_fail for result in result_list])
+            self.is_abort = np.mean([result.is_abort for result in result_list])
+
+            has_success = self.is_success > 0.0
+            has_fail = self.is_fail > 0.0
+            has_completed = has_success or has_fail
+
             success_result_list = [result for result in result_list if result.is_success]
-            fail_result_list = [result for result in result_list if not result.is_success]
-            self.ser = np.mean([result.ser for result in result_list])
-            self.ser_fail_only = np.mean([result.ser for result in fail_result_list] or [0.0])
-            self.key_rate = np.mean([result.key_rate for result in result_list])
-            self.key_rate_success_only = np.mean([result.key_rate for result in success_result_list] or [0.0])
-            self.encoding_size_rate = np.mean([result.encoding_size_rate for result in result_list])
-            self.encoding_size_rate_success_only = np.mean([result.encoding_size_rate for result in success_result_list] or [0.0])
+            fail_result_list = [result for result in result_list if result.is_fail]
+            completed_result_list = success_result_list + fail_result_list
+
+            self.ser_completed_only = np.mean([result.ser_completed_only for result in completed_result_list]) if has_completed else None
+            self.ser_fail_only = np.mean([result.ser_fail_only for result in fail_result_list]) if has_fail else None
+
+            self.key_rate = np.mean([result.key_rate for result in success_result_list] or [0.0])
+            self.key_rate_completed_only = np.mean([result.key_rate for result in completed_result_list]) if has_completed else None
+            self.key_rate_success_only = np.mean([result.key_rate for result in success_result_list]) if has_success else None
+
+            self.leak_rate = np.mean([result.leak_rate for result in result_list])
+            self.leak_rate_completed_only = np.mean([result.leak_rate for result in completed_result_list]) if has_completed else None
+            self.leak_rate_success_only = np.mean([result.leak_rate for result in success_result_list]) if has_success else None
+
             self.matrix_size_rate = np.mean([result.matrix_size_rate for result in result_list])
-            self.matrix_size_rate_success_only = np.mean([result.matrix_size_rate for result in success_result_list] or [0.0])
+            self.matrix_size_rate_success_only = np.mean([result.matrix_size_rate for result in success_result_list]) if has_success else None
+
             self.bob_communication_rate = np.mean([result.bob_communication_rate for result in result_list])
-            self.bob_communication_rate_success_only = np.mean([result.bob_communication_rate for result in success_result_list] or [0.0])
+            self.bob_communication_rate_success_only = np.mean([result.bob_communication_rate for result in success_result_list]) if has_success else None
+
             self.total_communication_rate = np.mean([result.total_communication_rate for result in result_list])
-            self.total_communication_rate_success_only = np.mean([result.total_communication_rate for result in success_result_list] or [0.0])
+            self.total_communication_rate_success_only = np.mean([result.total_communication_rate for result in success_result_list]) if has_success else None
+
             self.time_rate = np.mean([result.time_rate for result in result_list])
-            self.time_rate_success_only = np.mean([result.time_rate for result in success_result_list] or [0.0])
+            self.time_rate_success_only = np.mean([result.time_rate for result in success_result_list]) if has_success else None
+
             self.sample_size = len(result_list)
 
     def get_cfg_row(self):
@@ -67,7 +104,7 @@ class Result(object):
             return cfg_string.strip(", ")
 
     def get_output_row(self):
-        return [self.sample_size, self.with_ml, self.is_success, self.ser, self.ser_fail_only, self.key_rate, self.key_rate_success_only, self.encoding_size_rate, self.encoding_size_rate_success_only, self.matrix_size_rate, self.matrix_size_rate_success_only,
+        return [self.sample_size, self.with_ml, self.is_success, self.is_fail, self.is_abort, self.ser_completed_only, self.ser_fail_only, self.key_rate, self.key_rate_completed_only, self.key_rate_success_only, self.leak_rate, self.leak_rate_completed_only, self.leak_rate_success_only, self.matrix_size_rate, self.matrix_size_rate_success_only,
                 self.bob_communication_rate, self.bob_communication_rate_success_only, self.total_communication_rate, self.total_communication_rate_success_only, self.time_rate, self.time_rate_success_only]
 
     def get_row(self):
@@ -79,7 +116,7 @@ def get_header():
 
 def get_old_header():
     header = get_header()
-    return header[:18] + [header[19]] + header[22:]
+    return header[:18] + [header[19]] + header[24:]
 
 def get_cfg_header():
     return ["base", "key_length", "block_length", "num_blocks", "p_err", "success_rate", "goal_candidates_num", "max_candidates_num",
@@ -87,17 +124,21 @@ def get_cfg_header():
 
 
 def get_output_header():
-    return ["sample_size", "with_ml", "is_success", "ser", "ser_fail_only", "key_rate", "key_rate_success_only",
-            "encoding_size_rate", "encoding_size_rate_success_only", "matrix_size_rate", "matrix_size_rate_success_only", "bob_communication_rate", "bob_communication_rate_success_only", "total_communication_rate", "total_communication_rate_success_only", "time_rate", "time_rate_success_only"]
+    return ["sample_size", "with_ml", "is_success", "is_fail", "is_abort", "ser_completed_only", "ser_fail_only", "key_rate", "key_rate_completed_only", "key_rate_success_only",
+            "leak_rate", "leak_rate_completed_only", "leak_rate_success_only", "matrix_size_rate", "matrix_size_rate_success_only", "bob_communication_rate", "bob_communication_rate_success_only", "total_communication_rate", "total_communication_rate_success_only", "time_rate", "time_rate_success_only"]
 
 def str_to_result(row_string):
     list_of_strings = row_string[1:-1].split(", ")
 
-    if len(list_of_strings) == 31:
-        # Old format -> populate the new fields
-        list_of_strings.insert(18, "False")
-        list_of_strings.insert(20, None)
-        list_of_strings.insert(21, None)
+    # if len(list_of_strings) == 31:
+    #     # Old format -> populate the new fields
+    #     list_of_strings.insert(18, "False")
+    #     list_of_strings.insert(20, None)
+    #     list_of_strings.insert(21, None)
+    #     list_of_strings.insert(22, None)
+    #     list_of_strings.insert(23, None)
+    #     list_of_strings.insert(25, None)
+    #     list_of_strings.insert(28, None)
 
     # print(list_of_strings[0])
     base = int(list_of_strings[0])
@@ -129,25 +170,38 @@ def str_to_result(row_string):
                                                               max_candidates_num=max_candidates_num,
                                                               encoding_sample_size=encoding_sample_size)
     sample_size = int(list_of_strings[17])
-    with_ml = list_of_strings[18] in ["'True'", "True"]
-    is_success = (list_of_strings[19] in ["'True'", "True"]) if (list_of_strings[19] in ["'True'", "True", "'False'", "False"]) else float(list_of_strings[19])
-    ser = list_of_strings[20] if list_of_strings[20] is None else float(list_of_strings[20])
-    ser_fail_only = list_of_strings[21] if list_of_strings[21] is None else float(list_of_strings[21])
-    key_rate = float(list_of_strings[22])
-    key_rate_success_only = float(list_of_strings[23])
-    encoding_size_rate = float(list_of_strings[24])
-    encoding_size_rate_success_only = float(list_of_strings[25])
-    matrix_size_rate = float(list_of_strings[26])
-    matrix_size_rate_success_only = float(list_of_strings[27])
-    bob_communication_rate = float(list_of_strings[28])
-    bob_communication_rate_success_only = float(list_of_strings[29])
-    total_communication_rate = float(list_of_strings[30])
-    total_communication_rate_success_only = float(list_of_strings[31])
-    time_rate = float(list_of_strings[32])
-    time_rate_success_only = float(list_of_strings[33])
-    return Result(cfg=cfg, with_ml=with_ml, is_success=is_success, ser=ser, ser_fail_only=ser_fail_only, key_rate=key_rate, key_rate_success_only=key_rate_success_only, encoding_size_rate=encoding_size_rate, encoding_size_rate_success_only=encoding_size_rate_success_only,
+    with_ml = metric_to_val(list_of_strings[18])
+    is_success = metric_to_val(list_of_strings[19])
+    is_fail = metric_to_val(list_of_strings[20])
+    is_abort = metric_to_val(list_of_strings[21])
+    ser_completed_only = metric_to_val(list_of_strings[22])
+    ser_fail_only = metric_to_val(list_of_strings[23])
+    key_rate = float(list_of_strings[24])
+    key_rate_completed_only = metric_to_val(list_of_strings[25])
+    key_rate_success_only = metric_to_val(list_of_strings[26])
+    leak_rate = float(list_of_strings[27])
+    leak_rate_completed_only = metric_to_val(list_of_strings[28])
+    leak_rate_success_only = metric_to_val(list_of_strings[29])
+    matrix_size_rate = float(list_of_strings[30])
+    matrix_size_rate_success_only = metric_to_val(list_of_strings[31])
+    bob_communication_rate = float(list_of_strings[32])
+    bob_communication_rate_success_only = metric_to_val(list_of_strings[33])
+    total_communication_rate = float(list_of_strings[34])
+    total_communication_rate_success_only = metric_to_val(list_of_strings[34])
+    time_rate = float(list_of_strings[36])
+    time_rate_success_only = metric_to_val(list_of_strings[37])
+    return Result(cfg=cfg, with_ml=with_ml, is_success=is_success, is_fail=is_fail, is_abort=is_abort, ser_completed_only=ser_completed_only, ser_fail_only=ser_fail_only, key_rate=key_rate, key_rate_completed_only=key_rate_completed_only, key_rate_success_only=key_rate_success_only, leak_rate=leak_rate, leak_rate_completed_only=leak_rate_completed_only, leak_rate_success_only=leak_rate_success_only,
                   matrix_size_rate=matrix_size_rate, matrix_size_rate_success_only=matrix_size_rate_success_only, bob_communication_rate=bob_communication_rate, bob_communication_rate_success_only=bob_communication_rate_success_only,
-                 total_communication_rate=total_communication_rate, total_communication_rate_success_only=total_communication_rate_success_only, time_rate=time_rate, time_rate_success_only=time_rate_success_only, result_list=None, sample_size=sample_size)
+                  total_communication_rate=total_communication_rate, total_communication_rate_success_only=total_communication_rate_success_only, time_rate=time_rate, time_rate_success_only=time_rate_success_only, result_list=None, sample_size=sample_size)
+
+def metric_to_val(metric):
+    if metric in [None, "None"]:
+        return None
+    if metric in ["'True'", "True"]:
+        return True
+    if metric in ["'False'", "False"]:
+        return False
+    return float(metric)
 
 def result_str_to_cfg_str(result_str):
     list_of_strings = result_str[1:-1].split(", ")
