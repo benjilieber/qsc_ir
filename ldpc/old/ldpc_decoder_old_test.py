@@ -1,21 +1,15 @@
 import os
 import sys
 import math
-import time
 
 import util
-from itertools import product
-import itertools
 
 sys.path.append(os.getcwd())
 
 import unittest
 from ldpc_decoder import LdpcDecoder
-import numpy as np
 from ldpc_generator import LdpcGenerator
-from protocol_configs import ProtocolConfigs
 from protocol_configs import CodeGenerationStrategy
-from encoder import Encoder
 from key_generator import KeyGenerator
 
 
@@ -470,8 +464,8 @@ class LdpcDecoderTest(unittest.TestCase):
         sparsity = 3
         p_err = 0.0
         num_rounds = 100
-        cfg = ProtocolConfigs(base=3, block_length=block_length, num_blocks=1,
-                              code_generation_strategy=CodeGenerationStrategy.ldpc, sparsity=sparsity)
+        cfg = cfg(base=3, block_length=block_length, num_blocks=1,
+                  code_generation_strategy=CodeGenerationStrategy.ldpc, sparsity=sparsity)
         code_gen = LdpcGenerator(cfg, use_sparse=True, use_extended=True)
         for i in range(10):
             encoding_matrix = code_gen.generate_encoding_matrix(num_encoding_columns)

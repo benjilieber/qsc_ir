@@ -1,16 +1,12 @@
 import copy
-import itertools
 
 import numpy as np
-import scipy
 import math
-import random
 from scipy.stats import entropy
-from graph import Graph
 from itertools import repeat
 
 import util
-from encoder import Encoder
+from mb.encoder import Encoder
 
 
 class LdpcDecoder(object):
@@ -87,7 +83,8 @@ class LdpcDecoder(object):
                 a_dist = self.calculate_new_distribution(f, r)
                 a_guess = np.argmax(a_dist, axis=1)
                 a_guess_list[i] = a_guess
-                encoding_error_trajectory_list[i].append(util.hamming_single_block(self.encoding_matrix * a_guess, self.encoded_a))
+                encoding_error_trajectory_list[i].append(
+                    util.hamming_single_block(self.encoding_matrix * a_guess, self.encoded_a))
                 if a is not None:
                     trajectory_list[i].append(util.hamming_single_block(a, a_guess))
                 entropies = [entropy(a_dist_i, base=2) for a_dist_i in a_dist]

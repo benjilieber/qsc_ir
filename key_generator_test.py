@@ -5,8 +5,8 @@ from key_generator import KeyGenerator
 class KeyGeneratorTest(unittest.TestCase):
     def test_zero_error(self):
         p_err = 0
-        key_size = 10
-        keygen = KeyGenerator(p_err, key_size)
+        N = 10
+        keygen = KeyGenerator(p_err, N)
         for i in range(0, 1000):
             a, b = keygen.generate_keys()
             self.assertTrue(set(a).issubset({0, 1, 2}))
@@ -16,8 +16,8 @@ class KeyGeneratorTest(unittest.TestCase):
 
     def test_non_zero_error(self):
         p_err = 0.1
-        key_size = 10
-        keygen = KeyGenerator(p_err, key_size)
+        N = 10
+        keygen = KeyGenerator(p_err, N)
         num_errors = 0
         for i in range(0, 1000):
             a, b = keygen.generate_keys()

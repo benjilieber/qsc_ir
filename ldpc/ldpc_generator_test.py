@@ -1,13 +1,13 @@
 import unittest
 from ldpc_generator import LdpcGenerator
-from protocol_configs import ProtocolConfigs
+from protocol_configs import Cfg
 
 class LdpcGeneratorTest(unittest.TestCase):
     def test_generate_ldpc_code1(self):
         n = 35
         num_encoding_columns = 19
         sparsity = 35
-        cfg = ProtocolConfigs(base=3, block_length=n, num_blocks=1, sparsity=sparsity)
+        cfg = cfg(base=3, block_length=n, num_blocks=1, sparsity=sparsity)
         code_gen = LdpcGenerator(cfg)
         encoding_matrix = code_gen.generate_gallagher_matrix(num_encoding_columns)
         # print(encoding_matrix.toarray())
@@ -17,7 +17,7 @@ class LdpcGeneratorTest(unittest.TestCase):
         n = 35
         num_encoding_columns = 19
         sparsity = 4
-        cfg = ProtocolConfigs(base=3, block_length=n, num_blocks=1, sparsity=sparsity)
+        cfg = cfg(base=3, block_length=n, num_blocks=1, sparsity=sparsity)
         code_gen = LdpcGenerator(cfg)
         encoding_matrix = code_gen.generate_gallagher_matrix(num_encoding_columns)
         print(encoding_matrix.toarray())
@@ -27,7 +27,7 @@ class LdpcGeneratorTest(unittest.TestCase):
         n = 35
         num_encoding_columns = 19
         sparsity = 4
-        cfg = ProtocolConfigs(base=3, block_length=n, num_blocks=1, sparsity=sparsity)
+        cfg = cfg(base=3, block_length=n, num_blocks=1, sparsity=sparsity)
         code_gen = LdpcGenerator(cfg)
         encoding_matrix = code_gen.generate_rand_matrix(num_encoding_columns)
         print(encoding_matrix.toarray())

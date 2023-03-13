@@ -9,7 +9,7 @@ class R(object):
         """
         self.encoding_matrix = encoding_matrix
         self.encoded_a = encoded_a
-        self.base = encoding_matrix.base
+        self.base = encoding_matrix.q
         self.indices = encoding_matrix.indices
         self.indptr = encoding_matrix.indptr
         self.indices_r = encoding_matrix.indices_r

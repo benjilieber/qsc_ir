@@ -5,7 +5,7 @@ class Q(object):
     def __init__(self, f, encoding_matrix, data=None):
         self.f = f
         self.encoding_matrix = encoding_matrix
-        self.base = encoding_matrix.base
+        self.base = encoding_matrix.q
         self.indices = encoding_matrix.indices
         self.indptr = encoding_matrix.indptr
         self.indices_r = encoding_matrix.indices_r

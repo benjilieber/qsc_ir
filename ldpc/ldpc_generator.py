@@ -21,10 +21,10 @@ class LdpcGenerator(object):
         num_encodings_list = partition_almost_uniformly(num_encoding_columns, t)
         sub_matrices = [self.__generate_gallagher_submatrix(n, num_encodings_list[i]) for i in range(t)
                         if num_encodings_list[i] != 0]
-        return LdpcMatrix(scipy.sparse.vstack(sub_matrices), n, self.cfg.base)
+        return LdpcMatrix(scipy.sparse.vstack(sub_matrices), n, self.cfg.q)
 
     def __generate_gallagher_submatrix(self, n, num_subgraph_encodings):
-        data = np.array([random.randint(1, self.cfg.base - 1) for _ in range(n)])
+        data = np.array([random.randint(1, self.cfg.q - 1) for _ in range(n)])
 
         permutation = np.random.permutation(n)
         indices = permutation
@@ -44,9 +44,9 @@ class LdpcGenerator(object):
         indices = np.array([ind for deg in check_degs for ind in sorted(np.random.choice(range(0, n), deg, replace=False))])
         # TODO: ensure each column has atleast one 1/2
 
-        data = np.array([random.randint(1, self.cfg.base - 1) for _ in range(indptr[-1])])
+        data = np.array([random.randint(1, self.cfg.q - 1) for _ in range(indptr[-1])])
 
-        return LdpcMatrix(csr_matrix((data, indices, indptr), shape=(num_encoding_columns, n)), n, self.cfg.base)
+        return LdpcMatrix(csr_matrix((data, indices, indptr), shape=(num_encoding_columns, n)), n, self.cfg.q)
 
 
 

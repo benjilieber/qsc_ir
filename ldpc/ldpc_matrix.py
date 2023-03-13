@@ -15,8 +15,8 @@ class LdpcMatrix(csr_matrix):
         self.indices_r = np.array([ind for ind_list in j_to_ind for ind in ind_list])
 
     def __mul__(self, vector):
-        return np.mod([np.inner(self.data[self.indices[i_start:i_end]], vector[self.indices[i_start:i_end]]) for i, (i_start, i_end) in enumerate(zip(self.indptr, self.indptr[1:]))], self.base)
-        # return np.mod(super(csr_matrix, self).__mul__(vector), self.base)
+        # return np.mod([np.inner(self.data[self.indices[i_start:i_end]], vector[self.indices[i_start:i_end]]) for i, (i_start, i_end) in enumerate(zip(self.indptr, self.indptr[1:]))], self.base)
+        return np.mod(super(csr_matrix, self).__mul__(vector), self.base)
 
     def __getitem__(self, i):
         return np.array(self.data[self.indices[self.indptr[i]:self.indptr[i+1]]])

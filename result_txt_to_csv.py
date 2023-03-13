@@ -1,18 +1,18 @@
 import csv
-# import sys
+import os
+import re
 
 import result
 import run_module
-import glob
 
-def convert_txt_to_csv(input_txt_file_name):
+def convert_txt_to_csv_single_file(input_txt_file_name):
     # args = sys.argv[1:]
     # input_txt_file_name = args[0]
     # output_csv_file_name = args[1]
     # output_agg_csv_file_name = args[1]
     # input_txt_file_name = "slurm-13884535.out"
-    output_csv_file_name = "results/history.csv"
-    output_agg_csv_file_name = "results/history_agg.csv"
+    output_csv_file_name = "mb/results/history.csv"
+    output_agg_csv_file_name = "mb/results/history_agg.csv"
     run_module.write_header(output_csv_file_name)
     run_module.write_header(output_agg_csv_file_name)
     input_txt_file = open(input_txt_file_name, 'r')
@@ -31,6 +31,7 @@ def convert_txt_to_csv(input_txt_file_name):
                 else:
                     writer_agg.writerow(result.str_to_result(input_txt_row).get_row())
 
-# input_txt_file_name_list = glob.glob(r'*.out')
-# for input_txt_file_name in input_txt_file_name_list:
-#     convert_txt_to_csv(input_txt_file_name)
+def convert_txt_to_csv():
+    for filename in os.listdir():
+        if re.match(r'*.out', filename):
+            convert_txt_to_csv_single_file(filename)

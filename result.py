@@ -1,6 +1,7 @@
 import numpy as np
 
-from protocol_configs import CodeGenerationStrategy, PruningStrategy, RoundingStrategy, ProtocolConfigs
+from cfg import CodeStrategy
+from mb.mb_cfg import MbCfg, PruningStrategy, RoundingStrategy
 import pandas as pd
 import glob
 from enum import Enum
@@ -87,9 +88,9 @@ class Result(object):
             self.sample_size = len(result_list)
 
     def get_cfg_row(self):
-        return [self.cfg.base, self.cfg.key_length, self.cfg.block_length, self.cfg.num_blocks, self.cfg.p_err, self.cfg.success_rate,
+        return [self.cfg.q, self.cfg.N, self.cfg.block_length, self.cfg.num_blocks, self.cfg.p_err, self.cfg.success_rate,
                 self.cfg.goal_candidates_num, self.cfg.max_candidates_num,
-                self.cfg.max_num_indices_to_encode, self.cfg.fixed_number_of_encodings, str(self.cfg.code_generation_strategy), str(self.cfg.rounding_strategy), str(self.cfg.pruning_strategy), self.cfg.radius_picking, self.cfg.encoding_sample_size, self.cfg.sparsity, self.cfg.theoretic_key_rate]
+                self.cfg.max_num_indices_to_encode, self.cfg.fixed_number_of_encodings, str(self.cfg.code_strategy), str(self.cfg.rounding_strategy), str(self.cfg.pruning_strategy), self.cfg.radius_picking, self.cfg.encoding_sample_size, self.cfg.theoretic_key_rate]
 
     def __str__(self):
         cfg_string = "cfg: "
@@ -119,8 +120,8 @@ def get_old_header():
     return header[:18] + [header[19]] + header[24:]
 
 def get_cfg_header():
-    return ["base", "key_length", "block_length", "num_blocks", "p_err", "success_rate", "goal_candidates_num", "max_candidates_num",
-            "max_num_indices_to_encode", "predetermined_number_of_encodings", "code_generation_strategy", "rounding_strategy", "pruning_strategy", "radius_picking", "encoding_sample_size", "sparsity", "theoretic_key_rate"]
+    return ["base", "N", "block_length", "num_blocks", "p_err", "success_rate", "goal_candidates_num", "max_candidates_num",
+            "max_num_indices_to_encode", "predetermined_number_of_encodings", "code_strategy", "rounding_strategy", "pruning_strategy", "radius_picking", "encoding_sample_size", "theoretic_key_rate"]
 
 
 def get_output_header():
@@ -150,46 +151,43 @@ def str_to_result(row_string):
     max_candidates_num = int(list_of_strings[7])
     max_num_indices_to_encode = int(list_of_strings[8])
     fixed_number_of_encodings = list_of_strings[9] in ["'True'", "True"]
-    code_generation_strategy = CodeGenerationStrategy[list_of_strings[10][1:-1]]
+    code_strategy = CodeStrategy[list_of_strings[10][1:-1]]
     rounding_strategy = RoundingStrategy[list_of_strings[11][1:-1]]
     pruning_strategy = PruningStrategy[list_of_strings[12][1:-1]]
     radius_picking = list_of_strings[13] in ["'True'", "True"]
     encoding_sample_size = int(list_of_strings[14])
-    sparsity = int(list_of_strings[15])
-    cfg = ProtocolConfigs(base=base, block_length=block_length, num_blocks=num_blocks,
-                                                              p_err=p_err,
-                                                              success_rate=success_rate,
-                                                              goal_candidates_num=goal_candidates_num,
-                                                              rounding_strategy=rounding_strategy,
-                                                              code_generation_strategy=code_generation_strategy,
-                                                              pruning_strategy=pruning_strategy,
-                                                              sparsity=sparsity,
-                                                              fixed_number_of_encodings=fixed_number_of_encodings,
-                                                              max_num_indices_to_encode=max_num_indices_to_encode,
-                                                              radius_picking=radius_picking,
-                                                              max_candidates_num=max_candidates_num,
-                                                              encoding_sample_size=encoding_sample_size)
-    sample_size = int(list_of_strings[17])
-    with_ml = metric_to_val(list_of_strings[18])
-    is_success = metric_to_val(list_of_strings[19])
-    is_fail = metric_to_val(list_of_strings[20])
-    is_abort = metric_to_val(list_of_strings[21])
-    ser_completed_only = metric_to_val(list_of_strings[22])
-    ser_fail_only = metric_to_val(list_of_strings[23])
-    key_rate = float(list_of_strings[24])
-    key_rate_completed_only = metric_to_val(list_of_strings[25])
-    key_rate_success_only = metric_to_val(list_of_strings[26])
-    leak_rate = float(list_of_strings[27])
-    leak_rate_completed_only = metric_to_val(list_of_strings[28])
-    leak_rate_success_only = metric_to_val(list_of_strings[29])
-    matrix_size_rate = float(list_of_strings[30])
-    matrix_size_rate_success_only = metric_to_val(list_of_strings[31])
-    bob_communication_rate = float(list_of_strings[32])
-    bob_communication_rate_success_only = metric_to_val(list_of_strings[33])
-    total_communication_rate = float(list_of_strings[34])
+    cfg = MbCfg(q=base, block_length=block_length, num_blocks=num_blocks,
+              p_err=p_err,
+              success_rate=success_rate,
+              goal_candidates_num=goal_candidates_num,
+              rounding_strategy=rounding_strategy,
+              pruning_strategy=pruning_strategy,
+              fixed_number_of_encodings=fixed_number_of_encodings,
+              max_num_indices_to_encode=max_num_indices_to_encode,
+              radius_picking=radius_picking,
+              max_candidates_num=max_candidates_num,
+              encoding_sample_size=encoding_sample_size)
+    sample_size = int(list_of_strings[16])
+    with_ml = metric_to_val(list_of_strings[17])
+    is_success = metric_to_val(list_of_strings[18])
+    is_fail = metric_to_val(list_of_strings[19])
+    is_abort = metric_to_val(list_of_strings[20])
+    ser_completed_only = metric_to_val(list_of_strings[21])
+    ser_fail_only = metric_to_val(list_of_strings[22])
+    key_rate = float(list_of_strings[23])
+    key_rate_completed_only = metric_to_val(list_of_strings[24])
+    key_rate_success_only = metric_to_val(list_of_strings[25])
+    leak_rate = float(list_of_strings[26])
+    leak_rate_completed_only = metric_to_val(list_of_strings[27])
+    leak_rate_success_only = metric_to_val(list_of_strings[28])
+    matrix_size_rate = float(list_of_strings[29])
+    matrix_size_rate_success_only = metric_to_val(list_of_strings[30])
+    bob_communication_rate = float(list_of_strings[31])
+    bob_communication_rate_success_only = metric_to_val(list_of_strings[32])
+    total_communication_rate = float(list_of_strings[33])
     total_communication_rate_success_only = metric_to_val(list_of_strings[34])
-    time_rate = float(list_of_strings[36])
-    time_rate_success_only = metric_to_val(list_of_strings[37])
+    time_rate = float(list_of_strings[35])
+    time_rate_success_only = metric_to_val(list_of_strings[36])
     return Result(cfg=cfg, with_ml=with_ml, is_success=is_success, is_fail=is_fail, is_abort=is_abort, ser_completed_only=ser_completed_only, ser_fail_only=ser_fail_only, key_rate=key_rate, key_rate_completed_only=key_rate_completed_only, key_rate_success_only=key_rate_success_only, leak_rate=leak_rate, leak_rate_completed_only=leak_rate_completed_only, leak_rate_success_only=leak_rate_success_only,
                   matrix_size_rate=matrix_size_rate, matrix_size_rate_success_only=matrix_size_rate_success_only, bob_communication_rate=bob_communication_rate, bob_communication_rate_success_only=bob_communication_rate_success_only,
                   total_communication_rate=total_communication_rate, total_communication_rate_success_only=total_communication_rate_success_only, time_rate=time_rate, time_rate_success_only=time_rate_success_only, result_list=None, sample_size=sample_size)

@@ -1,4 +1,3 @@
-import copy
 import itertools
 
 import numpy as np
@@ -78,7 +77,6 @@ class LdpcDecoder(object):
                     f_list = self.generate_forked_f(f, max_entropy_index, [hint_value])
                     q_list = q.fork(max_entropy_index, [hint_value], f_list)
                     stats.add_hint(max_entropy_index, hint_value)
-
 
                 if stats.should_fork(i, cur_round):
                     max_entropy_index = np.argmax(stats.entropies_list[i])

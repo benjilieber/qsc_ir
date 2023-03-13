@@ -196,10 +196,35 @@ def plot_results4(file_name):
         # plt.legend()
         plt.show()
 
+def add_yield(df):
+    df['yield'] = df.success_rate * df.key_rate_success_only
+def add_efficiency(df):
+    df.loc[df.p_err.eq(0.0), 'optimal_leak'] = np.log2(df.q - 1)
+    df.loc[df.p_err.ne(0.0), 'optimal_leak'] = -df.p_err * np.log2(df.p_err) - (1 - df.p_err) * np.log2(
+        (1 - df.p_err) / (df.q - 1))
+    df['efficiency'] = df.encoding_size_rate * np.log2(df.q) / df.optimal_leak
+
+def get_theoretic_key_rate_single(q, p_err):
+    if p_err == 0.0:
+        return math.log2(q / (q - 1))
+    return p_err * np.log2(p_err) + (1 - p_err) * np.log2((1 - p_err) / (q - 1)) + math.log2(q)
+
+def get_theoretic_key_rate(q, p_err_array):
+    # p_err is a numpy array
+    theoretic_key_rate = np.empty_like(p_err_array)
+
+    theoretic_key_rate[p_err_array == 0.0] = math.log2(q / (q - 1))
+
+    non_zero_p_err = p_err_array[p_err_array != 0.0]
+    theoretic_key_rate[p_err_array != 0.0] = non_zero_p_err * np.log2(non_zero_p_err) + (1 - non_zero_p_err) * np.log2(
+        (1 - non_zero_p_err) / (q - 1)) + math.log2(q)
+
+    return theoretic_key_rate
+
 def plot_error_exponent(df, q_filter=None, p_err_filter=None):
-    df["q"] = df.base
+    df["q"] = df.q
     df["qer"] = df.p_err * (-1) + 1
-    df["n"] = np.ceil(np.log2(df.key_length))
+    df["n"] = np.ceil(np.log2(df.N))
     df["N"] = np.exp2(df.n).astype(int)
     df["FER"] = 1-df.success_rate
 
@@ -237,9 +262,9 @@ def plot_error_exponent(df, q_filter=None, p_err_filter=None):
             plt.show()
 
 def plot_scaling_exponent(df, q_filter=None, p_err_filter=None, success_rate_filter=None):
-    df["q"] = df.base
+    df["q"] = df.q
     df["qer"] = df.p_err * (-1) + 1
-    df["n"] = np.ceil(np.log2(df.key_length))
+    df["n"] = np.ceil(np.log2(df.N))
     df["N"] = np.exp2(df.n).astype(int)
     df["gap"] = df.theoretic_key_rate - df.key_rate_success_only
 
@@ -297,10 +322,16 @@ def plot_scaling_exponent(df, q_filter=None, p_err_filter=None, success_rate_fil
                 plt.show()
 
 def plot_vs_qser(df, y_name, q_filter=None, n_filter=None):
-    df["q"] = df.base
+    df["q"] = df.q
     df["qer"] = df.p_err * (-1) + 1
-    df["n"] = np.ceil(np.log2(df.key_length))
+    df["n"] = np.ceil(np.log2(df.N))
     df["N"] = np.exp2(df.n).astype(int)
+    add_yield(df)
+    add_efficiency(df)
+    df['logL'] = np.log(df.goal_candidates_num)
+    df['logI'] = np.log(df.max_num_indices_to_encode)
+    df['Kbps'] = np.reciprocal(df.time_rate) * np.log2(df.q) / 1000
+    df['total_communication_rate'] = df.total_communication_rate * np.log2(df.q)
 
     # # color by L
     color_name = "L"
@@ -319,11 +350,11 @@ def plot_vs_qser(df, y_name, q_filter=None, n_filter=None):
 
     if n_filter is not None:
         df = df[df.n.isin(n_filter)]
+    if q_filter is not None:
+        df = df[df.q.isin(q_filter)]
 
     grouped_by_q = df.groupby("q")
     for q in grouped_by_q.groups.keys():
-        if q_filter is not None and q not in q_filter:
-            continue
         cur_q_group = grouped_by_q.get_group(q)
         grouped_by_N = cur_q_group.groupby("N")
         for N in grouped_by_N.groups.keys():
@@ -420,17 +451,21 @@ def plot_vs_qser(df, y_name, q_filter=None, n_filter=None):
             plt.savefig("{y_name}-vs-QSER,q={q},N={N},color={color_name}.png".format(y_name=y_name, q=q, N=N, color_name=color_name))
             plt.show()
 
-def plot_key_rate_vs_qser(df):
-    return plot_vs_qser(df, "keyRate")
-def plot_yield_vs_qser(df):
-    return plot_vs_qser(df, "yield")
-def plot_efficiency_vs_qser(df):
-    return plot_vs_qser(df, "efficiency")
+def plot_key_rate_vs_qser(file_name):
+    return plot_vs_qser(file_name, "keyRate")
+def plot_yield_vs_qser(file_name):
+    return plot_vs_qser(file_name, "yield")
+def plot_efficiency_vs_qser(file_name):
+    return plot_vs_qser(file_name, "efficiency")
+# def plot_Kbps_vs_yield(df, q_filter=None, n_filter=None, color_col=None):
+#     return plot_y_vs_x(df, "yield", "Kbps", q_filter, n_filter, color_col=color_col)
+# def plot_communication_vs_yield(df, q_filter=None, n_filter=None, color_col=None):
+#     return plot_y_vs_x(df, "yield", "total_communication_rate", q_filter, n_filter, color_col=color_col)
 
 def plot_time_vs_yield(df, q_filter=None, n_filter=None, p_err_filter=None):
-    df["q"] = df.base
+    df["q"] = df.q
     df["qer"] = df.p_err * (-1) + 1
-    df["n"] = np.ceil(np.log2(df.key_length))
+    df["n"] = np.ceil(np.log2(df.N))
     df["N"] = np.exp2(df.n).astype(int)
 
     if q_filter is not None:
@@ -471,9 +506,9 @@ def plot_time_vs_yield(df, q_filter=None, n_filter=None, p_err_filter=None):
             plt.show()
 
 def plot_time_vs_N(df, q_filter=None, n_filter=None, p_err_filter=None):
-    df["q"] = df.base
+    df["q"] = df.q
     df["qer"] = df.p_err * (-1) + 1
-    df["n"] = np.ceil(np.log2(df.key_length))
+    df["n"] = np.ceil(np.log2(df.N))
     df["N"] = np.exp2(df.n).astype(int)
 
     if q_filter is not None:
@@ -509,9 +544,9 @@ def plot_time_vs_N(df, q_filter=None, n_filter=None, p_err_filter=None):
             plt.show()
 
 def plot_time_vs_block_length(df, q_filter=None, n_filter=None, p_err_filter=None):
-    df["q"] = df.base
+    df["q"] = df.q
     df["qer"] = df.p_err * (-1) + 1
-    df["n"] = np.ceil(np.log2(df.key_length))
+    df["n"] = np.ceil(np.log2(df.N))
     df["N"] = np.exp2(df.n).astype(int)
 
     if q_filter is not None:
