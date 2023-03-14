@@ -51,11 +51,15 @@ def parse_args():
     parser.add_argument('--p_err_range', required=True, type=parseFloatRange, help='The error probability values.')
     parser.add_argument('--success_rate_range', type=parseFloatRange,
                         help='The success rate values.')
-    parser.add_argument('--radius_picking', default=False, type=bool, help='Whether to use single-block radius-picking pruning.')
-    parser.add_argument('--rounding_strategy_list', default=[RoundingStrategy.ceil], type=list(RoundingStrategy), help='Which rounding function to use (for encoding-number picking).')
+    parser.add_argument('--radius_picking', default=False, type=bool,
+                        help='Whether to use single-block radius-picking pruning.')
+    parser.add_argument('--rounding_strategy_list', default=[RoundingStrategy.ceil], type=list(RoundingStrategy),
+                        help='Which rounding function to use (for encoding-number picking).')
     parser.add_argument('--pruning_strategy', type=PruningStrategy, help='The pruning strategy.')
-    parser.add_argument('--max_candidates_num', type=int, help='The upper threshold for the list size, from which the list should be reduced when reached.')
-    parser.add_argument('--encoding_sample_size', type=int, help='The number of encodings sampled to pick the best one.')
+    parser.add_argument('--max_candidates_num', type=int,
+                        help='The upper threshold for the list size, from which the list should be reduced when reached.')
+    parser.add_argument('--encoding_sample_size', type=int,
+                        help='The number of encodings sampled to pick the best one.')
     parser.add_argument('--is_slurm', type=bool, required=True, help='Whether we are running on slurm.')
     parser.add_argument('--previous_run_files', required=False, type=str,
                         help='Paths of raw results of previous runs. If they exist, the new run will start where the previous ones left off.')
@@ -141,4 +145,3 @@ def create_args(q_list,
             self.polar_scl_l_list = polar_scl_l_list
 
     return Args()
-

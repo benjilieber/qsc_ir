@@ -1,7 +1,8 @@
+import copy
 import math
 
 import numpy as np
-import copy
+
 
 class F(object):
     def __init__(self, base, p_err, b=None, data=None, use_log=False):
@@ -12,7 +13,8 @@ class F(object):
         else:
             self.data = np.array([[self._calculate_f_helper(s, b_i) for s in range(base)] for b_i in b])
             if use_log:
-                self.data = np.array([[-math.inf if (val == 0.0) else math.log(val) for val in row] for row in self.data])
+                self.data = np.array(
+                    [[-math.inf if (val == 0.0) else math.log(val) for val in row] for row in self.data])
 
     def _calculate_f_helper(self, s, b_i):
         f_raw = self.p_err if b_i == s else (1 - self.p_err) / (self.base - 1)

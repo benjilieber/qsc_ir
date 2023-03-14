@@ -1,6 +1,7 @@
 import itertools
-from timeit import default_timer as timer
 from enum import Enum
+from timeit import default_timer as timer
+
 import numpy as np
 
 from polar.polar_cfg import IndexType
@@ -13,6 +14,7 @@ class ProbResult(Enum):
     FailActualIsMax = 3
     FailActualWithinRange = 4
     FailActualSmallerThanMin = 5
+
 
 class PolarEncoderDecoder:
     def __init__(self, cfg, use_log=False):
@@ -28,7 +30,8 @@ class PolarEncoderDecoder:
         assert (len(x_vec_dist) == self.cfg.N)
         assert (len(information_vec) == self.cfg.num_info_indices)
 
-        (encoded_vector, next_u_index, next_information_vec_index) = self.recursive_encode_decode(information_vec, u_index,
+        (encoded_vector, next_u_index, next_information_vec_index) = self.recursive_encode_decode(information_vec,
+                                                                                                  u_index,
                                                                                                   information_vec_index,
                                                                                                   x_vec_dist)
 
@@ -45,9 +48,9 @@ class PolarEncoderDecoder:
         assert (len(x_vec_dist) == len(xy_vec_dist) == self.cfg.N)
 
         (encoded_vector, next_u_index, next_info_vec_index) = self.recursive_encode_decode(info_vec, u_index,
-                                                                                                  info_vec_index,
-                                                                                                  x_vec_dist,
-                                                                                                  xy_vec_dist)
+                                                                                           info_vec_index,
+                                                                                           x_vec_dist,
+                                                                                           xy_vec_dist)
 
         assert (next_u_index == len(encoded_vector) == self.cfg.N)
         assert (next_info_vec_index == len(info_vec) == self.cfg.num_info_indices)
@@ -76,7 +79,9 @@ class PolarEncoderDecoder:
         start = timer()
         (info_vec_list, encoded_vector_list, next_u_index, next_information_vector_index, final_list_size,
          original_indices_map, actual_encoding) = self.recursive_list_decode(info_vec_list, u_index, info_vec_index,
-                                                                             [xy_vec_dist], frozen_values_iterator, in_list_size=1, actual_xy_vec_dist=xy_vec_dist)
+                                                                             [xy_vec_dist], frozen_values_iterator,
+                                                                             in_list_size=1,
+                                                                             actual_xy_vec_dist=xy_vec_dist)
         end = timer()
 
         assert (1 <= final_list_size <= self.cfg.scl_l)
@@ -87,8 +92,9 @@ class PolarEncoderDecoder:
         assert (np.count_nonzero(original_indices_map) == 0)
 
         if actual_info_vec is not None:
-            explicit_probs, normalization = normalize([self.calc_explicit_prob(information, frozen_values, xy_vec_dist) for information
-                                                       in info_vec_list[:self.cfg.scl_l]], use_log=self.cfg.use_log)
+            explicit_probs, normalization = normalize(
+                [self.calc_explicit_prob(information, frozen_values, xy_vec_dist) for information
+                 in info_vec_list[:self.cfg.scl_l]], use_log=self.cfg.use_log)
             actual_explicit_prob = self.calc_explicit_prob(actual_info_vec, frozen_values, xy_vec_dist)
             if self.cfg.use_log:
                 actual_explicit_prob = actual_explicit_prob - normalization
@@ -115,7 +121,9 @@ class PolarEncoderDecoder:
                 prob_result = ProbResult.FailActualSmallerThanMin
             return info_vec_list[0], prob_result
 
-        candidate_list = np.array([np.array_equal(np.matmul(info_vec, check_matrix) % self.cfg.q, check_value) for info_vec in info_vec_list[:self.cfg.scl_l]])
+        candidate_list = np.array(
+            [np.array_equal(np.matmul(info_vec, check_matrix) % self.cfg.q, check_value) for info_vec in
+             info_vec_list[:self.cfg.scl_l]])
         if True in candidate_list:
             for i, val in enumerate(candidate_list):
                 if val:
@@ -172,10 +180,10 @@ class PolarEncoderDecoder:
                 xy_minus_vec_dist = None
 
             (minus_encoded_vec, next_u_index, next_info_vec_index) = self.recursive_encode_decode(info_vec,
-                                                                                                          u_index,
-                                                                                                          info_vec_index,
-                                                                                                          x_minus_vec_dist,
-                                                                                                          xy_minus_vec_dist)
+                                                                                                  u_index,
+                                                                                                  info_vec_index,
+                                                                                                  x_minus_vec_dist,
+                                                                                                  xy_minus_vec_dist)
 
             x_plus_vec_dist = x_vec_dist.plus_transform(minus_encoded_vec)
             x_plus_vec_dist.normalize()
@@ -188,10 +196,10 @@ class PolarEncoderDecoder:
             u_index = next_u_index
             info_vec_index = next_info_vec_index
             (plus_encoded_vec, next_u_index, next_info_vec_index) = self.recursive_encode_decode(info_vec,
-                                                                                                         u_index,
-                                                                                                         info_vec_index,
-                                                                                                         x_plus_vec_dist,
-                                                                                                         xy_plus_vec_dist)
+                                                                                                 u_index,
+                                                                                                 info_vec_index,
+                                                                                                 x_plus_vec_dist,
+                                                                                                 xy_plus_vec_dist)
 
             half_N = len(x_vec_dist) // 2
 
@@ -253,9 +261,11 @@ class PolarEncoderDecoder:
                 if actual_xy_vec_dist is not None:
                     actual_encoded_vec = [self.actual_info_vec[info_vec_index]]
                     if self.cfg.use_log:
-                        self.actual_prob += actual_xy_vec_dist.calc_marginalized_probs()[actual_encoded_vec[0]] - norm_wt
+                        self.actual_prob += actual_xy_vec_dist.calc_marginalized_probs()[
+                                                actual_encoded_vec[0]] - norm_wt
                     else:
-                        self.actual_prob *= actual_xy_vec_dist.calc_marginalized_probs()[actual_encoded_vec[0]] / norm_wt
+                        self.actual_prob *= actual_xy_vec_dist.calc_marginalized_probs()[
+                                                actual_encoded_vec[0]] / norm_wt
             else:
                 new_list_size = in_list_size
                 frozen_val = frozen_vec_iterator[0]
@@ -268,10 +278,14 @@ class PolarEncoderDecoder:
                 next_info_vec_index = info_vec_index
                 orig_indices_map = np.arange(in_list_size)
                 if self.cfg.use_log:
-                    self.prob_list, norm_wt = normalize([prob + xy_vec_dist_list[i].calc_marginalized_probs()[frozen_val] for i, prob in enumerate(self.prob_list)], use_log=self.cfg.use_log)
+                    self.prob_list, norm_wt = normalize(
+                        [prob + xy_vec_dist_list[i].calc_marginalized_probs()[frozen_val] for i, prob in
+                         enumerate(self.prob_list)], use_log=self.cfg.use_log)
                     self.actual_prob += actual_xy_vec_dist.calc_marginalized_probs()[frozen_val] - norm_wt
                 else:
-                    self.prob_list, norm_wt = normalize([prob * xy_vec_dist_list[i].calc_marginalized_probs()[frozen_val] for i, prob in enumerate(self.prob_list)], use_log=self.cfg.use_log)
+                    self.prob_list, norm_wt = normalize(
+                        [prob * xy_vec_dist_list[i].calc_marginalized_probs()[frozen_val] for i, prob in
+                         enumerate(self.prob_list)], use_log=self.cfg.use_log)
                     self.actual_prob *= actual_xy_vec_dist.calc_marginalized_probs()[frozen_val] / norm_wt
 
             return (info_vec_list, encoded_vec_list, next_u_index, next_info_vec_index, new_list_size,
@@ -288,11 +302,15 @@ class PolarEncoderDecoder:
                 encoded_vec = polar_transform(self.cfg.q, frozen_vec)
                 encoded_vec_list = [encoded_vec] * in_list_size
                 if self.cfg.use_log:
-                    new_prob_list = [prob + np.sum([xy_vec_dist.probs[i, encoded_vec[i]] for i in range(segment_size)]) for xy_vec_dist, prob in zip(xy_vec_dist_list, self.prob_list)]
+                    new_prob_list = [prob + np.sum([xy_vec_dist.probs[i, encoded_vec[i]] for i in range(segment_size)])
+                                     for xy_vec_dist, prob in zip(xy_vec_dist_list, self.prob_list)]
                     self.prob_list, norm_wt = normalize(new_prob_list, use_log=self.cfg.use_log)
-                    self.actual_prob += np.sum([actual_xy_vec_dist.probs[i, encoded_vec[i]] for i in range(segment_size)]) - norm_wt
+                    self.actual_prob += np.sum(
+                        [actual_xy_vec_dist.probs[i, encoded_vec[i]] for i in range(segment_size)]) - norm_wt
                 else:
-                    new_prob_list = [prob * np.product([xy_vec_dist.probs[i, encoded_vec[i]] for i in range(segment_size)]) for xy_vec_dist, prob in zip(xy_vec_dist_list, self.prob_list)]
+                    new_prob_list = [
+                        prob * np.product([xy_vec_dist.probs[i, encoded_vec[i]] for i in range(segment_size)]) for
+                        xy_vec_dist, prob in zip(xy_vec_dist_list, self.prob_list)]
                     self.prob_list, norm_wt = normalize(new_prob_list, use_log=self.cfg.use_log)
                     self.actual_prob *= np.product([actual_xy_vec_dist.probs[i, encoded_vec[i]] for i in
                                                     range(segment_size)]) / norm_wt
@@ -326,9 +344,11 @@ class PolarEncoderDecoder:
                             info_vec_list[s * in_list_size + i] = info_vec  # branch the paths q times
                         info_vec_list[s * in_list_size + i][info_vec_index] = s
                         if self.cfg.use_log:
-                            new_prob_list[s * in_list_size + i] = self.prob_list[i] + np.sum([xy_vec_dist_list[i].probs[j, encoded_vec_splits[s, j]] for j in range(segment_size)])
+                            new_prob_list[s * in_list_size + i] = self.prob_list[i] + np.sum(
+                                [xy_vec_dist_list[i].probs[j, encoded_vec_splits[s, j]] for j in range(segment_size)])
                         else:
-                            new_prob_list[s * in_list_size + i] = self.prob_list[i] * np.product([xy_vec_dist_list[i].probs[j, encoded_vec_splits[s, j]] for j in range(segment_size)])
+                            new_prob_list[s * in_list_size + i] = self.prob_list[i] * np.product(
+                                [xy_vec_dist_list[i].probs[j, encoded_vec_splits[s, j]] for j in range(segment_size)])
                     end = timer()
                     self.info_time += end - start
                 new_list_size = in_list_size * self.cfg.q
@@ -356,9 +376,11 @@ class PolarEncoderDecoder:
                 if actual_xy_vec_dist is not None:
                     actual_encoded_vec = encoded_vec_splits[self.actual_info_vec[info_vec_index]]
                     if self.cfg.use_log:
-                        self.actual_prob += np.sum([actual_xy_vec_dist.probs[i, actual_encoded_vec[i]] for i in range(segment_size)]) - norm_wt
+                        self.actual_prob += np.sum(
+                            [actual_xy_vec_dist.probs[i, actual_encoded_vec[i]] for i in range(segment_size)]) - norm_wt
                     else:
-                        self.actual_prob *= np.product([actual_xy_vec_dist.probs[i, actual_encoded_vec[i]] for i in range(segment_size)]) / norm_wt
+                        self.actual_prob *= np.product(
+                            [actual_xy_vec_dist.probs[i, actual_encoded_vec[i]] for i in range(segment_size)]) / norm_wt
 
                 next_u_index = u_index + segment_size
                 next_info_vec_index = info_vec_index + 1
@@ -374,7 +396,9 @@ class PolarEncoderDecoder:
                     # Pick the 2 least reliable indices
                     [j1, j2] = self.pick_least_reliable_indices(xy_vec_dist_list[i].probs, 2)
                     # Fork there
-                    encoded_vec_list[fork_size*i : fork_size*(i + 1)], new_prob_list[fork_size*i : fork_size*(i + 1)] = self.fork_indices(self.prob_list[i], xy_vec_dist_list[i].probs, segment_size, [j1, j2])
+                    encoded_vec_list[fork_size * i: fork_size * (i + 1)], new_prob_list[fork_size * i: fork_size * (
+                                i + 1)] = self.fork_indices(self.prob_list[i], xy_vec_dist_list[i].probs, segment_size,
+                                                            [j1, j2])
                 new_list_size = in_list_size * fork_size
 
                 # Prune
@@ -393,7 +417,8 @@ class PolarEncoderDecoder:
                 # Normalize
                 self.prob_list, norm_wt = normalize(new_prob_list, use_log=self.cfg.use_log)
                 if actual_xy_vec_dist is not None:
-                    actual_encoded_vec = polar_transform(self.cfg.q, self.actual_info_vec[info_vec_index:info_vec_index + segment_size])
+                    actual_encoded_vec = polar_transform(self.cfg.q, self.actual_info_vec[
+                                                                     info_vec_index:info_vec_index + segment_size])
                     if self.cfg.use_log:
                         self.actual_prob += np.sum([actual_xy_vec_dist.probs[i, actual_encoded_vec[i]] for i in
                                                     range(segment_size)]) - norm_wt
@@ -404,7 +429,8 @@ class PolarEncoderDecoder:
                 # Update informationList
                 start = timer()
                 info_vec_list[0:new_list_size] = info_vec_list[orig_indices_map]
-                info_vec_list[0:new_list_size, info_vec_index:info_vec_index + segment_size] = [polar_transform(self.cfg.q, encodedVector) for encodedVector in encoded_vec_list]
+                info_vec_list[0:new_list_size, info_vec_index:info_vec_index + segment_size] = [
+                    polar_transform(self.cfg.q, encodedVector) for encodedVector in encoded_vec_list]
                 info_vec_list[new_list_size:] = -1
                 end = timer()
                 self.info_time += end - start
@@ -425,9 +451,12 @@ class PolarEncoderDecoder:
                 frozen_val = frozen_vec_iterator[0]
                 for i in range(in_list_size):
                     # Pick the least reliable indices
-                    leastReliableIndices = self.pick_least_reliable_indices(xy_vec_dist_list[i].probs, num_forked_indices + 1)
+                    leastReliableIndices = self.pick_least_reliable_indices(xy_vec_dist_list[i].probs,
+                                                                            num_forked_indices + 1)
                     # Fork there
-                    encoded_vec_list[fork_size*i: fork_size*(i + 1)], new_prob_list[fork_size*i: fork_size*(i + 1)] = self.fork_indices_spc(self.prob_list[i], xy_vec_dist_list[i].probs, segment_size, leastReliableIndices, frozen_val)
+                    encoded_vec_list[fork_size * i: fork_size * (i + 1)], new_prob_list[fork_size * i: fork_size * (
+                                i + 1)] = self.fork_indices_spc(self.prob_list[i], xy_vec_dist_list[i].probs,
+                                                                segment_size, leastReliableIndices, frozen_val)
                 frozen_vec_iterator.iternext()
                 new_list_size = in_list_size * fork_size
 
@@ -447,7 +476,9 @@ class PolarEncoderDecoder:
                 # Normalize
                 self.prob_list, norm_wt = normalize(new_prob_list, use_log=self.cfg.use_log)
                 if actual_xy_vec_dist is not None:
-                    actual_encoded_vec = polar_transform(self.cfg.q, np.concatenate(([frozen_val], self.actual_info_vec[info_vec_index:info_vec_index + segment_size - 1]), axis=None))
+                    actual_encoded_vec = polar_transform(self.cfg.q, np.concatenate(
+                        ([frozen_val], self.actual_info_vec[info_vec_index:info_vec_index + segment_size - 1]),
+                        axis=None))
                     if self.cfg.use_log:
                         self.actual_prob += np.sum([actual_xy_vec_dist.probs[i, actual_encoded_vec[i]] for i in
                                                     range(segment_size)]) - norm_wt
@@ -458,7 +489,8 @@ class PolarEncoderDecoder:
                 # Update informationList
                 start = timer()
                 info_vec_list[0:new_list_size] = info_vec_list[orig_indices_map]
-                info_vec_list[0:new_list_size, info_vec_index:info_vec_index + segment_size - 1] = [polar_transform(self.cfg.q, encodedVector)[1:] for encodedVector in encoded_vec_list]
+                info_vec_list[0:new_list_size, info_vec_index:info_vec_index + segment_size - 1] = [
+                    polar_transform(self.cfg.q, encodedVector)[1:] for encodedVector in encoded_vec_list]
                 info_vec_list[new_list_size:] = -1
                 end = timer()
                 self.info_time += end - start
@@ -477,16 +509,19 @@ class PolarEncoderDecoder:
                 xy_minus_vec_dist_list.append(xy_minus_vec_dist)
             # xy_minus_vec_dist_list, xyMinusNormalizationVector = normalizeDistList(xy_minus_vec_dist_list)
             end = timer()
-            self.transform_time += end-start
+            self.transform_time += end - start
             if actual_xy_vec_dist is not None:
                 actual_xy_minus_vec_dist = actual_xy_vec_dist.minus_transform()
                 actual_xy_minus_vec_dist.normalize()
                 # actual_xy_minus_vec_dist.normalize(xyMinusNormalizationVector)
 
             (minus_info_list, minus_encoded_vec_list, next_u_index, next_info_vec_index, minus_list_size,
-             minus_orig_indices_map, minus_actual_encoded_vec) = self.recursive_list_decode(info_vec_list, u_index, info_vec_index,
-                                                                                             xy_minus_vec_dist_list, frozen_vec_iterator,
-                                                                                             in_list_size, actual_xy_vec_dist=actual_xy_minus_vec_dist)
+             minus_orig_indices_map, minus_actual_encoded_vec) = self.recursive_list_decode(info_vec_list, u_index,
+                                                                                            info_vec_index,
+                                                                                            xy_minus_vec_dist_list,
+                                                                                            frozen_vec_iterator,
+                                                                                            in_list_size,
+                                                                                            actual_xy_vec_dist=actual_xy_minus_vec_dist)
 
             start = timer()
             xy_plus_vec_dist_list = []
@@ -498,7 +533,7 @@ class PolarEncoderDecoder:
                 xy_plus_vec_dist_list.append(xy_plus_vec_dist)
             # xy_plus_vec_dist_list, xyPlusNormalizationVector = normalizeDistList(xy_plus_vec_dist_list)
             end = timer()
-            self.transform_time += end-start
+            self.transform_time += end - start
             if actual_xy_vec_dist is not None:
                 actual_xy_plus_vec_dist = actual_xy_vec_dist.plus_transform(minus_actual_encoded_vec)
                 actual_xy_plus_vec_dist.normalize()
@@ -507,9 +542,12 @@ class PolarEncoderDecoder:
             u_index = next_u_index
             info_vec_index = next_info_vec_index
             (plus_info_list, plus_encoded_vec_list, next_u_index, next_info_vec_index, plus_list_size,
-             plus_orig_indices_map, plus_actual_encoded_vec) = self.recursive_list_decode(minus_info_list, u_index, info_vec_index,
-                                                                                           xy_plus_vec_dist_list, frozen_vec_iterator,
-                                                                                           minus_list_size, actual_xy_vec_dist=actual_xy_plus_vec_dist)
+             plus_orig_indices_map, plus_actual_encoded_vec) = self.recursive_list_decode(minus_info_list, u_index,
+                                                                                          info_vec_index,
+                                                                                          xy_plus_vec_dist_list,
+                                                                                          frozen_vec_iterator,
+                                                                                          minus_list_size,
+                                                                                          actual_xy_vec_dist=actual_xy_plus_vec_dist)
 
             new_list_size = plus_list_size
 
@@ -523,7 +561,7 @@ class PolarEncoderDecoder:
                 encoded_vec_list[i][1::2] = -plus_encoded_vec_list[i]
                 encoded_vec_list[i] %= self.cfg.q
             end = timer()
-            self.encoding_time += end-start
+            self.encoding_time += end - start
 
             if actual_xy_vec_dist is not None:
                 actual_encoded_vec = np.full(segment_size, -1, dtype=np.int64)
@@ -618,12 +656,14 @@ class PolarEncoderDecoder:
     def get_message_frozen_bits(self, u_message):
         return u_message[list(self.cfg.frozen_set)]
 
+
 def normalize(prob_list, use_log=False):
     max_prob = np.max(prob_list)
     if use_log:
         return prob_list - max_prob, max_prob
     else:
         return prob_list / max_prob, max_prob
+
 
 def calc_normalization_vec(dist_list):
     segment_size = len(dist_list[0].probs)
@@ -632,11 +672,13 @@ def calc_normalization_vec(dist_list):
         normalization[i] = max([dist.probs[i].max(axis=0) for dist in dist_list])
     return normalization
 
+
 def normalize_dist_list(dist_list):
     normalization_vector = calc_normalization_vec(dist_list)
     for dist in dist_list:
         dist.normalize(normalization_vector)
     return dist_list, normalization_vector
+
 
 def polar_transform(q, xvec):
     # print("xvec =", xvec)

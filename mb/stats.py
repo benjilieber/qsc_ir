@@ -1,8 +1,9 @@
 import csv
 import itertools
 import unittest
-import numpy as np
 from itertools import product
+
+import numpy as np
 import scipy.special
 import scipy.stats
 
@@ -21,7 +22,8 @@ class StatsTest(unittest.TestCase):
         block_length = 10
         num_blocks = 30
         n = block_length * num_blocks
-        cfg = MbCfg(q=base, block_length=block_length, num_blocks=num_blocks, p_err=p_err, success_rate=success_rate, fixed_number_of_encodings=True)
+        cfg = MbCfg(q=base, block_length=block_length, num_blocks=num_blocks, p_err=p_err, success_rate=success_rate,
+                    fixed_number_of_encodings=True)
         actual_success_num = 0
         for _ in range(sample_size):
             keygen = KeyGenerator(p_err, n)
@@ -32,7 +34,6 @@ class StatsTest(unittest.TestCase):
             if sum([err > radius for err, radius in zip(errors_per_block, cfg.max_block_error)]) == 0:
                 actual_success_num += 1
         print(actual_success_num / sample_size)
-
 
     def test_solution_distribution(self):
         block_size = 22
@@ -64,12 +65,12 @@ class StatsTest(unittest.TestCase):
         k_list = list(range(20))
 
         for k in k_list:
-            avg_leak_space_size = (p ** (-p) * ((1-p)/(q-1))**(p-1)) ** k
+            avg_leak_space_size = (p ** (-p) * ((1 - p) / (q - 1)) ** (p - 1)) ** k
 
             j = 0
             cur_space_size = 0
             while j <= k and cur_space_size < avg_leak_space_size:
-                cur_space_size += scipy.special.binom(k, j) * (q-1) ** (k-j)
+                cur_space_size += scipy.special.binom(k, j) * (q - 1) ** (k - j)
                 j += 1
             block_success_prob = scipy.stats.binom.cdf(j, k, p)
             print("average radius = " + str(j) + ", block success prob = " + str(block_success_prob))
@@ -154,10 +155,16 @@ class StatsTest(unittest.TestCase):
                 single_block_list_dist, _ = get_solution_list_size_dist_list2(q, k, t, p_eq, single_block_sample_size)
                 single_block_avg_list_sizes = avg_values(single_block_list_dist)
                 # print("single_block_cum_avg (with zero) = " + str(single_block_avg_list_sizes))
-                cur_prefix_avg_list_sizes = single_block_avg_list_sizes[:cfg.max_block_error[0]+1]
+                cur_prefix_avg_list_sizes = single_block_avg_list_sizes[:cfg.max_block_error[0] + 1]
                 for i in range(1, num_blocks):
-                    cur_single_block_avg_list_sizes = single_block_avg_list_sizes[:cfg.max_block_error[i]+1]
-                    cur_prefix_avg_list_sizes = [sum([avg_prefix_list_size * cur_single_block_avg_list_sizes[total_radius - (max(total_radius-(len(cur_single_block_avg_list_sizes)-1), 0) + j)] for j, avg_prefix_list_size in enumerate(cur_prefix_avg_list_sizes[max(total_radius-(len(cur_single_block_avg_list_sizes)-1), 0):total_radius+1])]) for total_radius in range(cfg.prefix_radii[i])]
+                    cur_single_block_avg_list_sizes = single_block_avg_list_sizes[:cfg.max_block_error[i] + 1]
+                    cur_prefix_avg_list_sizes = [sum([avg_prefix_list_size * cur_single_block_avg_list_sizes[
+                        total_radius - (max(total_radius - (len(cur_single_block_avg_list_sizes) - 1), 0) + j)] for
+                                                      j, avg_prefix_list_size in enumerate(cur_prefix_avg_list_sizes[
+                                                                                           max(total_radius - (
+                                                                                                       len(cur_single_block_avg_list_sizes) - 1),
+                                                                                               0):total_radius + 1])])
+                                                 for total_radius in range(cfg.prefix_radii[i])]
                     # print("after " + str(i) + " blocks:" + str(sum(cur_prefix_avg_list_sizes)))
                     list_size_history.append(sum(cur_prefix_avg_list_sizes))
                 print("history" + str(list_size_history))
@@ -176,22 +183,33 @@ class StatsTest(unittest.TestCase):
         for k in range(3, 16):
             k = 10
             print("k = " + str(k))
-            cfg = MbCfg(q=3, block_length=k, num_blocks=num_blocks, p_err=p_eq, success_rate=success_rate, fixed_number_of_encodings=True)
+            cfg = MbCfg(q=3, block_length=k, num_blocks=num_blocks, p_err=p_eq, success_rate=success_rate,
+                        fixed_number_of_encodings=True)
             single_block_avg_list_sizes = dict()
             for t in set(cfg.number_of_encodings_list):
                 print("t = " + str(t))
-                single_block_list_dist, _ = get_solution_list_size_dist_list2(q, k, t, p_eq, single_block_sample_size, max_radius=max(cfg.max_block_error))
+                single_block_list_dist, _ = get_solution_list_size_dist_list2(q, k, t, p_eq, single_block_sample_size,
+                                                                              max_radius=max(cfg.max_block_error))
                 single_block_avg_list_sizes[t] = avg_values(single_block_list_dist)
 
             list_size_history = []
-            cur_prefix_avg_list_sizes = single_block_avg_list_sizes[cfg.number_of_encodings_list[0]][:cfg.max_block_error[0]+1]
+            cur_prefix_avg_list_sizes = single_block_avg_list_sizes[cfg.number_of_encodings_list[0]][
+                                        :cfg.max_block_error[0] + 1]
             for i in range(1, num_blocks):
-                cur_single_block_avg_list_sizes = single_block_avg_list_sizes[cfg.number_of_encodings_list[i]][:cfg.max_block_error[i]+1]
-                cur_prefix_avg_list_sizes = [sum([avg_prefix_list_size * cur_single_block_avg_list_sizes[total_radius - (max(total_radius-(len(cur_single_block_avg_list_sizes)-1), 0) + j)] for j, avg_prefix_list_size in enumerate(cur_prefix_avg_list_sizes[max(total_radius-(len(cur_single_block_avg_list_sizes)-1), 0):total_radius+1])]) for total_radius in range(cfg.prefix_radii[i])]
+                cur_single_block_avg_list_sizes = single_block_avg_list_sizes[cfg.number_of_encodings_list[i]][
+                                                  :cfg.max_block_error[i] + 1]
+                cur_prefix_avg_list_sizes = [sum([avg_prefix_list_size * cur_single_block_avg_list_sizes[
+                    total_radius - (max(total_radius - (len(cur_single_block_avg_list_sizes) - 1), 0) + j)] for
+                                                  j, avg_prefix_list_size in enumerate(cur_prefix_avg_list_sizes[
+                                                                                       max(total_radius - (
+                                                                                                   len(cur_single_block_avg_list_sizes) - 1),
+                                                                                           0):total_radius + 1])]) for
+                                             total_radius in range(cfg.prefix_radii[i])]
                 # print("after " + str(i) + " blocks:" + str(sum(cur_prefix_avg_list_sizes)))
                 list_size_history.append(sum(cur_prefix_avg_list_sizes))
             print("history: " + str(list_size_history))
             print("after: " + str(sum(cur_prefix_avg_list_sizes)))
+
 
 def get_solution_list_size_dist(q, k, j, t, sample_size):
     list_size_counts = [0]
@@ -210,7 +228,9 @@ def get_solution_list_size_dist(q, k, j, t, sample_size):
         for cnt in image_count.values():
             list_size_counts[cnt] += 1
         list_size_counts[0] += q ** t - len(image_count)
-    return np.array([0] + list_size_counts[1:]) / sum(list_size_counts[1:]), np.array(list_size_counts) / sum(list_size_counts)
+    return np.array([0] + list_size_counts[1:]) / sum(list_size_counts[1:]), np.array(list_size_counts) / sum(
+        list_size_counts)
+
 
 def get_solution_list_size_dist_list(q, k, t, sample_size):
     list_size_counts_list = [[0] for _ in range(k + 1)]
@@ -220,7 +240,7 @@ def get_solution_list_size_dist_list(q, k, t, sample_size):
         cum_image_count = dict()
         matrix = draw_matrix(q, k, t)
 
-        for j in range(k+1):
+        for j in range(k + 1):
             for vec in get_nbhd_border(q, k, j):
                 cur_img = np.matmul(vec, matrix) % q
                 if image_count[j].get(tuple(cur_img)):
@@ -232,18 +252,24 @@ def get_solution_list_size_dist_list(q, k, t, sample_size):
                 else:
                     cum_image_count[tuple(cur_img)] = 1
             if max(image_count[j].values()) >= len(list_size_counts_list[j]):
-                list_size_counts_list[j] += [0 for _ in range(max(image_count[j].values()) + 1 - len(list_size_counts_list[j]))]
+                list_size_counts_list[j] += [0 for _ in
+                                             range(max(image_count[j].values()) + 1 - len(list_size_counts_list[j]))]
             if max(cum_image_count.values()) >= len(cum_list_size_count_list[j]):
-                cum_list_size_count_list[j] += [0 for _ in range(max(cum_image_count.values()) + 1 - len(cum_list_size_count_list[j]))]
+                cum_list_size_count_list[j] += [0 for _ in range(
+                    max(cum_image_count.values()) + 1 - len(cum_list_size_count_list[j]))]
             for cnt in image_count[j].values():
                 list_size_counts_list[j][cnt] += 1
             for cnt in cum_image_count.values():
                 cum_list_size_count_list[j][cnt] += 1
             list_size_counts_list[j][0] += q ** t - len(image_count[j])
             cum_list_size_count_list[j][0] += q ** t - len(cum_image_count)
-    print("cum_avg (with zero) = " + str(avg_values([np.array(list_size_counts) / sum(list_size_counts) for list_size_counts in cum_list_size_count_list])))
+    print("cum_avg (with zero) = " + str(avg_values(
+        [np.array(list_size_counts) / sum(list_size_counts) for list_size_counts in cum_list_size_count_list])))
 
-    return [np.array([0] + list_size_counts[1:]) / sum(list_size_counts[1:]) for list_size_counts in list_size_counts_list], [np.array(list_size_counts) / sum(list_size_counts) for list_size_counts in list_size_counts_list]
+    return [np.array([0] + list_size_counts[1:]) / sum(list_size_counts[1:]) for list_size_counts in
+            list_size_counts_list], [np.array(list_size_counts) / sum(list_size_counts) for list_size_counts in
+                                     list_size_counts_list]
+
 
 def get_solution_list_size_dist_list2(q, k, t, p_eq, sample_size, max_radius=None):
     per_radius_list_size_count_list = [[0] for _ in range(k + 1)]
@@ -258,20 +284,25 @@ def get_solution_list_size_dist_list2(q, k, t, p_eq, sample_size, max_radius=Non
 
         if max_radius is None:
             max_radius = k
-        for j in range(max_radius+1):
+        for j in range(max_radius + 1):
             a_candidates_num_delta = 0
             for vec in get_nbhd_border(q, k, j):
                 if t == 0 or np.equal(np.matmul(vec, matrix) % q, a_img).all():
                     a_candidates_num_delta += 1
                     a_candidates_num += 1
             if a_candidates_num_delta >= len(per_radius_list_size_count_list[j]):
-                per_radius_list_size_count_list[j] += [0 for _ in range(a_candidates_num_delta + 1 - len(per_radius_list_size_count_list[j]))]
+                per_radius_list_size_count_list[j] += [0 for _ in range(
+                    a_candidates_num_delta + 1 - len(per_radius_list_size_count_list[j]))]
             if a_candidates_num >= len(cum_list_size_count_list[j]):
-                cum_list_size_count_list[j] += [0 for _ in range(a_candidates_num + 1 - len(cum_list_size_count_list[j]))]
+                cum_list_size_count_list[j] += [0 for _ in
+                                                range(a_candidates_num + 1 - len(cum_list_size_count_list[j]))]
             per_radius_list_size_count_list[j][a_candidates_num_delta] += 1
             cum_list_size_count_list[j][a_candidates_num] += 1
         # assert(cum_list_size_count_list[-1][q ** (k - t)] == i + 1)
-    return [np.array(list_size_counts) / sum(list_size_counts) for list_size_counts in per_radius_list_size_count_list], [np.array(list_size_counts) / sum(list_size_counts) for list_size_counts in cum_list_size_count_list]
+    return [np.array(list_size_counts) / sum(list_size_counts) for list_size_counts in
+            per_radius_list_size_count_list], [np.array(list_size_counts) / sum(list_size_counts) for list_size_counts
+                                               in cum_list_size_count_list]
+
 
 def draw_matrix(q, k, t):
     if t > k:
@@ -281,10 +312,12 @@ def draw_matrix(q, k, t):
         encoding_matrix = np.random.choice(range(q), (k, t))
     return encoding_matrix
 
+
 def get_nbhd(q, k, j):
     for n_err in range(j + 1):
         for candidate in get_nbhd_border(q, k, n_err):
             yield candidate
+
 
 def get_nbhd_border(q, k, num_errors):
     deltas = product(list(range(1, q)), repeat=k - num_errors)
@@ -292,21 +325,27 @@ def get_nbhd_border(q, k, num_errors):
         for err_indices in itertools.combinations_with_replacement(range(k - (num_errors - 1)), num_errors):
             yield np.insert(arr=cur_delta, obj=err_indices, values=0)
 
+
 def avg_value(dist):
     return sum([i * prob for i, prob in enumerate(dist)])
+
 
 def avg_values(dist_list):
     return [sum([i * prob for i, prob in enumerate(dist)]) for dist in dist_list]
 
+
 def wished_value(q, k, j, t):
-    return sum([scipy.special.binom(k, i) * (q-1) ** (k-i) for i in range(j+1)]) / q ** t
+    return sum([scipy.special.binom(k, i) * (q - 1) ** (k - i) for i in range(j + 1)]) / q ** t
+
 
 def wished_cum_values(q, k, t):
     wished_values_per_radius = wished_values(q, k, t)
-    return [sum(wished_values_per_radius[:j+1]) for j in range(k + 1)]
+    return [sum(wished_values_per_radius[:j + 1]) for j in range(k + 1)]
+
 
 def wished_values(q, k, t):
-    return [scipy.special.binom(k, i) * (q-1) ** (k-i) / q ** t for i in range(k + 1)]
+    return [scipy.special.binom(k, i) * (q - 1) ** (k - i) / q ** t for i in range(k + 1)]
+
 
 # def exp_cum_values(dist_list_with_zero, k, p):
 #     weighted_expected_values = [scipy.special.binom(k, j) for j, dist in dist_list_with_zero]
@@ -316,11 +355,12 @@ def write_header(file_name, per_radius):
     if per_radius:
         header = ["q", "block_size", "num_encodings", "average_list_sizes", "list_sizes_heuristic", "sample_size"]
     else:
-        header = ["q", "block_size", "radius", "num_encodings", "average_list_size_no_zero", "average_list_size_with_zero", "list_size_heuristic", "sample_size"]
+        header = ["q", "block_size", "radius", "num_encodings", "average_list_size_no_zero",
+                  "average_list_size_with_zero", "list_size_heuristic", "sample_size"]
     try:
         with open(file_name, 'r') as f:
             for row in f:
-                assert(row.rstrip('\n').split(",") == header)
+                assert (row.rstrip('\n').split(",") == header)
                 return
     except FileNotFoundError:
         with open(file_name, 'a', newline='') as f:
@@ -329,12 +369,16 @@ def write_header(file_name, per_radius):
     except AssertionError:
         raise AssertionError(f"Header of {file_name} is bad.")
 
-def write_result(file_name, q, block_size, radius, num_encodings, average_list_size_no_zero, average_list_size_with_zero, expected_list_size, sample_size, verbosity=False):
+
+def write_result(file_name, q, block_size, radius, num_encodings, average_list_size_no_zero,
+                 average_list_size_with_zero, expected_list_size, sample_size, verbosity=False):
     if verbosity:
         print("writing results")
     with open(file_name, 'a', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow([q, block_size, radius, num_encodings, average_list_size_no_zero, average_list_size_with_zero, expected_list_size, sample_size])
+        writer.writerow([q, block_size, radius, num_encodings, average_list_size_no_zero, average_list_size_with_zero,
+                         expected_list_size, sample_size])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,6 +1,7 @@
 import matplotlib as mpl
-import networkx as nx
 import matplotlib.pyplot as plt
+import networkx as nx
+
 
 class Graph(object):
     def __init__(self):
@@ -11,7 +12,7 @@ class Graph(object):
 
     def addEdges(self, i_to_j, n):
         self.n = n
-        edges = [(n+i, j) for i, j_list in enumerate(i_to_j) for j in j_list]
+        edges = [(n + i, j) for i, j_list in enumerate(i_to_j) for j in j_list]
         self.G = nx.Graph()
         self.G.add_edges_from(edges)
 

@@ -2,10 +2,11 @@ import math
 import unittest
 
 import matplotlib.pyplot as plt
-from matplotlib.pyplot import plot
 import numpy as np
+from matplotlib.pyplot import plot
 
 import util
+
 
 class UtilTest(unittest.TestCase):
 
@@ -51,7 +52,8 @@ class UtilTest(unittest.TestCase):
 
     def test_required_checks(self):
         self.assertEqual(util.required_checks(200, 3, 0), math.ceil(200 * math.log(2, 3)))
-        self.assertEqual(util.required_checks(200, 3, 0.01), math.ceil(200 * (-0.01 * math.log(0.01, 3) - 0.99 * math.log(0.99 / 2, 3))))
+        self.assertEqual(util.required_checks(200, 3, 0.01),
+                         math.ceil(200 * (-0.01 * math.log(0.01, 3) - 0.99 * math.log(0.99 / 2, 3))))
         self.assertEqual(util.required_checks(200, 3, 1), 0)
         plot(list(np.arange(0, 1, 0.01)), [util.required_checks(100, 3, p_err) for p_err in np.arange(0, 1, 0.01)])
         plt.show()

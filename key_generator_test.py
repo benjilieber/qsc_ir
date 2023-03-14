@@ -1,4 +1,5 @@
 import unittest
+
 from key_generator import KeyGenerator
 
 
@@ -12,7 +13,6 @@ class KeyGeneratorTest(unittest.TestCase):
             self.assertTrue(set(a).issubset({0, 1, 2}))
             self.assertTrue(set(b).issubset({0, 1, 2}))
             self.assertTrue(all([a_i != b_i for a_i, b_i in zip(a, b)]))
-
 
     def test_non_zero_error(self):
         p_err = 0.1

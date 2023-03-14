@@ -53,7 +53,7 @@ class Tests(unittest.TestCase):
 
 
 def calculate_all_p(d, p_err):
-    return [calculate_p(d1, d-d1, p_err) for d1 in range(d+1)]
+    return [calculate_p(d1, d - d1, p_err) for d1 in range(d + 1)]
 
 
 def calculate_p(d1, d2, p_err):
@@ -62,8 +62,8 @@ def calculate_p(d1, d2, p_err):
 
 def calculate_p_helper1(di, p_err, k):
     if di == 0:
-        return k==0
-    return sum([calculate_p_helper2(di, p_err, k, q0) for q0 in range(di+1)])
+        return k == 0
+    return sum([calculate_p_helper2(di, p_err, k, q0) for q0 in range(di + 1)])
 
 
 def calculate_p_helper2(di, p_err, k, q0):
@@ -71,23 +71,21 @@ def calculate_p_helper2(di, p_err, k, q0):
 
 
 def trinomial(n, m1, m2):
-    return math.factorial(n) / (math.factorial(m1)*math.factorial(m2)*math.factorial(n-m1-m2))
+    return math.factorial(n) / (math.factorial(m1) * math.factorial(m2) * math.factorial(n - m1 - m2))
 
 
 def get_q1_range(di, k, q0):
-    lower_bound = math.ceil((q0-di-k)/3)
-    upper_bound = math.floor((di-q0-k)/3)
-    return [int((di-q0+k+3*r)/2) for r in range(lower_bound, upper_bound+1) if ((di + q0 + k + r) % 2 == 0)]
+    lower_bound = math.ceil((q0 - di - k) / 3)
+    upper_bound = math.floor((di - q0 - k) / 3)
+    return [int((di - q0 + k + 3 * r) / 2) for r in range(lower_bound, upper_bound + 1) if ((di + q0 + k + r) % 2 == 0)]
 
 
 def calculate_p_for_di_q0(di, p_err, q0):
-    return ((1+p_err)/4) ** (di-q0) * ((1-p_err)/2) ** q0
-
-
+    return ((1 + p_err) / 4) ** (di - q0) * ((1 - p_err) / 2) ** q0
 
 
 def calculate_all_p(d, p_err):
-    return [calculate_p(d1, d-d1, p_err) for d1 in range(d+1)]
+    return [calculate_p(d1, d - d1, p_err) for d1 in range(d + 1)]
 
 
 def calculate_p(d1, d2, p_err):
@@ -96,8 +94,8 @@ def calculate_p(d1, d2, p_err):
 
 def calculate_p_helper1(di, p_err, k):
     if di == 0:
-        return k==0
-    return sum([calculate_p_helper2(di, p_err, k, q0) for q0 in range(di+1)])
+        return k == 0
+    return sum([calculate_p_helper2(di, p_err, k, q0) for q0 in range(di + 1)])
 
 
 def calculate_p_helper2(di, p_err, k, q0):
@@ -105,17 +103,18 @@ def calculate_p_helper2(di, p_err, k, q0):
 
 
 def trinomial(n, m1, m2):
-    return math.factorial(n) / (math.factorial(m1)*math.factorial(m2)*math.factorial(n-m1-m2))
+    return math.factorial(n) / (math.factorial(m1) * math.factorial(m2) * math.factorial(n - m1 - m2))
 
 
 def get_q1_range(di, k, q0):
-    lower_bound = math.ceil((q0-di-k)/3)
-    upper_bound = math.floor((di-q0-k)/3)
-    return [int((di-q0+k+3*r)/2) for r in range(lower_bound, upper_bound+1) if ((di + q0 + k + r) % 2 == 0)]
+    lower_bound = math.ceil((q0 - di - k) / 3)
+    upper_bound = math.floor((di - q0 - k) / 3)
+    return [int((di - q0 + k + 3 * r) / 2) for r in range(lower_bound, upper_bound + 1) if ((di + q0 + k + r) % 2 == 0)]
 
 
 def calculate_p_for_di_q0(di, p_err, q0):
-    return ((1+p_err)/4) ** (di-q0) * ((1-p_err)/2) ** q0
+    return ((1 + p_err) / 4) ** (di - q0) * ((1 - p_err) / 2) ** q0
+
 
 if __name__ == '__main__':
     unittest.main()

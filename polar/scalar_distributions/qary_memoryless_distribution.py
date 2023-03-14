@@ -1,14 +1,14 @@
 import math
+import os.path
 import sys
 from enum import Enum
 from math import floor
-import os.path
 
 import numpy as np
 
-from polar.scalar_distributions import BinaryMemorylessDistribution
-from polar.scalar_distributions.BinaryMemorylessDistribution import eta, naturalEta
-from polar.vector_distributions import QaryMemorylessVectorDistribution
+from polar.polar_encoder_decoder import PolarEncoderDecoder
+from polar.scalar_distributions.binary_memoryless_distribution import eta, naturalEta, BinaryMemorylessDistribution
+from polar.vector_distributions.qary_memoryless_vector_distribution import QaryMemorylessVectorDistribution
 
 # constants
 lcrLeft = 0
@@ -268,7 +268,7 @@ class QaryMemorylessDistribution:
         elif binningToUse == Binning.PeregTal:
             mu, indexOfBorderCell, maxProbOfBorderCell, gamma = self.calcMuForPeregTal(M)
         else:
-            assert (false)
+            assert (False)
 
         dims = [M for i in range(self.q)]
 
@@ -761,7 +761,8 @@ class QaryMemorylessDistribution:
             for i in range(length):
                 for x in range(self.q):
                     if use_log:
-                        qmvd.probs[i][x] = math.log(self.probs[yvec[i]][x]) if self.probs[yvec[i]][x] != 0 else -math.inf
+                        qmvd.probs[i][x] = math.log(self.probs[yvec[i]][x]) if self.probs[yvec[i]][
+                                                                                   x] != 0 else -math.inf
                     else:
                         qmvd.probs[i][x] = self.probs[yvec[i]][x]
         else:
@@ -796,11 +797,13 @@ def makeQEC(q, p):
 
     return qec
 
+
 def makeAWGN(q, snr, rate):
     assert (q == 2)
     awgn = QaryMemorylessDistribution(q)
     awgn.probs = []
     return awgn
+
 
 def makeInputDistribution(probs):
     dist = QaryMemorylessDistribution(len(probs))
@@ -906,7 +909,8 @@ def upgrade_cost_lower_bound(q, L):
     return kappa * (L ** (-2 / (q - 1))) / math.log(2)
 
 
-def calcFrozenSet_degradingUpgrading(n, L, xDistribution, xyDistribution, directory_name=None, upperBoundOnErrorProbability=None, numInfoIndices=None, verbosity=False):
+def calcFrozenSet_degradingUpgrading(n, L, xDistribution, xyDistribution, directory_name=None,
+                                     upperBoundOnErrorProbability=None, numInfoIndices=None, verbosity=False):
     """Calculate the frozen set by degrading and upgrading the a-priori and joint distributions, respectively
 
     Args:
@@ -926,9 +930,12 @@ def calcFrozenSet_degradingUpgrading(n, L, xDistribution, xyDistribution, direct
     assert (L > 0)
     assert (upperBoundOnErrorProbability is None or upperBoundOnErrorProbability > 0)
     assert (xyDistribution is not None)
-    TVvec, Pevec = calcTVAndPe_degradingUpgrading(n, L, xDistribution, xyDistribution, directory_name, verbosity=verbosity)
-    frozenSet = QaryPolarEncoderDecoder.frozenSetFromTVAndPe(TVvec, Pevec, upperBoundOnErrorProbability, numInfoIndices, verbosity=verbosity)
+    TVvec, Pevec = calcTVAndPe_degradingUpgrading(n, L, xDistribution, xyDistribution, directory_name,
+                                                  verbosity=verbosity)
+    frozenSet = PolarEncoderDecoder.frozenSetFromTVAndPe(TVvec, Pevec, upperBoundOnErrorProbability, numInfoIndices,
+                                                         verbosity=verbosity)
     return frozenSet
+
 
 def calcTVAndPe_degradingUpgrading(n, L, xDistribution, xyDistribution, directory_name=None, verbosity=False):
     if directory_name is not None:

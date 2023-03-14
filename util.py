@@ -33,18 +33,21 @@ def required_checks(n, base, p_err, candidates_left=1):
         return 0
     return math.ceil(
         n * (-p_err * math.log(p_err, base) - (1 - p_err) * (
-                    math.log(1 - p_err, base) - math.log(base - 1, base))) - math.log(candidates_left, base))
+                math.log(1 - p_err, base) - math.log(base - 1, base))) - math.log(candidates_left, base))
+
 
 def theoretic_key_rate(p_err, base):
     if p_err in [0.0, 1.0]:
-        return math.log(base/(base-1), 2)
-    return math.log(base, 2) + p_err * math.log(p_err, 2) + (1-p_err) * math.log((1-p_err)/(base-1), 2)
+        return math.log(base / (base - 1), 2)
+    return math.log(base, 2) + p_err * math.log(p_err, 2) + (1 - p_err) * math.log((1 - p_err) / (base - 1), 2)
+
 
 def calculate_rank(matrix, base):
     GF = galois.GF(base)
     matrix = GF(matrix)
     matrix.row_reduce()
     return np.linalg.matrix_rank(matrix)
+
 
 def logminexp(x, y):
     if x < y:
@@ -53,4 +56,4 @@ def logminexp(x, y):
         return -math.inf
     elif y == -math.inf:
         return x
-    return y + math.log(math.exp(x-y)-1)
+    return y + math.log(math.exp(x - y) - 1)

@@ -4,7 +4,6 @@ import arg_module
 import run_module
 from cfg import CodeStrategy
 from mb.mb_cfg import RoundingStrategy, PruningStrategy
-import sys
 
 is_slurm = False
 verbosity = True

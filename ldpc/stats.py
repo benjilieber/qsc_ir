@@ -1,7 +1,10 @@
-import util
-from scipy.stats import entropy
-import numpy as np
 import math
+
+import numpy as np
+from scipy.stats import entropy
+
+import util
+
 
 class Stats(object):
     def __init__(self, encoding_matrix, encoded_a, a, num_rounds, use_hints, use_forking):
@@ -83,6 +86,6 @@ class Stats(object):
                 [index for index, entropy_sum in enumerate(self.entropy_sum_trajectory_list[i]) if
                  isinstance(entropy_sum, str)] or [-math.inf])
             if number_rounds_since_last_fork >= 5 and self.entropy_sum_trajectory_list[i][-1] > 0.5 and abs(
-                self.entropy_sum_trajectory_list[i][-1] - self.entropy_sum_trajectory_list[i][last_10_index]) <= 10:
+                    self.entropy_sum_trajectory_list[i][-1] - self.entropy_sum_trajectory_list[i][last_10_index]) <= 10:
                 return True
         return False

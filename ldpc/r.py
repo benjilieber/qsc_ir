@@ -26,11 +26,13 @@ class R(object):
                 cur_row += 1
                 next_row_start = self.indptr[cur_row]
                 sigma[cur] = [
-                    np.sum([q.data[cur, t] for t in range(self.base) if ((enc_coef * t) % self.base == s)] or [0]) for s in
+                    np.sum([q.data[cur, t] for t in range(self.base) if ((enc_coef * t) % self.base == s)] or [0]) for s
+                    in
                     range(self.base)]
             else:
                 sigma[cur] = [
-                    np.sum([sigma[cur - 1, (s - enc_coef * t) % self.base] * q.data[cur, t] for t in range(self.base)]) for s in
+                    np.sum([sigma[cur - 1, (s - enc_coef * t) % self.base] * q.data[cur, t] for t in range(self.base)])
+                    for s in
                     range(self.base)]
 
         rho = np.full((len(q.data), self.base), 0.0)
@@ -42,11 +44,13 @@ class R(object):
                 cur_row -= 1
                 next_row_start = self.indptr[cur_row] - 1
                 rho[cur] = [
-                    np.sum([q.data[cur, t] for t in range(self.base) if ((enc_coef * t) % self.base == s)] or [0]) for s in
+                    np.sum([q.data[cur, t] for t in range(self.base) if ((enc_coef * t) % self.base == s)] or [0]) for s
+                    in
                     range(self.base)]
             else:
                 rho[cur] = [
-                    np.sum([rho[cur + 1, (s - enc_coef * t) % self.base] * q.data[cur, t] for t in range(self.base)]) for s in
+                    np.sum([rho[cur + 1, (s - enc_coef * t) % self.base] * q.data[cur, t] for t in range(self.base)])
+                    for s in
                     range(self.base)]
 
         self.data = np.array([[np.sum([(sigma[cur - 1, (self.encoded_a[cur_i] - self.encoding_matrix.data[
@@ -59,9 +63,9 @@ class R(object):
 
     def calculate_new_distribution(self, f):
         return [[f[j, s] * np.prod(
-                [self.data[ind][s] for ind in self.indices_r[cur_j_start:next_j_start]]) for s in
-                        range(self.base)]
-             for j, (cur_j_start, next_j_start) in enumerate(zip(self.indptr_r, self.indptr_r[1:]))]
+            [self.data[ind][s] for ind in self.indices_r[cur_j_start:next_j_start]]) for s in
+                 range(self.base)]
+                for j, (cur_j_start, next_j_start) in enumerate(zip(self.indptr_r, self.indptr_r[1:]))]
 
     def __getitem__(self, key):
         return self.data[key]

@@ -1,11 +1,10 @@
 import os
 import time
-from random import random
 from timeit import default_timer as timer
+
 import numpy as np
 
 import util
-from result import Result, Status
 
 
 class PolarProtocol(object):

@@ -1,6 +1,7 @@
 import math
 from enum import Enum
 
+
 class CodeStrategy(Enum):
     mb = 'mb'
     ldpc = 'ldpc'
@@ -8,6 +9,7 @@ class CodeStrategy(Enum):
 
     def __str__(self):
         return self.value
+
 
 class Cfg(object):
 
@@ -45,10 +47,11 @@ class Cfg(object):
 
     def _theoretic_key_rate(self):
         if self.p_err == 0.0:
-            return math.log(self.q/(self.q-1), 2)
+            return math.log(self.q / (self.q - 1), 2)
         if self.p_err == 1.0:
             return math.log(self.q, 2)
-        return math.log(self.q, 2) + self.p_err * math.log(self.p_err, 2) + (1-self.p_err) * math.log((1-self.p_err)/(self.q-1), 2)
+        return math.log(self.q, 2) + self.p_err * math.log(self.p_err, 2) + (1 - self.p_err) * math.log(
+            (1 - self.p_err) / (self.q - 1), 2)
 
     def _theoretic_key_q_rate(self):
         return self._theoretic_key_rate() * self.log(2, self.q)
@@ -62,6 +65,8 @@ class Cfg(object):
                          "theoretic_key_rate": self.theoretic_key_rate}
         assert (set(specific_dict.keys()) == set(specific_log_header()))
         return specific_dict
+
+
 def specific_log_header():
     return ["q",
             "N",
@@ -69,6 +74,8 @@ def specific_log_header():
             "qer",
             "use_log",
             "theoretic_key_rate"]
+
+
 def specific_log_header_params():
     return ["q",
             "N",

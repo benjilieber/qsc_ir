@@ -1,6 +1,7 @@
 import unittest
+
 from ldpc_generator import LdpcGenerator
-from protocol_configs import Cfg
+
 
 class LdpcGeneratorTest(unittest.TestCase):
     def test_generate_ldpc_code1(self):
@@ -32,6 +33,7 @@ class LdpcGeneratorTest(unittest.TestCase):
         encoding_matrix = code_gen.generate_rand_matrix(num_encoding_columns)
         print(encoding_matrix.toarray())
         print(encoding_matrix.toarray().shape)
+
 
 if __name__ == '__main__':
     unittest.main()

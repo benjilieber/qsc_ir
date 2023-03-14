@@ -1,9 +1,9 @@
 import copy
+import math
+from itertools import repeat
 
 import numpy as np
-import math
 from scipy.stats import entropy
-from itertools import repeat
 
 import util
 from mb.encoder import Encoder
@@ -15,14 +15,15 @@ class LdpcDecoder(object):
         self.m = m  # basis field size
         self.p_err = p_err
         self.encoded_a = encoded_a
-        assert(not (use_forking and use_hints))
+        assert (not (use_forking and use_hints))
         self.use_forking = use_forking
         self.use_hints = use_hints
         self.encoding_matrix = encoding_matrix
         self.num_checks = encoding_matrix.shape[0]  # "= m, i"
         self.num_noise_symbols = encoding_matrix.shape[1]  # "= n, j"
 
-        self.i_to_j = [encoding_matrix.indices[cur:next] for cur, next in zip(encoding_matrix.indptr, encoding_matrix.indptr[1:])]
+        self.i_to_j = [encoding_matrix.indices[cur:next] for cur, next in
+                       zip(encoding_matrix.indptr, encoding_matrix.indptr[1:])]
         self.j_to_i = [[] for _ in range(self.num_noise_symbols)]
         for i, p in enumerate(self.i_to_j):
             for j in p:
@@ -42,7 +43,8 @@ class LdpcDecoder(object):
         cur_candidate_status_list = [True]
         f_init = self.calculate_f(b)  # (num_noise_symbols, m)
         f_list = [f_init]
-        q_list = [np.array([[f_init[j] if j != -1 else [-1] * self.m for j in self.i_to_j[i]] for i in range(self.num_checks)])]
+        q_list = [np.array(
+            [[f_init[j] if j != -1 else [-1] * self.m for j in self.i_to_j[i]] for i in range(self.num_checks)])]
         # TODO: optimize this - see https://scicomp.stackexchange.com/questions/35242/fast-nonzero-indices-per-row-column-for-sparse-2d-numpy-array
         trajectory_list = [[]]
         encoding_error_trajectory_list = [[]]
@@ -99,7 +101,7 @@ class LdpcDecoder(object):
                         [index for index, entropy_sum in enumerate(entropy_sum_trajectory_list[i]) if
                          isinstance(entropy_sum, str)] or [-math.inf])
                     if number_rounds_since_last_hint >= 5 and entropy_sum_trajectory_list[i][-1] > 0.5 and abs(
-                        entropy_sum_trajectory_list[i][-1] - entropy_sum_trajectory_list[i][last_10_index]) <= 10:
+                            entropy_sum_trajectory_list[i][-1] - entropy_sum_trajectory_list[i][last_10_index]) <= 10:
                         max_entropy_index = np.argmax(entropies)
                         hint_value = a[max_entropy_index]
                         q_list = self.generate_forked_q(q, max_entropy_index, [hint_value])
@@ -110,11 +112,14 @@ class LdpcDecoder(object):
                             trajectory_list[0].append(hint_name)
                         entropy_sum_trajectory_list[0].append(hint_name)
 
-
                 if self.use_forking and num_rounds - cur_round > self.m and cur_round > 10:
-                    last_10_index = [index for index, entropy_sum in enumerate(entropy_sum_trajectory_list[i]) if not isinstance(entropy_sum, str)][-11]
-                    number_rounds_since_last_fork = len(entropy_sum_trajectory_list[i]) - max([index for index, entropy_sum in enumerate(entropy_sum_trajectory_list[i]) if isinstance(entropy_sum, str)] or [-math.inf])
-                    if number_rounds_since_last_fork >= 5 and entropy_sum_trajectory_list[i][-1] > 0.5 and abs(entropy_sum_trajectory_list[i][-1] - entropy_sum_trajectory_list[i][last_10_index]) <= 10:
+                    last_10_index = [index for index, entropy_sum in enumerate(entropy_sum_trajectory_list[i]) if
+                                     not isinstance(entropy_sum, str)][-11]
+                    number_rounds_since_last_fork = len(entropy_sum_trajectory_list[i]) - max(
+                        [index for index, entropy_sum in enumerate(entropy_sum_trajectory_list[i]) if
+                         isinstance(entropy_sum, str)] or [-math.inf])
+                    if number_rounds_since_last_fork >= 5 and entropy_sum_trajectory_list[i][-1] > 0.5 and abs(
+                            entropy_sum_trajectory_list[i][-1] - entropy_sum_trajectory_list[i][last_10_index]) <= 10:
                         max_entropy_index = np.argmax(entropies)
                         forked_values = self.determine_forked_values(f, max_entropy_index)
                         f_list = f_list + self.generate_forked_f(f, max_entropy_index, forked_values)
@@ -151,10 +156,12 @@ class LdpcDecoder(object):
                 # heuristic 1: encoding error
                 # scores = [util.hamming_single_block(self.encoding_matrix.encode(a_guess_list[i]), self.encoded_a) if cur_candidate_status_list[i] else math.inf for i in range(num_candidates_start_of_round)]
                 # heuristic 2: entropy sum
-                scores = [sum(entropies_list[i]) if cur_candidate_status_list[i] else math.inf for i in range(num_candidates_start_of_round)]
+                scores = [sum(entropies_list[i]) if cur_candidate_status_list[i] else math.inf for i in
+                          range(num_candidates_start_of_round)]
                 sorted_forks = sorted(range(len(scores)), key=lambda sub: scores[sub])
                 best_forks = sorted_forks[:min(self.max_candidates_num, sum(i < math.inf for i in scores))]
-                cur_candidate_status_list = [(i in best_forks) or (i >= num_candidates_start_of_round) for i in range(len(cur_candidate_status_list))]
+                cur_candidate_status_list = [(i in best_forks) or (i >= num_candidates_start_of_round) for i in
+                                             range(len(cur_candidate_status_list))]
 
             # if any([f[j][a[j]] == 0.0 for j in range(self.num_noise_symbols)]):
             #     print("Wrong values were decided")
@@ -192,7 +199,8 @@ class LdpcDecoder(object):
         for i, j_list in enumerate(self.i_to_j):
             rho[i] = self.calculate_rho_helper(q[i], self.encoding_matrix[i], j_list)
 
-        r = [self.calculate_r_helper(sigma[i], rho[i], self.encoded_a[i], self.encoding_matrix[i], self.i_to_j[i]) for i in
+        r = [self.calculate_r_helper(sigma[i], rho[i], self.encoded_a[i], self.encoding_matrix[i], self.i_to_j[i]) for i
+             in
              range(self.num_checks)]
 
         return r
@@ -214,7 +222,8 @@ class LdpcDecoder(object):
 
             else:
                 sigma_row[j_ord] = [np.sum(
-                    [sigma_row[j_ord - 1, (s - enc_coef * t) % self.m] * q_row[j_ord][t] for t in range(self.m)]) for s in
+                    [sigma_row[j_ord - 1, (s - enc_coef * t) % self.m] * q_row[j_ord][t] for t in range(self.m)]) for s
+                    in
                     range(self.m)]
 
         return sigma_row
@@ -244,10 +253,12 @@ class LdpcDecoder(object):
 
     def calculate_r_helper(self, sigma_row, rho_row, encoded_value, encoding_row, j_list):
         return [[np.sum([(sigma_row[j_ord - 1,
-                              (encoded_value - encoding_row[j] * s - t) % self.m] if j_ord - 1 >= 0 else (
+                                    (encoded_value - encoding_row[j] * s - t) % self.m] if j_ord - 1 >= 0 else (
                 ((encoded_value - encoding_row[j] * s - t) % self.m) == 0))
-                       * (rho_row[j_ord + 1, t] if (j_ord + 1 < self.sparsity and j_list[j_ord + 1] != -1) else (t == 0))
-                       for t in range(self.m)]) for s in range(self.m)] if j != -1 else [-1.0] * self.m for j_ord, j in enumerate(j_list)]
+                         * (rho_row[j_ord + 1, t] if (j_ord + 1 < self.sparsity and j_list[j_ord + 1] != -1) else (
+                    t == 0))
+                         for t in range(self.m)]) for s in range(self.m)] if j != -1 else [-1.0] * self.m for j_ord, j
+                in enumerate(j_list)]
 
     def calculate_new_q(self, f, r):
         """
@@ -255,7 +266,9 @@ class LdpcDecoder(object):
         checks I[j]\{i}.
         """
         q = np.array(
-            [[[f[j][s] * np.prod([r[k][np.where(self.i_to_j[k] == j)[0][0]][s] for k in self.j_to_i[j] if k != i and k != -1]) for s in range(self.m)]
+            [[[f[j][s] * np.prod(
+                [r[k][np.where(self.i_to_j[k] == j)[0][0]][s] for k in self.j_to_i[j] if k != i and k != -1]) for s in
+               range(self.m)]
               if j != -1 else [-1.0] * self.m for
               j in
               self.i_to_j[i]] for i in range(self.num_checks)])
@@ -265,8 +278,10 @@ class LdpcDecoder(object):
         return q_normalized
 
     def calculate_new_distribution(self, f, r):
-        return [[f[j][s] * np.prod([r[i][np.where(self.i_to_j[i] == j)[0][0]][s] for i in self.j_to_i[j] if i != -1]) for s in range(self.m)] for j in
-                range(self.num_noise_symbols)]
+        return [
+            [f[j][s] * np.prod([r[i][np.where(self.i_to_j[i] == j)[0][0]][s] for i in self.j_to_i[j] if i != -1]) for s
+             in range(self.m)] for j in
+            range(self.num_noise_symbols)]
 
     def not_going_anywhere(self, vec):
         if np.isnan(vec).any() or (np.sum(vec, axis=2) == 0.0).any():
@@ -305,7 +320,8 @@ class LdpcDecoder(object):
         :param q:
         :return:
         """
-        q_max = [[max([q[i][np.where(self.i_to_j[i] == j)[0][0]][s] for i in self.j_to_i[j]]) for s in range(self.m)] for j in range(self.num_noise_symbols)]
+        q_max = [[max([q[i][np.where(self.i_to_j[i] == j)[0][0]][s] for i in self.j_to_i[j]]) for s in range(self.m)]
+                 for j in range(self.num_noise_symbols)]
         # new_f_raw = np.array(
         #     [[0.0 if q_max[j][s] == 0.0 else f[j][s] for s in range(self.m)] for j in range(self.num_noise_symbols)])
         new_f_raw = np.array(

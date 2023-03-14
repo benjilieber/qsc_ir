@@ -1,17 +1,11 @@
-import glob
 from enum import Enum
 
 import numpy as np
-import pandas as pd
 
 import cfg
-from cfg import CodeStrategy
 from ldpc import ldpc_cfg
-from ldpc.ldpc_cfg import LdpcCfg
 from mb import mb_cfg
-from mb.mb_cfg import MbCfg, PruningStrategy, RoundingStrategy
 from polar import polar_cfg
-from polar.polar_cfg import PolarCfg
 
 
 class Status(Enum):
@@ -115,41 +109,47 @@ class Result(object):
 
     def get_output_dict(self):
         specific_dict = {"sample_size": self.sample_size,
-                "with_ml": self.with_ml,
-                "is_success": self.is_success,
-                "is_fail": self.is_fail,
-                "is_abort": self.is_abort,
-                "ser_completed_only": self.ser_completed_only,
-                "ser_fail_only": self.ser_fail_only,
-                "key_rate": self.key_rate,
-                "key_rate_completed_only": self.key_rate_completed_only,
-                "key_rate_success_only": self.key_rate_success_only,
-                "leak_rate": self.leak_rate,
-                "leak_rate_completed_only": self.leak_rate_completed_only,
-                "leak_rate_success_only": self.leak_rate_success_only,
-                "matrix_size_rate": self.matrix_size_rate,
-                "matrix_size_rate_success_only": self.matrix_size_rate_success_only,
-                "bob_communication_rate": self.bob_communication_rate,
-                "bob_communication_rate_success_only": self.bob_communication_rate_success_only,
-                "total_communication_rate": self.total_communication_rate,
-                "total_communication_rate_success_only": self.total_communication_rate_success_only,
-                "time_rate": self.time_rate,
-                "time_rate_success_only": self.time_rate_success_only}
+                         "with_ml": self.with_ml,
+                         "is_success": self.is_success,
+                         "is_fail": self.is_fail,
+                         "is_abort": self.is_abort,
+                         "ser_completed_only": self.ser_completed_only,
+                         "ser_fail_only": self.ser_fail_only,
+                         "key_rate": self.key_rate,
+                         "key_rate_completed_only": self.key_rate_completed_only,
+                         "key_rate_success_only": self.key_rate_success_only,
+                         "leak_rate": self.leak_rate,
+                         "leak_rate_completed_only": self.leak_rate_completed_only,
+                         "leak_rate_success_only": self.leak_rate_success_only,
+                         "matrix_size_rate": self.matrix_size_rate,
+                         "matrix_size_rate_success_only": self.matrix_size_rate_success_only,
+                         "bob_communication_rate": self.bob_communication_rate,
+                         "bob_communication_rate_success_only": self.bob_communication_rate_success_only,
+                         "total_communication_rate": self.total_communication_rate,
+                         "total_communication_rate_success_only": self.total_communication_rate_success_only,
+                         "time_rate": self.time_rate,
+                         "time_rate_success_only": self.time_rate_success_only}
         assert (set(specific_dict.keys()) == set(specific_log_header()))
         return specific_dict
 
     def get_dict(self):
         return {**self.get_cfg_dict(), **self.get_output_dict()}
+
     def get_row(self):
         return list(self.get_dict().values())
+
     def get_header(self):
         return list(self.get_dict().keys())
+
     def get_cfg_row(self):
         return self.get_cfg_dict().values()
+
     def get_output_row(self):
         return self.get_output_dict().values()
+
     def get_cfg_header(self):
         return self.get_cfg_dict().keys()
+
     def get_output_header(self):
         return self.get_output_dict().keys()
 
@@ -164,6 +164,7 @@ class Result(object):
             return cfg_string.strip(", ") + "\n" + output_string.strip(", ")
         else:
             return cfg_string.strip(", ")
+
 
 def specific_log_header():
     return ["sample_size",
@@ -187,5 +188,7 @@ def specific_log_header():
             "total_communication_rate_success_only",
             "time_rate",
             "time_rate_success_only"]
+
+
 def get_header():
     return cfg.specific_log_header() + mb_cfg.specific_log_header() + ldpc_cfg.specific_log_header() + polar_cfg.specific_log_header() + specific_log_header()

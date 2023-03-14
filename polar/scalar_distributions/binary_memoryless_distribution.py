@@ -3,12 +3,8 @@ import math
 import sys
 
 from polar.scalar_distributions.UpgradingDegrading import LinkedListHeap
-from polar.vector_distributions import BinaryMemorylessVectorDistribution
-from polar.vector_distributions import BinaryTrellis
+from polar.vector_distributions.binary_memoryless_vector_distribution import BinaryMemorylessVectorDistribution
 
-# from cython.cython_BinaryMemorylessDistribution import eta as fast_eta
-# from cython.cython_BinaryMemorylessDistribution import hxgiveny as fast_hxgiveny
-#
 # use_fast = True
 use_fast = False
 
@@ -205,41 +201,6 @@ class BinaryMemorylessDistribution:
             self.auxiliary = newAuxiliary
 
         self.normalize()  # for good measure
-
-    # Basically for debugging. You would never need to use this.
-    def makeBinaryTrellisDistribution(self, length, yvec):
-        bt = BinaryTrellis.BinaryTrellis(length)
-
-        vertex_stateId = 0
-        vertex_verticalPosInLayer = 0
-        vertex_layer = 0
-        vertexProb = 1.0
-
-        bt.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
-
-        vertex_stateId = 0
-        vertex_verticalPosInLayer = length
-        vertex_layer = length
-        vertexProb = 1.0
-
-        bt.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
-
-        if yvec is not None:
-            assert (len(yvec) == length)
-            for i in range(length):
-                for x in range(2):
-                    bt.addToEdgeProb(fromVertex_stateId=0, fromVertex_verticalPosInLayer=i, fromVertex_layer=i,
-                                     toVertex_stateId=0, toVertex_verticalPosInLayer=i + 1, toVertex_layer=i + 1,
-                                     edgeLabel=x, probToAdd=self.probs[yvec[i]][x])
-        else:
-            for i in range(length):
-                for x in range(2):
-                    bt.addToEdgeProb(fromVertex_stateId=0, fromVertex_verticalPosInLayer=i, fromVertex_layer=i,
-                                     toVertex_stateId=0, toVertex_verticalPosInLayer=i + 1, toVertex_layer=i + 1,
-                                     edgeLabel=x, probToAdd=self.probs[0][x])
-                    bt.probs[i][x] = self.probs[0][x]
-
-        return bt
 
     def makeBinaryMemorylessVectorDistribution(self, length, yvec):
         bmvd = BinaryMemorylessVectorDistribution.BinaryMemorylessVectorDistribution(length)
@@ -443,37 +404,33 @@ class BinaryMemorylessDistribution:
 
 
 # functions for degrade/upgrade/merge
-if use_fast == True:
-    eta = fast_eta
-    hxgiveny = fast_hxgiveny
-else:
-    def eta(p):
-        assert 0.0 <= p <= 1.0 + 10 * sys.float_info.epsilon
+def eta(p):
+    assert 0.0 <= p <= 1.0 + 10 * sys.float_info.epsilon
 
-        p = min(1.0, p)
+    p = min(1.0, p)
 
-        if p == 0.0:
-            return 0.0
-        else:
-            return -p * math.log2(p)
+    if p == 0.0:
+        return 0.0
+    else:
+        return -p * math.log2(p)
 
 
-    def eta_list(p_list):
-        return sum([eta(p) for p in p_list])
+def eta_list(p_list):
+    return sum([eta(p) for p in p_list])
 
 
-    def naturalEta(p):
-        assert 0.0 <= p <= 1.0
+def naturalEta(p):
+    assert 0.0 <= p <= 1.0
 
-        if p == 0.0:
-            return 0.0
-        else:
-            return -p * math.log(p)
+    if p == 0.0:
+        return 0.0
+    else:
+        return -p * math.log(p)
 
 
-    def hxgiveny(data):
-        py = data[0] + data[1]
-        return py * (eta(data[0] / py) + eta(data[1] / py))
+def hxgiveny(data):
+    py = data[0] + data[1]
+    return py * (eta(data[0] / py) + eta(data[1] / py))
 
 
 # def myisclose(a, b):

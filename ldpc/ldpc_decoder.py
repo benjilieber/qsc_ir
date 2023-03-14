@@ -1,9 +1,8 @@
 import itertools
-
-import numpy as np
 import math
 from itertools import repeat
 
+import numpy as np
 import scipy
 
 import util
@@ -15,11 +14,12 @@ from stats import Stats
 
 class LdpcDecoder(object):
 
-    def __init__(self, base, p_err, encoding_matrix, encoded_a, a=None, use_forking=False, use_hints=False, max_candidates_num=None, success_rate=None):
+    def __init__(self, base, p_err, encoding_matrix, encoded_a, a=None, use_forking=False, use_hints=False,
+                 max_candidates_num=None, success_rate=None):
         self.base = base
         self.p_err = p_err
         self.encoded_a = encoded_a
-        assert(not (use_forking and use_hints))
+        assert (not (use_forking and use_hints))
         self.use_forking = use_forking
         self.use_hints = use_hints
         self.encoding_matrix = encoding_matrix
@@ -27,7 +27,7 @@ class LdpcDecoder(object):
         self.max_candidates_num = max_candidates_num
         if success_rate is not None:
             self.success_log_rate_left = math.log(success_rate)
-            self.num_merges_left = len(encoding_matrix.indptr)-1
+            self.num_merges_left = len(encoding_matrix.indptr) - 1
         else:
             self.success_log_rate_left = None
             self.num_merges_left = None
@@ -92,10 +92,12 @@ class LdpcDecoder(object):
                     stats.add_fork(i, max_entropy_index, forked_values)
 
             if self.use_forking and len(candidates_left) > self.max_candidates_num:
-                scores = [sum(stats.entropies_list[i]) if cur_candidate_status_list[i] else math.inf for i in range(num_candidates_start_of_round)]
+                scores = [sum(stats.entropies_list[i]) if cur_candidate_status_list[i] else math.inf for i in
+                          range(num_candidates_start_of_round)]
                 sorted_forks = sorted(range(len(scores)), key=lambda sub: scores[sub])
                 best_forks = sorted_forks[:min(self.max_candidates_num, sum(i < math.inf for i in scores))]
-                cur_candidate_status_list = [(i in best_forks) or (i >= num_candidates_start_of_round) for i in range(len(cur_candidate_status_list))]
+                cur_candidate_status_list = [(i in best_forks) or (i >= num_candidates_start_of_round) for i in
+                                             range(len(cur_candidate_status_list))]
 
         candidates_left = [i for i, status in enumerate(cur_candidate_status_list) if status]
 
@@ -118,11 +120,13 @@ class LdpcDecoder(object):
         for j in range(self.num_noise_symbols):
             i_list = self.encoding_matrix.j_to_i[j]
             base_candidates_mask = (f_init[j] != -math.inf)
-            new_candidate_block = CandidateBlock(np.array([j]), np.array([[k] for k in range(self.base) if base_candidates_mask[k]]), f_init[j][base_candidates_mask])
+            new_candidate_block = CandidateBlock(np.array([j]),
+                                                 np.array([[k] for k in range(self.base) if base_candidates_mask[k]]),
+                                                 f_init[j][base_candidates_mask])
             index_to_id_map[j] = j
             id_to_candidate_block_map[j] = new_candidate_block
             for i in i_list:
-                j_list = self.encoding_matrix.indices[self.encoding_matrix.indptr[i]:self.encoding_matrix.indptr[i+1]]
+                j_list = self.encoding_matrix.indices[self.encoding_matrix.indptr[i]:self.encoding_matrix.indptr[i + 1]]
                 if max(j_list) == j:
                     ids = set([index_to_id_map[j_neighbor] for j_neighbor in j_list])
                     candidate_blocks_list = [id_to_candidate_block_map[id] for id in ids]
@@ -134,13 +138,17 @@ class LdpcDecoder(object):
                             if index in ids:
                                 del id_to_candidate_block_map[index]
 
-                    iteration_success_log_prob = merged_candidate_block.prune(self.max_candidates_num, calc_max_iteration_log_prob(self.num_merges_left, self.success_log_rate_left))
+                    iteration_success_log_prob = merged_candidate_block.prune(self.max_candidates_num,
+                                                                              calc_max_iteration_log_prob(
+                                                                                  self.num_merges_left,
+                                                                                  self.success_log_rate_left))
                     if self.success_log_rate_left is not None:
                         self.success_log_rate_left -= iteration_success_log_prob
                         self.num_merges_left -= 1
             if (j % 50) == 0:
                 print(j)
-                print("max num candidates per block: " + str(max([len(candidate_block.candidates) for candidate_block in id_to_candidate_block_map.values()])))
+                print("max num candidates per block: " + str(
+                    max([len(candidate_block.candidates) for candidate_block in id_to_candidate_block_map.values()])))
                 print("num candidate blocks: " + str(len(id_to_candidate_block_map)))
 
         final_candidate_block = self.merge_candidates(list(id_to_candidate_block_map.values()))
@@ -157,9 +165,15 @@ class LdpcDecoder(object):
             new_candidate_log_probs_raw = candidate_blocks_list[0].candidate_log_probs
 
         else:
-            new_indices = np.array([index for candidate_block in candidate_blocks_list for index in candidate_block.indices])
-            new_candidates_raw = np.array([[k for sub_array in new_candidate for k in sub_array] for new_candidate in itertools.product(*(candidate_block.candidates for candidate_block in candidate_blocks_list))])
-            new_candidate_log_probs_raw = np.array([sum(new_candidate_log_probs) for new_candidate_log_probs in itertools.product(*(candidate_block.candidate_log_probs for candidate_block in candidate_blocks_list))])
+            new_indices = np.array(
+                [index for candidate_block in candidate_blocks_list for index in candidate_block.indices])
+            new_candidates_raw = np.array([[k for sub_array in new_candidate for k in sub_array] for new_candidate in
+                                           itertools.product(*(candidate_block.candidates for candidate_block in
+                                                               candidate_blocks_list))])
+            new_candidate_log_probs_raw = np.array([sum(new_candidate_log_probs) for new_candidate_log_probs in
+                                                    itertools.product(
+                                                        *(candidate_block.candidate_log_probs for candidate_block in
+                                                          candidate_blocks_list))])
 
         if not is_final_merge:
             j_to_index_map = [np.where(new_indices == j)[0][0] for j in j_list]
@@ -170,10 +184,12 @@ class LdpcDecoder(object):
             print("final merge")
             indices_to_keep = list(range(len(new_candidates_raw)))
 
-        return CandidateBlock(new_indices, new_candidates_raw[indices_to_keep], new_candidate_log_probs_raw[indices_to_keep])
+        return CandidateBlock(new_indices, new_candidates_raw[indices_to_keep],
+                              new_candidate_log_probs_raw[indices_to_keep])
 
     def check_condition(self, candidate, i):
         return (np.inner(self.encoding_matrix[i], candidate) % self.base) == self.encoded_a[i]
+
 
 class CandidateBlock(object):
     def __init__(self, indices, candidates, candidate_log_probs):
@@ -193,14 +209,15 @@ class CandidateBlock(object):
             total_log_prob = scipy.special.logsumexp(sorted_log_probs)
             num_indices_to_remove = 0
             cur_total_log_prob = total_log_prob
-            while (cur_total_log_prob - total_log_prob > max_candidates_log_prob) and (cur_total_log_prob > sorted_log_probs[num_indices_to_remove]):
+            while (cur_total_log_prob - total_log_prob > max_candidates_log_prob) and (
+                    cur_total_log_prob > sorted_log_probs[num_indices_to_remove]):
                 next_total_log_prob = util.logminexp(cur_total_log_prob, sorted_log_probs[num_indices_to_remove])
                 if next_total_log_prob - total_log_prob < max_candidates_log_prob:
                     break
                 else:
                     cur_total_log_prob = next_total_log_prob
                     num_indices_to_remove += 1
-            prune_rate = num_indices_to_remove/len(self.candidates)
+            prune_rate = num_indices_to_remove / len(self.candidates)
             num_indices_to_keep = len(self.candidates) - num_indices_to_remove
             indices_to_keep = np.argpartition(self.candidate_log_probs, -num_indices_to_keep)[-num_indices_to_keep:]
         else:
@@ -215,6 +232,7 @@ class CandidateBlock(object):
         self.indices = sorted_indices
         self.candidates = self.candidates[:, arg_sorted_indices]
         return self
+
 
 def calc_max_iteration_log_prob(num_merges_left, success_log_rate_left):
     if success_log_rate_left is None:

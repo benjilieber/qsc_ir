@@ -3,7 +3,6 @@ import sys
 import time
 
 import util
-
 from ldpc.ldpc_matrix import LdpcMatrix
 
 sys.path.append(os.getcwd())
@@ -18,7 +17,7 @@ from scipy.sparse import csr_matrix
 
 
 class LdpcDecoderTest(unittest.TestCase):
-    def test_decode_easy(self): # successful
+    def test_decode_easy(self):  # successful
         indptr = [0, 2, 4, 6, 8, 10, 12, 14, 16]
         indices = [1, 3, 0, 1, 1, 2, 0, 3, 0, 3, 1, 2, 2, 3, 0, 2]
         data = [2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 2, 1]
@@ -32,7 +31,7 @@ class LdpcDecoderTest(unittest.TestCase):
         decoder = LdpcDecoder(3, 0.01, encoding_matrix, encoded_a)
         _, stats = decoder.decode_belief_propagation(b, 20)
         a_guess = stats.a_guess_list[0]
-        np.testing.assert_array_equal(encoding_matrix* a_guess, encoded_a)
+        np.testing.assert_array_equal(encoding_matrix * a_guess, encoded_a)
 
     def test_decode_square_matrix_p0_bp(self):
         n = 10000
@@ -222,7 +221,7 @@ class LdpcDecoderTest(unittest.TestCase):
         m = util.required_checks(n, 3, p_err)
         sparsity = 3
         run_single_test_it(n, m, p_err, sparsity, success_rate=0.5)
-        
+
 
 def run_single_test_bp(n, m, p_err, sparsity):
     cfg = cfg(base=3, block_length=n, num_blocks=1,
@@ -239,6 +238,7 @@ def run_single_test_bp(n, m, p_err, sparsity):
     a_guess = stats.a_guess_list[0]
     np.testing.assert_array_equal(a_guess, a)
 
+
 def run_single_test_it(n, m, p_err, sparsity, max_candidates_num=None, success_rate=None):
     cfg = cfg(base=3, block_length=n, num_blocks=1,
               code_generation_strategy=CodeGenerationStrategy.ldpc, sparsity=sparsity)
@@ -249,13 +249,15 @@ def run_single_test_it(n, m, p_err, sparsity, max_candidates_num=None, success_r
     a, b = key_generator.generate_keys()
     encoded_a = encoding_matrix * a
 
-    decoder = LdpcDecoder(3, p_err, encoding_matrix, encoded_a, a=a, max_candidates_num=max_candidates_num, success_rate=success_rate)
+    decoder = LdpcDecoder(3, p_err, encoding_matrix, encoded_a, a=a, max_candidates_num=max_candidates_num,
+                          success_rate=success_rate)
     candidates = decoder.decode_iteratively(b)
     print(candidates)
     print(a)
     print([sum(np.equal(a, c)) for c in candidates])
-    print([sum(np.equal(encoded_a, encoding_matrix*c)) for c in candidates])
+    print([sum(np.equal(encoded_a, encoding_matrix * c)) for c in candidates])
     print(len(encoded_a))
+
 
 if __name__ == '__main__':
     unittest.main()

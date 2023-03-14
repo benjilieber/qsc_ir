@@ -1,9 +1,12 @@
 import math
 from enum import Enum
-from scipy.stats import binom
-import util
+
 import numpy as np
+from scipy.stats import binom
+
+import util
 from cfg import Cfg, CodeStrategy
+
 
 class IndicesToEncodeStrategy(Enum):
     all_multi_candidate_blocks = "all_multi_candidate_blocks"
@@ -12,12 +15,14 @@ class IndicesToEncodeStrategy(Enum):
     def __str__(self):
         return self.value
 
+
 class RoundingStrategy(Enum):
     floor = 'floor'
     ceil = 'ceil'
 
     def __str__(self):
         return self.value
+
 
 class PruningStrategy(Enum):
     radii_probabilities = 'radii_probabilities'
@@ -26,6 +31,7 @@ class PruningStrategy(Enum):
     def __str__(self):
         return self.value
 
+
 class LinearCodeFormat(Enum):
     MATRIX = 'matrix'
     AFFINE_SUBSPACE = 'affine_subspace'
@@ -33,9 +39,11 @@ class LinearCodeFormat(Enum):
     def __str__(self):
         return self.value
 
+
 class MbCfg(Cfg):
 
-    def __init__(self, orig_cfg=None, q=None, block_length=None, num_blocks=None, p_err=0, success_rate=1.0, prefix_radii=None, radius_picking=None, full_rank_encoding=True,
+    def __init__(self, orig_cfg=None, q=None, block_length=None, num_blocks=None, p_err=0, success_rate=1.0,
+                 prefix_radii=None, radius_picking=None, full_rank_encoding=True,
                  use_zeroes_in_encoding_matrix=True,
                  goal_candidates_num=None,
                  max_candidates_num=None,
@@ -49,7 +57,9 @@ class MbCfg(Cfg):
                  agg_results_file_path=None,
                  verbosity=False):
         self.code_strategy = CodeStrategy.mb
-        super().__init__(orig_cfg=orig_cfg, q=q, N=num_blocks * block_length, p_err=p_err, raw_results_file_path=raw_results_file_path, agg_results_file_path=agg_results_file_path, verbosity=verbosity)
+        super().__init__(orig_cfg=orig_cfg, q=q, N=num_blocks * block_length, p_err=p_err,
+                         raw_results_file_path=raw_results_file_path, agg_results_file_path=agg_results_file_path,
+                         verbosity=verbosity)
 
         self.success_rate = success_rate
         self.block_length = block_length  # block length
@@ -132,7 +142,9 @@ class MbCfg(Cfg):
             if floor_cdf == 0.0:
                 ceil_m = self.num_blocks
             else:
-                ceil_m = math.ceil(math.log(total_success_prob, ceil_cdf/floor_cdf) - self.num_blocks * math.log(floor_cdf, ceil_cdf/floor_cdf))
+                ceil_m = math.ceil(
+                    math.log(total_success_prob, ceil_cdf / floor_cdf) - self.num_blocks * math.log(floor_cdf,
+                                                                                                    ceil_cdf / floor_cdf))
         else:
             ceil_m = math.ceil(self.num_blocks + total_success_prob - 1 - self.num_blocks * floor_cdf)
 
@@ -148,7 +160,7 @@ class MbCfg(Cfg):
         # success_rate_per_block = 1 - (1 - self.success_rate) / self.num_blocks
 
         for i in range(self.num_blocks):
-            radii[i] = int(binom.ppf(success_rate_per_block, (i+1) * self.block_length, self.p_err))
+            radii[i] = int(binom.ppf(success_rate_per_block, (i + 1) * self.block_length, self.p_err))
 
         return radii
 
@@ -171,26 +183,30 @@ class MbCfg(Cfg):
 
     def _is_within_radius_multi_block(self, x, y):
         num_blocks_considered = min(len(x), len(y))
-        return util.closeness_multi_block(x[:num_blocks_considered], y[:num_blocks_considered]) <= self.prefix_radii[num_blocks_considered - 1]
+        return util.closeness_multi_block(x[:num_blocks_considered], y[:num_blocks_considered]) <= self.prefix_radii[
+            num_blocks_considered - 1]
 
     def is_within_radius_all_blocks(self, x, y):
         if self.fixed_radius:
             return self._is_within_fixed_radius_multi_block(x, y)
         num_blocks_considered = min(len(x), len(y))
-        return all([self._is_within_radius_multi_block(x[:k], y[:k]) for k in range(num_blocks_considered)]) and self._is_within_max_radius_multi_block(x, y)
+        return all([self._is_within_radius_multi_block(x[:k], y[:k]) for k in
+                    range(num_blocks_considered)]) and self._is_within_max_radius_multi_block(x, y)
 
     def is_within_radius_new_block(self, x, y):
         last_index = min(len(x), len(y)) - 1
         if self.fixed_radius:
             return self._is_within_fixed_radius_single_block(x[last_index], y[last_index])
-        return self._is_within_radius_multi_block(x, y) and self._is_within_max_radius_single_block(x[last_index], y[last_index], last_index)
+        return self._is_within_radius_multi_block(x, y) and self._is_within_max_radius_single_block(x[last_index],
+                                                                                                    y[last_index],
+                                                                                                    last_index)
 
     def _determine_num_encodings_list(self):
         total_checks = util.required_checks(self.N, self.q, self.p_err)
         num_encodings_list = []
         tot_num_encodings = 0
         for i in range(self.num_blocks):
-            cur_num_encodings = math.floor(total_checks * (i+1) / self.num_blocks - tot_num_encodings)
+            cur_num_encodings = math.floor(total_checks * (i + 1) / self.num_blocks - tot_num_encodings)
             num_encodings_list.append(cur_num_encodings)
             tot_num_encodings += cur_num_encodings
         return num_encodings_list
@@ -237,6 +253,7 @@ class MbCfg(Cfg):
     #             return False
     #     return True
 
+
 # def timeout_handler(signum, frame):
 #     print("Radii calculation out of time.")
 #     raise TimeoutError("Radii calculation out of time.")
@@ -256,6 +273,8 @@ def specific_log_header():
             "mb_encoding_sample_size",
             "mb_radius_picking",
             "mb_predetermined_number_of_encodings"]
+
+
 def specific_log_header_params():
     return ["code_strategy",
             "mb_success_rate",

@@ -1,5 +1,4 @@
 import csv
-import glob
 import os
 import sys
 
@@ -27,11 +26,12 @@ from mb.mb_protocol import MbProtocol
 from result import Result
 import math
 
+
 def write_header(file_name):
     try:
         with open(file_name, 'r') as f:
             for row in f:
-                assert(row.rstrip('\n').split(",") == result.get_header())
+                assert (row.rstrip('\n').split(",") == result.get_header())
                 return
     except FileNotFoundError:
         with open(file_name, 'a', newline='') as f:
@@ -39,6 +39,7 @@ def write_header(file_name):
             writer.writerow(result.get_header())
     except AssertionError:
         raise AssertionError(f"Header of {file_name} is bad.")
+
 
 def write_results(result_pair_list, is_slurm=False, verbosity=False):
     non_ml_result_list = [result_pair[0] for result_pair in result_pair_list]
@@ -65,6 +66,7 @@ def write_results(result_pair_list, is_slurm=False, verbosity=False):
         writer.writerow(Result(non_ml_result_list[0].cfg, with_ml=False, result_list=non_ml_result_list).get_row())
         writer.writerow(Result(ml_result_list[0].cfg, with_ml=True, result_list=ml_result_list).get_row())
 
+
 def single_run(cfg):
     # print(f"Started process {os.getpid()}", flush=True)
     np.random.seed([os.getppid(), int(str(time.time() % 1)[2:10])])
@@ -74,6 +76,7 @@ def single_run(cfg):
     result_pair = protocol.run()
     # print(f"Ended process {os.getpid()}", flush=True)
     return result_pair
+
 
 def multi_run_series(cfg, sample_size, is_slurm, verbosity=False):
     result_pair_list = []
@@ -94,7 +97,7 @@ def multi_run_parallel(cfg, sample_size, is_slurm, verbosity=False):
     values = [cfg] * sample_size
     # partial_write_results = partial(write_results, is_slurm=is_slurm, verbosity=verbosity)
     with multiprocessing.Pool(sample_size) as pool:
-    # with multiprocessing.Pool() as pool:
+        # with multiprocessing.Pool() as pool:
         write_results(pool.map(single_run, values), is_slurm=is_slurm, verbosity=verbosity)
         if verbosity:
             print("starting to run")
@@ -125,9 +128,12 @@ def multi_run(args):
         for q in args.q_list:
             for p_err in args.p_err_range:
                 for N in args.N_list:
-                    cfg = Cfg(q=q, N=N, p_err=p_err, use_log=args.use_log, raw_results_file_path=args.raw_results_file_path, agg_results_file_path=args.agg_results_file_path, verbosity=args.verbosity)
+                    cfg = Cfg(q=q, N=N, p_err=p_err, use_log=args.use_log,
+                              raw_results_file_path=args.raw_results_file_path,
+                              agg_results_file_path=args.agg_results_file_path, verbosity=args.verbosity)
                     for run_cfg in generate_cfg(code_strategy, args, cfg):
-                        if args.previous_run_files is not None and previous_cfg_df.apply(check_cfg_equality(run_cfg), axis=1).any(axis=None):
+                        if args.previous_run_files is not None and previous_cfg_df.apply(check_cfg_equality(run_cfg),
+                                                                                         axis=1).any(axis=None):
                             if args.verbosity:
                                 print("skip cfg (previously run)")
                             continue
@@ -135,9 +141,11 @@ def multi_run(args):
                             print(result.Result(run_cfg))
                         if args.run_mode == 'parallel':
                             # r_list.append(multi_run_parallel(cfg, args.sample_size))
-                            multi_run_parallel(run_cfg, args.sample_size, is_slurm=args.is_slurm, verbosity=args.verbosity)
+                            multi_run_parallel(run_cfg, args.sample_size, is_slurm=args.is_slurm,
+                                               verbosity=args.verbosity)
                         else:
-                            multi_run_series(run_cfg, args.sample_size, is_slurm=args.is_slurm, verbosity=args.verbosity)
+                            multi_run_series(run_cfg, args.sample_size, is_slurm=args.is_slurm,
+                                             verbosity=args.verbosity)
 
     # print("started all runs")
     # if args.run_mode == 'parallel':
@@ -151,6 +159,7 @@ def multi_run(args):
     if args.verbosity:
         print(f'elapsed time: {end - start}')
 
+
 def generate_cfg(code_strategy, args, cfg):
     if code_strategy == CodeStrategy.mb:
         for mb_cfg in generate_mb_cfg(args, cfg):
@@ -163,6 +172,7 @@ def generate_cfg(code_strategy, args, cfg):
             yield polar_cfg
     else:
         raise "Unknown code strategy: " + str(code_strategy)
+
 
 def generate_mb_cfg(args, cfg):
     if cfg.p_err == 0.0:
@@ -182,7 +192,8 @@ def generate_mb_cfg(args, cfg):
                     goal_candidates_num_range = [3, 9, 27, 81, 243, 729, 2187, math.ceil(math.sqrt(actual_N))]
                 for goal_candidates_num in goal_candidates_num_range:
                     for max_num_indices_to_encode in args.mb_max_num_indices_to_encode_range:
-                        yield MbCfg(orig_cfg=cfg, success_rate=success_rate, block_length=block_size, num_blocks=num_blocks,
+                        yield MbCfg(orig_cfg=cfg, success_rate=success_rate, block_length=block_size,
+                                    num_blocks=num_blocks,
                                     goal_candidates_num=goal_candidates_num,
                                     indices_to_encode_strategy=IndicesToEncodeStrategy.most_candidate_blocks,
                                     rounding_strategy=rounding_strategy,
@@ -193,9 +204,11 @@ def generate_mb_cfg(args, cfg):
                                     max_candidates_num=args.mb_max_candidates_num,
                                     encoding_sample_size=args.mb_encoding_sample_size)
 
+
 def generate_ldpc_cfg(args, cfg):
     for sparsity in args.ldpc_sparsity_range:
         yield LdpcCfg(orig_cfg=cfg, sparsity=sparsity)
+
 
 def generate_polar_cfg(args, cfg):
     for relative_gap_rate in args.polar_relative_gap_rate_list:
@@ -211,9 +224,11 @@ def check_cfg_equality(cfg1):
     dict1 = cfg1.log_dict()
     specific_log_header_params = cfg.specific_log_header_params() + mb_cfg.specific_log_header_params() + ldpc_cfg.specific_log_header_params() + polar_cfg.specific_log_header_params()
     cfg_params = list(set(specific_log_header_params) & set(dict1.keys()))
+
     def check_cfg_equality_nested(cfg2):
         for key in cfg_params:
             if cfg2[key] != dict1[key]:
                 return False
         return True
+
     return check_cfg_equality_nested

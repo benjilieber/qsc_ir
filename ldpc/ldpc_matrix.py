@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.sparse import csr_matrix
 
+
 class LdpcMatrix(csr_matrix):
     def __init__(self, matrix, num_noise_symbols, base):
         super(csr_matrix, self).__init__(matrix)
@@ -19,4 +20,4 @@ class LdpcMatrix(csr_matrix):
         return np.mod(super(csr_matrix, self).__mul__(vector), self.base)
 
     def __getitem__(self, i):
-        return np.array(self.data[self.indices[self.indptr[i]:self.indptr[i+1]]])
+        return np.array(self.data[self.indices[self.indptr[i]:self.indptr[i + 1]]])

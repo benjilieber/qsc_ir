@@ -5,6 +5,7 @@ from scipy.special import logsumexp
 
 from polar.vector_distribution import VectorDistribution
 
+
 class QaryMemorylessVectorDistribution(VectorDistribution):
 
     def __init__(self, q, length, use_log=False):
@@ -36,7 +37,8 @@ class QaryMemorylessVectorDistribution(VectorDistribution):
             for x2 in range(self.q):
                 u1 = (x1 + x2) % self.q
                 if self.use_log:
-                    newVector.probs[:, u1] = np.logaddexp(newVector.probs[:, u1], np.add(self.probs[::2, x1], self.probs[1::2, x2]))
+                    newVector.probs[:, u1] = np.logaddexp(newVector.probs[:, u1],
+                                                          np.add(self.probs[::2, x1], self.probs[1::2, x2]))
                 else:
                     newVector.probs[:, u1] += self.probs[::2, x1] * self.probs[1::2, x2]
         return newVector
@@ -56,7 +58,9 @@ class QaryMemorylessVectorDistribution(VectorDistribution):
             x1 = (u1 + u2) % self.q
             x2 = -u2 % self.q
             if self.use_log:
-                newVector.probs[:, u2] = np.logaddexp(newVector.probs[:, u2], self.probs[np.arange(self.length, step=2), x1] + self.probs[1::2, x2])
+                newVector.probs[:, u2] = np.logaddexp(newVector.probs[:, u2],
+                                                      self.probs[np.arange(self.length, step=2), x1] + self.probs[1::2,
+                                                                                                       x2])
             else:
                 newVector.probs[:, u2] += self.probs[np.arange(self.length, step=2), x1] * self.probs[1::2, x2]
 

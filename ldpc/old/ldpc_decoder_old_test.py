@@ -1,6 +1,6 @@
+import math
 import os
 import sys
-import math
 
 import util
 
@@ -175,12 +175,12 @@ class LdpcDecoderTest(unittest.TestCase):
     #     print("a:")
     #     print(a)
 
-        # deltas = product([1, 2], repeat=block_length)
-        # for cur_delta in deltas:
-        #     cur_candidate = np.mod(np.add(b, cur_delta), [3] * block_length).astype(int)
-        #     if np.array_equal(np.matmul(cur_candidate, encoding_matrix) % 3, encoded_a):
-        #         print("valid candidate:")
-        #         print(cur_candidate)
+    # deltas = product([1, 2], repeat=block_length)
+    # for cur_delta in deltas:
+    #     cur_candidate = np.mod(np.add(b, cur_delta), [3] * block_length).astype(int)
+    #     if np.array_equal(np.matmul(cur_candidate, encoding_matrix) % 3, encoded_a):
+    #         print("valid candidate:")
+    #         print(cur_candidate)
     # def test_decode_single_block(self):  # random (1000, 750, 4) -> ? forked indices works
     #     block_length = 9000
     #     num_encoding_columns = 6000
@@ -434,7 +434,6 @@ class LdpcDecoderTest(unittest.TestCase):
     #             print(encoding_error_trajectory_list[i])
     #             print([int(entropy_sum) if (not isinstance(entropy_sum, str) and not math.isnan(entropy_sum)) else entropy_sum for entropy_sum in entropy_sum_trajectory_list[i]])
 
-
     # def test_unique_solution(self):
     #     block_length = 21
     #     num_encoding_columns = 14
@@ -472,8 +471,10 @@ class LdpcDecoderTest(unittest.TestCase):
             key_generator = KeyGenerator(p_err=p_err, key_length=block_length)
             a, b = key_generator.generate_keys()
             encoded_a = encoding_matrix.encode(a)
-            decoder_no_forking = LdpcDecoder(3, p_err, encoding_matrix, encoded_a, use_sparse_matrix=True, use_forking=False)
-            candidates_left, a_guess_list, encoding_error_trajectory_list, error_trajectory_list, entropy_sum_trajectory_list, final_entropies_list, a_guess_entropy_sum_list = decoder_no_forking.decode_belief_propagation(b, num_rounds, a=a)
+            decoder_no_forking = LdpcDecoder(3, p_err, encoding_matrix, encoded_a, use_sparse_matrix=True,
+                                             use_forking=False)
+            candidates_left, a_guess_list, encoding_error_trajectory_list, error_trajectory_list, entropy_sum_trajectory_list, final_entropies_list, a_guess_entropy_sum_list = decoder_no_forking.decode_belief_propagation(
+                b, num_rounds, a=a)
             if len(candidates_left):
                 print(util.hamming_single_block(a, a_guess_list[0]))
                 print(error_trajectory_list[0])
@@ -481,6 +482,7 @@ class LdpcDecoderTest(unittest.TestCase):
                 print(
                     [int(entropy_sum) if not (math.isnan(entropy_sum) or isinstance(entropy_sum, str)) else entropy_sum
                      for entropy_sum in entropy_sum_trajectory_list[0]])
+
 
 if __name__ == '__main__':
     unittest.main()

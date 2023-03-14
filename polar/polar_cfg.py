@@ -1,9 +1,10 @@
 import math
 import os
+
 import numpy as np
 
 from cfg import CodeStrategy, Cfg
-from polar.scalar_distributions.QaryMemorylessDistribution import QaryMemorylessDistribution
+from polar.scalar_distributions.qary_memoryless_distribution import QaryMemorylessDistribution
 
 
 class IndexType:
@@ -50,16 +51,6 @@ class PolarCfg(Cfg):
         else:
             mixing_factor = max(self.frozen_set) + 1 - len(self.frozen_set)
             self.scl_l = mixing_factor ** self.q
-
-        if self.verbosity:
-            print("q=" + str(self.q)
-                  + ", qer=" + str(self.p_err)
-                  + ", rate=" + str(self.key_rate)
-                  + ", n=" + str(self.n)
-                  + ", L=" + str(self.L)
-                  + ", numInfoQudits=" + str(self.num_info_indices)
-                  + ", maxListSize=" + str(self.scl_l))
-
 
     def log_dict(self):
         super_dict = super().log_dict()
@@ -150,7 +141,7 @@ class PolarCfg(Cfg):
         construction_path += '/polar_codes_constructions/'
         construction_path += 'q={}/'.format(self.q)
         construction_path += 'N={}/'.format(self.N)
-        construction_path += 'QER={}/'.format(self.p_err)
+        construction_path += 'QER={}/'.format(self.qer)
         return construction_path
 
     def _calc_index_types_from_tv_pe(self, tv, pe):
@@ -189,6 +180,8 @@ class PolarCfg(Cfg):
                 print("fraction of info indices = ", 1.0 - len(frozen_set) / self.N)
 
         return index_types, frozen_set, info_set
+
+
 def specific_log_header():
     return ["code_strategy",
             "polar_n",
@@ -200,6 +193,8 @@ def specific_log_header():
             "polar_constr_l",
             "polar_key_rate",
             "polar_scl_l"]
+
+
 def specific_log_header_params():
     return ["code_strategy",
             "polar_desired_key_rate",

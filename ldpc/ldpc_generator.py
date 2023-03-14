@@ -1,9 +1,12 @@
-import numpy as np
-import random
 import math
-from scipy.sparse import csr_matrix
+import random
+
+import numpy as np
 import scipy
+from scipy.sparse import csr_matrix
+
 from ldpc_matrix import LdpcMatrix
+
 
 class LdpcGenerator(object):
     def __init__(self, protocol_configs):
@@ -41,15 +44,13 @@ class LdpcGenerator(object):
 
         check_degs = [max(1, raw_deg) for raw_deg in np.random.binomial(n, p, num_encoding_columns)]
         indptr = np.insert(np.cumsum(check_degs), 0, 0)
-        indices = np.array([ind for deg in check_degs for ind in sorted(np.random.choice(range(0, n), deg, replace=False))])
+        indices = np.array(
+            [ind for deg in check_degs for ind in sorted(np.random.choice(range(0, n), deg, replace=False))])
         # TODO: ensure each column has atleast one 1/2
 
         data = np.array([random.randint(1, self.cfg.q - 1) for _ in range(indptr[-1])])
 
         return LdpcMatrix(csr_matrix((data, indices, indptr), shape=(num_encoding_columns, n)), n, self.cfg.q)
-
-
-
 
 
 def partition_almost_uniformly(num_elements, buckets):

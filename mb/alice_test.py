@@ -30,5 +30,6 @@ class AliceTest(unittest.TestCase):
             (np.matmul([0, 1, 2], encoding_matrices_delta[0]) + np.matmul([2, 1, 2], encoding_matrices_delta[1])) % 3,
             encoded_a)
 
+
 if __name__ == '__main__':
     unittest.main()

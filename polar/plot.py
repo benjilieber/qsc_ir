@@ -1,17 +1,19 @@
 import math
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-def plot_results1(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_filter=None, errorType="frame", adjustedKeyRate=False):
+
+def plot_results1(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_filter=None, errorType="frame",
+                  adjustedKeyRate=False):
     df = pd.read_csv(file_name)
 
     if n_filter is not None:
         df = df[df.n.isin(n_filter)]
 
     if not adjustedKeyRate:
-        df["origKeyRate"] = np.log2(df.q)*df.numInfoQudits/df.N
+        df["origKeyRate"] = np.log2(df.q) * df.numInfoQudits / df.N
         plt.xlabel('key rate')
     else:
         plt.xlabel('key rate, adjusted by list size')
@@ -57,6 +59,7 @@ def plot_results1(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_
             plt.title('q=' + str(q) + ', qer=' + str(qer))
             plt.show()
 
+
 def plot_results2(file_name, q_filter=None, qer_filter=None, n_filter=None):
     df = pd.read_csv(file_name)
 
@@ -94,7 +97,8 @@ def plot_results2(file_name, q_filter=None, qer_filter=None, n_filter=None):
             plt.show()
 
 
-def plot_results3(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_filter=None, rate_filter=None, max_list_size_filter=None, errorType="frame", adjustedKeyRate=False):
+def plot_results3(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_filter=None, rate_filter=None,
+                  max_list_size_filter=None, errorType="frame", adjustedKeyRate=False):
     df = pd.read_csv(file_name)
 
     if n_filter is not None:
@@ -117,7 +121,7 @@ def plot_results3(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_
             cur_qer_group = grouped_by_qer.get_group(qer)
 
             if not adjustedKeyRate:
-                cur_qer_group["origKeyRate"] = np.log2(cur_qer_group.q)*cur_qer_group.numInfoQudits/cur_qer_group.N
+                cur_qer_group["origKeyRate"] = np.log2(cur_qer_group.q) * cur_qer_group.numInfoQudits / cur_qer_group.N
                 minRate = np.min(cur_qer_group["origKeyRate"])
                 maxRate = np.max(cur_qer_group["origKeyRate"])
             else:
@@ -132,7 +136,7 @@ def plot_results3(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_
             elif errorType == "ml_lower_bound":
                 maxProb = np.max(cur_qer_group.FailActualSmallerThanMin)
             elif errorType == "frame_ml":
-                maxProb = np.max(1.0-cur_qer_group.SuccessActualIsMax)
+                maxProb = np.max(1.0 - cur_qer_group.SuccessActualIsMax)
 
             grouped_by_N = cur_qer_group.groupby("N")
             for N in grouped_by_N.groups.keys():
@@ -159,16 +163,18 @@ def plot_results3(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_
                         errorProb = cur_group.FailActualSmallerThanMin
                         plt.ylabel('ML lower bound error probability')
                     elif errorType == "frame_ml":
-                        errorProb = 1.0-cur_group.SuccessActualIsMax
+                        errorProb = 1.0 - cur_group.SuccessActualIsMax
                         plt.ylabel('frame list-decode ML error probability')
                     else:
                         raise "Unknown error type: " + errorType
 
-                    plt.scatter(keyRate, errorProb, label=str(round(rate*math.log2(q)/theoretic_key_rate, 2)) + ", maxListSize = " + str(np.max(cur_group.maxListSize)), s=10*np.log2(cur_group.maxListSize))
+                    plt.scatter(keyRate, errorProb, label=str(
+                        round(rate * math.log2(q) / theoretic_key_rate, 2)) + ", maxListSize = " + str(
+                        np.max(cur_group.maxListSize)), s=10 * np.log2(cur_group.maxListSize))
                     plt.plot(keyRate, errorProb)
 
                 plt.legend()
                 plt.title('q=' + str(q) + ', qer=' + str(qer) + ', N=' + str(N))
-                plt.xlim([max(0, minRate-0.1), maxRate+0.1])
+                plt.xlim([max(0, minRate - 0.1), maxRate + 0.1])
                 plt.ylim([0, maxProb])
                 plt.show()

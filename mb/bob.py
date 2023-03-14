@@ -1,15 +1,13 @@
 import itertools
 import math
 import random
+from itertools import product
 
 import numpy as np
 import scipy.special
 
 import util
-
 from mb.encoder import Encoder
-from itertools import product
-
 from mb.mb_cfg import PruningStrategy, LinearCodeFormat
 
 
@@ -96,7 +94,8 @@ class Bob(object):
 
                 # print(latest_block_candidates_per_prefix_encoding)
 
-                self.avg_candidates_per_img_history.append(0.0 if len(latest_block_candidates_per_prefix_encoding) == 0 else
+                self.avg_candidates_per_img_history.append(
+                    0.0 if len(latest_block_candidates_per_prefix_encoding) == 0 else
                     sum([len(candidates) for candidates in latest_block_candidates_per_prefix_encoding.values()]) / len(
                         latest_block_candidates_per_prefix_encoding))
 
@@ -133,7 +132,8 @@ class Bob(object):
             reduced_candidates_errors = []
             for cur_candidate, cur_candidate_error in zip(self.a_candidates, self.a_candidates_errors):
                 cur_candidate_relevant_part = np.take(cur_candidate, block_indices, axis=0)
-                if self.encoder.is_multi_block_solution(encoding.encoding_matrix, cur_candidate_relevant_part, encoding.encoded_vector):
+                if self.encoder.is_multi_block_solution(encoding.encoding_matrix, cur_candidate_relevant_part,
+                                                        encoding.encoded_vector):
                     reduced_candidates.append(cur_candidate)
                     reduced_candidates_errors.append(cur_candidate_error)
             self.a_candidates = np.array(reduced_candidates)
@@ -160,7 +160,8 @@ class Bob(object):
 
         if encoding.format == LinearCodeFormat.MATRIX:
             for cur_candidate, cur_error in self.candidates_with_errors_range(block, radius):
-                if self.encoder.is_single_block_solution(encoding.encoding_matrix[0], cur_candidate, encoding.encoded_vector):
+                if self.encoder.is_single_block_solution(encoding.encoding_matrix[0], cur_candidate,
+                                                         encoding.encoded_vector):
                     new_a_candidates.append(cur_candidate.tolist())
                     new_a_candidates_errors.append(cur_error)
 
@@ -170,10 +171,13 @@ class Bob(object):
             #     if cur_error <= radius:
             #         new_a_candidates.append(cur_candidate.tolist())
             #         new_a_candidates_errors.append(cur_error)
-            kernel_space = np.array([np.matmul(coefficients, encoding.kernel_base) % self.cfg.q for coefficients in product(list(range(self.cfg.q)), repeat=len(encoding.kernel_base))])
+            kernel_space = np.array([np.matmul(coefficients, encoding.kernel_base) % self.cfg.q for coefficients in
+                                     product(list(range(self.cfg.q)), repeat=len(encoding.kernel_base))])
             diff = (block - encoding.s0) % self.cfg.q
+
             def errors(kernel_vector):
                 return sum(kernel_vector == diff)
+
             kernel_space_errors = np.apply_along_axis(errors, 1, kernel_space)
             solutions_mask = (kernel_space_errors <= radius)
             new_a_candidates = (kernel_space[solutions_mask] + encoding.s0) % self.cfg.q
@@ -192,15 +196,18 @@ class Bob(object):
             # missing_encoding_delta_list = [self.encoder.get_missing_encoding_delta(encoding.encoded_vector, cur_encoding) for
             #                                cur_encoding
             #                                in encoded_a_prefix_list]
-            missing_encoding_delta_set = {tuple(self.encoder.get_missing_encoding_delta(encoding.encoded_vector, cur_encoding)) for
-                                           cur_encoding
-                                           in encoded_a_prefix_list}
+            missing_encoding_delta_set = {
+                tuple(self.encoder.get_missing_encoding_delta(encoding.encoded_vector, cur_encoding)) for
+                cur_encoding
+                in encoded_a_prefix_list}
             for cur_candidate, cur_error in self.candidates_with_errors_range(block, radius):
                 cur_candidate_encoding = self.encoder.encode_single_block(encoding.encoding_matrix[-1], cur_candidate)
                 # if any(np.array_equal(cur_candidate_encoding, missing_encoding_delta) for missing_encoding_delta in missing_encoding_delta_list):
                 if tuple(cur_candidate_encoding) in missing_encoding_delta_set:
-                    prefix_encoding = self.encoder.get_missing_encoding_delta(encoding.encoded_vector, cur_candidate_encoding)
-                    new_candidates_per_prefix_encoding.setdefault(tuple(prefix_encoding), []).append(cur_candidate.tolist())
+                    prefix_encoding = self.encoder.get_missing_encoding_delta(encoding.encoded_vector,
+                                                                              cur_candidate_encoding)
+                    new_candidates_per_prefix_encoding.setdefault(tuple(prefix_encoding), []).append(
+                        cur_candidate.tolist())
                     new_candidates_errors_per_prefix_encoding.setdefault(tuple(prefix_encoding), []).append(cur_error)
             return new_candidates_per_prefix_encoding, new_candidates_errors_per_prefix_encoding
 
@@ -218,15 +225,19 @@ class Bob(object):
             #                 cur_error)
             # # print(errors)
 
-            kernel_space = np.array([np.matmul(coefficients, encoding.kernel_base) % self.cfg.q for coefficients in product(list(range(self.cfg.q)), repeat=len(encoding.kernel_base))])
+            kernel_space = np.array([np.matmul(coefficients, encoding.kernel_base) % self.cfg.q for coefficients in
+                                     product(list(range(self.cfg.q)), repeat=len(encoding.kernel_base))])
             for prefix_encoding in encoded_a_prefix_list:
                 base_solution_raw = encoding.s0 - np.matmul(prefix_encoding, encoding.image_base_source)
                 diff = (block - base_solution_raw) % self.cfg.q
+
                 def errors(kernel_vector):
                     return sum(kernel_vector == diff)
+
                 kernel_space_errors = np.apply_along_axis(errors, 1, kernel_space)
                 solutions_mask = (kernel_space_errors <= radius)
-                new_candidates_per_prefix_encoding[tuple(prefix_encoding)] = (kernel_space[solutions_mask] + base_solution_raw) % self.cfg.q
+                new_candidates_per_prefix_encoding[tuple(prefix_encoding)] = (kernel_space[
+                                                                                  solutions_mask] + base_solution_raw) % self.cfg.q
                 new_candidates_errors_per_prefix_encoding[tuple(prefix_encoding)] = kernel_space_errors[solutions_mask]
             return new_candidates_per_prefix_encoding, new_candidates_errors_per_prefix_encoding
 
@@ -280,13 +291,14 @@ class Bob(object):
                     probs_per_err_cnt = {0: 0.0}
                 else:
                     probs_per_err_cnt = {err: err * math.log(self.cfg.p_err) + (
-                                len(new_candidates_raw[0]) * self.cfg.block_length - err) * math.log(
+                            len(new_candidates_raw[0]) * self.cfg.block_length - err) * math.log(
                         (1 - self.cfg.p_err) / (self.cfg.q - 1))
                                          for err in a_candidates_per_err_cnt.keys()}
                 total_prob = scipy.special.logsumexp(
                     [prob + math.log(len(a_candidates_per_err_cnt[err])) for err, prob in probs_per_err_cnt.items()])
             else:
-                probs_per_err_cnt = {err: (self.cfg.p_err ** err) * (((1 - self.cfg.p_err) / (self.cfg.q - 1)) ** (len(new_candidates_raw[0]) * self.cfg.block_length - err))
+                probs_per_err_cnt = {err: (self.cfg.p_err ** err) * (((1 - self.cfg.p_err) / (self.cfg.q - 1)) ** (
+                            len(new_candidates_raw[0]) * self.cfg.block_length - err))
                                      for err in a_candidates_per_err_cnt.keys()}
                 total_prob = sum([prob * len(a_candidates_per_err_cnt[err]) for err, prob in probs_per_err_cnt.items()])
 
@@ -313,11 +325,15 @@ class Bob(object):
                     should_split = weight_delta > cur_block_fail_prob - cur_pruned_weight
                 if should_split:
                     if use_log:
-                        delta_split_part = math.floor(math.exp(math.log(len(a_candidates_per_err_cnt[err])) + util.logminexp(math.log(cur_block_fail_prob), cur_pruned_weight) - weight_delta))
+                        delta_split_part = math.floor(math.exp(
+                            math.log(len(a_candidates_per_err_cnt[err])) + util.logminexp(math.log(cur_block_fail_prob),
+                                                                                          cur_pruned_weight) - weight_delta))
                         if delta_split_part != 0:
-                            cur_pruned_weight = scipy.special.logsumexp([cur_pruned_weight, math.log(delta_split_part) + probs_per_err_cnt[err] - total_prob])
+                            cur_pruned_weight = scipy.special.logsumexp(
+                                [cur_pruned_weight, math.log(delta_split_part) + probs_per_err_cnt[err] - total_prob])
                     else:
-                        delta_split_part = math.floor(len(a_candidates_per_err_cnt[err]) * (cur_block_fail_prob - cur_pruned_weight) / weight_delta)
+                        delta_split_part = math.floor(len(a_candidates_per_err_cnt[err]) * (
+                                    cur_block_fail_prob - cur_pruned_weight) / weight_delta)
                         cur_pruned_weight += delta_split_part * probs_per_err_cnt[err] / total_prob
                     split_indices = random.sample(a_candidates_per_err_cnt[err], delta_split_part)
                     post_pruning_mask[split_indices] = False
@@ -336,10 +352,10 @@ class Bob(object):
             # print(sum([probs_per_err_cnt[new_candidates_raw_errors[i]] for i, flag in enumerate(post_pruning_mask) if flag]) / total_prob)
             if use_log:
                 self.pruning_fail_prob_history.append(math.exp(cur_pruned_weight))
-                cur_block_success_prob = 1-math.exp(cur_pruned_weight)
+                cur_block_success_prob = 1 - math.exp(cur_pruned_weight)
             else:
                 self.pruning_fail_prob_history.append(cur_pruned_weight)
-                cur_block_success_prob = 1-cur_pruned_weight
+                cur_block_success_prob = 1 - cur_pruned_weight
             self.cur_success_prob = self.cur_success_prob * cur_block_success_prob
             pruning_rate = 1 - sum(post_pruning_mask) / (len(new_candidates_raw) or 1)
             self.pruning_rate_history.append(pruning_rate)

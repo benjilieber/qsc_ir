@@ -2,7 +2,7 @@ import math
 import unittest
 
 import result
-from mb.mb_cfg import MbCfg, CodeStrategy
+from mb.mb_cfg import MbCfg
 from result import Result, str_to_result, result_str_to_cfg_str
 
 
@@ -16,20 +16,22 @@ class ResultTest(unittest.TestCase):
         max_candidates_num = 50
         max_num_indices_to_encode = 3
         cfg = MbCfg(q=3, block_length=block_length, num_blocks=num_blocks, p_err=p_err,
-                  success_rate=success_rate, max_candidates_num = max_candidates_num,
-                  max_num_indices_to_encode=max_num_indices_to_encode)
+                    success_rate=success_rate, max_candidates_num=max_candidates_num,
+                    max_num_indices_to_encode=max_num_indices_to_encode)
         is_success = True
         key_rate = 0.6
         communication_rate = 42
         time = 56
         r = Result(cfg, is_success=is_success, key_rate=key_rate, leak_rate=communication_rate,
-                      matrix_size_rate=communication_rate, bob_communication_rate=communication_rate,
-                      total_communication_rate=communication_rate, time_rate=time)
+                   matrix_size_rate=communication_rate, bob_communication_rate=communication_rate,
+                   total_communication_rate=communication_rate, time_rate=time)
 
-        expected_theoretic_key_rate = math.log(3, 2) + p_err * math.log(p_err, 2) + (1-p_err) * math.log((1-p_err)/2, 2)
+        expected_theoretic_key_rate = math.log(3, 2) + p_err * math.log(p_err, 2) + (1 - p_err) * math.log(
+            (1 - p_err) / 2, 2)
         expected_cfg_row = [n, block_length, num_blocks, p_err, success_rate, max_candidates_num,
                             max_num_indices_to_encode, 'mb', expected_theoretic_key_rate]
-        expected_output_row = [is_success, key_rate, communication_rate, communication_rate, communication_rate, communication_rate, time]
+        expected_output_row = [is_success, key_rate, communication_rate, communication_rate, communication_rate,
+                               communication_rate, time]
         expected_row = expected_cfg_row + expected_output_row
 
         self.assertEqual(expected_cfg_row, r.get_cfg_row())
@@ -45,18 +47,18 @@ class ResultTest(unittest.TestCase):
         max_candidates_num = 50
         max_num_indices_to_encode = 3
         cfg = MbCfg(q=3, block_length=block_length, num_blocks=num_blocks, p_err=p_err,
-                  success_rate=success_rate, max_candidates_num = max_candidates_num,
-                  max_num_indices_to_encode=max_num_indices_to_encode)
+                    success_rate=success_rate, max_candidates_num=max_candidates_num,
+                    max_num_indices_to_encode=max_num_indices_to_encode)
 
         r_list = []
         for i in range(10):
             is_success = (i >= 5)
-            key_rate = 0.42 + 0.02*i
-            communication_rate = 41 + 1*i
-            time = 53 + 3*i
+            key_rate = 0.42 + 0.02 * i
+            communication_rate = 41 + 1 * i
+            time = 53 + 3 * i
             r_list.append(Result(cfg, is_success=is_success, key_rate=key_rate, leak_rate=communication_rate,
-                      matrix_size_rate=communication_rate, bob_communication_rate=communication_rate,
-                      total_communication_rate=communication_rate, time_rate=time))
+                                 matrix_size_rate=communication_rate, bob_communication_rate=communication_rate,
+                                 total_communication_rate=communication_rate, time_rate=time))
 
         expected_theoretic_key_rate = math.log(3, 2) + p_err * math.log(p_err, 2) + (1 - p_err) * math.log(
             (1 - p_err) / 2, 2)
@@ -76,15 +78,15 @@ class ResultTest(unittest.TestCase):
         max_candidates_num = 50
         max_num_indices_to_encode = 3
         cfg = MbCfg(q=3, block_length=block_length, num_blocks=num_blocks, p_err=p_err,
-                  success_rate=success_rate, max_candidates_num = max_candidates_num,
-                  max_num_indices_to_encode=max_num_indices_to_encode)
+                    success_rate=success_rate, max_candidates_num=max_candidates_num,
+                    max_num_indices_to_encode=max_num_indices_to_encode)
         is_success = True
         key_rate = 0.6
         communication_rate = 42
         time = 56
         r = Result(cfg, is_success=is_success, key_rate=key_rate, leak_rate=communication_rate,
-                      matrix_size_rate=communication_rate, bob_communication_rate=communication_rate,
-                      total_communication_rate=communication_rate, time_rate=time)
+                   matrix_size_rate=communication_rate, bob_communication_rate=communication_rate,
+                   total_communication_rate=communication_rate, time_rate=time)
 
         r_clone = str_to_result(str(r.get_row()))
 
@@ -99,15 +101,15 @@ class ResultTest(unittest.TestCase):
         max_candidates_num = 50
         max_num_indices_to_encode = 3
         cfg = MbCfg(q=3, block_length=block_length, num_blocks=num_blocks, p_err=p_err,
-                  success_rate=success_rate, max_candidates_num = max_candidates_num,
-                  max_num_indices_to_encode=max_num_indices_to_encode)
+                    success_rate=success_rate, max_candidates_num=max_candidates_num,
+                    max_num_indices_to_encode=max_num_indices_to_encode)
         is_success = True
         key_rate = 0.6
         communication_rate = 42
         time = 56
         r = Result(cfg, is_success=is_success, key_rate=key_rate, leak_rate=communication_rate,
-                      matrix_size_rate=communication_rate, bob_communication_rate=communication_rate,
-                      total_communication_rate=communication_rate, time_rate=time)
+                   matrix_size_rate=communication_rate, bob_communication_rate=communication_rate,
+                   total_communication_rate=communication_rate, time_rate=time)
 
         cfg_string = result_str_to_cfg_str(str(r.get_row()))
 
@@ -115,6 +117,7 @@ class ResultTest(unittest.TestCase):
 
     def test_convert_output_files_to_cfg_string_list(self):
         print(result.convert_output_files_to_cfg_string_list(["fake_results.csv"], "csv"))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,11 +1,12 @@
-import sys
 import os
+import sys
+
 sys.path.append(os.getcwd())
 
 import math
 from timeit import default_timer as timer
 
-from scalar_distributions import QaryMemorylessDistribution
+from scalar_distributions.qary_memoryless_distribution import QaryMemorylessDistribution
 
 
 def make_xVectorDistribution_fromQaryMemorylessDistribution(q, xyDistribution, length, use_log=False):
@@ -16,6 +17,7 @@ def make_xVectorDistribution_fromQaryMemorylessDistribution(q, xyDistribution, l
         return xVectorDistribution
 
     return make_xVectorDistribution
+
 
 def make_xyVectorDistribution_fromQaryMemorylessDistribution(xyDistribution, use_log=False):
     def make_xyVectorDistribution(receivedWord):
@@ -31,6 +33,7 @@ def make_xyVectorDistribution_fromQaryMemorylessDistribution(xyDistribution, use
 
     return make_xyVectorDistribution
 
+
 def test(q, listDecode=False, maxListSize=None, checkSize=None, numInfoIndices=None, verbosity=False):
     print("q = " + str(q))
 
@@ -44,7 +47,8 @@ def test(q, listDecode=False, maxListSize=None, checkSize=None, numInfoIndices=N
     xDistribution = None
     xyDistribution = QaryMemorylessDistribution.makeQSC(q, p)
 
-    frozenSet = getFrozenSet(q, N, n, L, "QSC", xDistribution, xyDistribution, p, upperBoundOnErrorProbability, numInfoIndices, verbosity=verbosity)
+    frozenSet = getFrozenSet(q, N, n, L, "QSC", xDistribution, xyDistribution, p, upperBoundOnErrorProbability,
+                             numInfoIndices, verbosity=verbosity)
 
     # print("Rate = ", N - len(frozenSet), "/", N, " = ", (N - len(frozenSet)) / N)
 
@@ -69,7 +73,8 @@ def test(q, listDecode=False, maxListSize=None, checkSize=None, numInfoIndices=N
     # PolarEncoderDecoder.genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, upperBoundOnErrorProbability, trustXYProbs)
 
 
-def test_ir(q, channel_type="QSC", maxListSize=None, checkSize=0, numberOfTrials=200, ir_version=1, numInfoIndices=None, use_log=False, verbosity=False):
+def test_ir(q, channel_type="QSC", maxListSize=None, checkSize=0, numberOfTrials=200, ir_version=1, numInfoIndices=None,
+            use_log=False, verbosity=False):
     p = 0.98
     L = 100
     n = 6
@@ -81,25 +86,29 @@ def test_ir(q, channel_type="QSC", maxListSize=None, checkSize=0, numberOfTrials
 
     if channel_type != "QSC":
         raise "TODO: Implement this for AWGN channel"
-    frozenSet = getFrozenSet(q, N, n, L, channel_type, xDistribution, xyDistribution, p, upperBoundOnErrorProbability, numInfoIndices, verbosity=verbosity)
+    frozenSet = getFrozenSet(q, N, n, L, channel_type, xDistribution, xyDistribution, p, upperBoundOnErrorProbability,
+                             numInfoIndices, verbosity=verbosity)
 
     simulateChannel = simulateChannel_fromQaryMemorylessDistribution(xyDistribution)
     make_xyVectorDistribution = make_xyVectorDistribution_fromQaryMemorylessDistribution(xyDistribution, use_log)
 
     if maxListSize is None:
-        mixingFactor = max(frozenSet)+1 - len(frozenSet)
+        mixingFactor = max(frozenSet) + 1 - len(frozenSet)
         maxListSize = mixingFactor ** q
         print(maxListSize)
     QaryPolarEncoderDecoder.irSimulation(q, N, simulateChannel,
-                                          make_xyVectorDistribution, numberOfTrials, frozenSet, maxListSize, checkSize, use_log=use_log,
-                                          verbosity=verbosity, ir_version=ir_version)
+                                         make_xyVectorDistribution, numberOfTrials, frozenSet, maxListSize, checkSize,
+                                         use_log=use_log,
+                                         verbosity=verbosity, ir_version=ir_version)
 
-def test_ir_per_config(q, L, n, maxListSize, numTrials, channel_type="QSC", qer=None, snr=None, rate=None, numInfoIndices=None, frozenSet=None, use_log=False, verbosity=False, file_name=None):
+
+def test_ir_per_config(q, L, n, maxListSize, numTrials, channel_type="QSC", qer=None, snr=None, rate=None,
+                       numInfoIndices=None, frozenSet=None, use_log=False, verbosity=False, file_name=None):
     N = 2 ** n
-    assert(channel_type in ["QSC", "AWGN"])
+    assert (channel_type in ["QSC", "AWGN"])
 
     if numInfoIndices is None:
-        assert(rate is not None)
+        assert (rate is not None)
         numInfoIndices = math.floor(rate * N)
 
     xDistribution = None
@@ -109,7 +118,8 @@ def test_ir_per_config(q, L, n, maxListSize, numTrials, channel_type="QSC", qer=
         xyDistribution = QaryMemorylessDistribution.makeAWGN(q, snr, rate)
 
     if frozenSet is None:
-        frozenSet = getFrozenSet(q, N, n, L, channel_type, xDistribution, xyDistribution, qer=qer, snr=snr, rate=rate, numInfoIndices=numInfoIndices, verbosity=verbosity)
+        frozenSet = getFrozenSet(q, N, n, L, channel_type, xDistribution, xyDistribution, qer=qer, snr=snr, rate=rate,
+                                 numInfoIndices=numInfoIndices, verbosity=verbosity)
 
     if maxListSize is None:
         mixingFactor = max(frozenSet) + 1 - len(frozenSet)
@@ -136,21 +146,32 @@ def test_ir_per_config(q, L, n, maxListSize, numTrials, channel_type="QSC", qer=
     make_xyVectorDistribution = make_xyVectorDistribution_fromQaryMemorylessDistribution(xyDistribution, use_log)
 
     start = timer()
-    frame_error_prob, symbol_error_prob, key_rate, prob_result_list = QaryPolarEncoderDecoder.irSimulation(q, N, simulateChannel,
-                                         make_xyVectorDistribution, numTrials, frozenSet, maxListSize, use_log=use_log, verbosity=verbosity)
+    frame_error_prob, symbol_error_prob, key_rate, prob_result_list = QaryPolarEncoderDecoder.irSimulation(q, N,
+                                                                                                           simulateChannel,
+                                                                                                           make_xyVectorDistribution,
+                                                                                                           numTrials,
+                                                                                                           frozenSet,
+                                                                                                           maxListSize,
+                                                                                                           use_log=use_log,
+                                                                                                           verbosity=verbosity)
     end = timer()
     time_rate = (end - start) / (numTrials * N)
     if file_name is not None:
         write_header(file_name)
-        write_result(file_name, q, qer, snr, calc_theoretic_key_rate(q, channel_type, qer=qer, snr=snr, rate=rate), n, N, L, "degradingUpgrading",
+        write_result(file_name, q, qer, snr, calc_theoretic_key_rate(q, channel_type, qer=qer, snr=snr, rate=rate), n,
+                     N, L, "degradingUpgrading",
                      numInfoIndices, rate, maxListSize, frame_error_prob, symbol_error_prob, key_rate, time_rate,
                      numTrials, prob_result_list,
                      verbosity=verbosity)
     return frame_error_prob, symbol_error_prob, key_rate, time_rate, maxListSize, prob_result_list
 
-def test_ir_and_record_range(file_name, q_range, L, n_range, numTrials, channel_type="QSC", qer_range=None, snr_range=None, maxListRange=None, rate_range=None, numInfoQuditsDelta=0, numInfoQuditsRadius=10, maxListSizeCompleteRange=False, explicitNumInfoQuditsRange=None, largeMaxListSize=False, use_log=False, verbosity=False):
+
+def test_ir_and_record_range(file_name, q_range, L, n_range, numTrials, channel_type="QSC", qer_range=None,
+                             snr_range=None, maxListRange=None, rate_range=None, numInfoQuditsDelta=0,
+                             numInfoQuditsRadius=10, maxListSizeCompleteRange=False, explicitNumInfoQuditsRange=None,
+                             largeMaxListSize=False, use_log=False, verbosity=False):
     write_header(file_name)
-    assert(channel_type in ["QSC", "AWGN"])
+    assert (channel_type in ["QSC", "AWGN"])
     if channel_type != "QSC":
         raise "TODO: Implement this for AWGN channel"
     for q in q_range:
@@ -160,7 +181,7 @@ def test_ir_and_record_range(file_name, q_range, L, n_range, numTrials, channel_
             qer_range = [None] * len(snr_range)
         for qer, snr in zip(qer_range, snr_range):
             for n in n_range:
-                N = 2**n
+                N = 2 ** n
                 if rate_range is not None:
                     numInfoQuditsRange = [math.floor(rate * N) for rate in rate_range]
                 else:
@@ -171,10 +192,13 @@ def test_ir_and_record_range(file_name, q_range, L, n_range, numTrials, channel_
                     theoretic_key_rate = calc_theoretic_key_rate(q, channel_type, qer=qer, snr=snr, rate=rate)
                     # theoretic_num_info_qudits = math.ceil(N*theoretic_key_rate*math.log(2, q))
                     if largeMaxListSize:
-                        frame_error_prob, symbol_error_prob, key_rate, time_rate, maxListSize, prob_result_list = test_ir_per_config(q=q, channel_type=channel_type, qer=qer, snr=snr, rate=rate, L=L, n=n, maxListSize=None, numInfoIndices=numInfoQudits,
-                                                                             numTrials=numTrials, use_log=use_log, verbosity=verbosity)
+                        frame_error_prob, symbol_error_prob, key_rate, time_rate, maxListSize, prob_result_list = test_ir_per_config(
+                            q=q, channel_type=channel_type, qer=qer, snr=snr, rate=rate, L=L, n=n, maxListSize=None,
+                            numInfoIndices=numInfoQudits,
+                            numTrials=numTrials, use_log=use_log, verbosity=verbosity)
                         write_result(file_name, q, qer, snr, theoretic_key_rate, n, N, L, "degradingUpgrading",
-                                     numInfoQudits, rate, maxListSize, frame_error_prob, symbol_error_prob, key_rate, time_rate, numTrials, prob_result_list,
+                                     numInfoQudits, rate, maxListSize, frame_error_prob, symbol_error_prob, key_rate,
+                                     time_rate, numTrials, prob_result_list,
                                      verbosity=verbosity)
                         continue
 
@@ -183,14 +207,21 @@ def test_ir_and_record_range(file_name, q_range, L, n_range, numTrials, channel_
                     cur_frame_error_prob = None
                     prev_frame_error_prob = None
                     for maxListSize in maxListRange:
-                        if not maxListSizeCompleteRange and prev_frame_error_prob is not None and (cur_frame_error_prob >= prev_frame_error_prob + 0.1):
+                        if not maxListSizeCompleteRange and prev_frame_error_prob is not None and (
+                                cur_frame_error_prob >= prev_frame_error_prob + 0.1):
                             break
-                        if math.log2(q)*numInfoQudits < math.log2(maxListSize):
+                        if math.log2(q) * numInfoQudits < math.log2(maxListSize):
                             break
-                        frame_error_prob, symbol_error_prob, key_rate, time_rate, maxListSize, prob_result_list = test_ir_per_config(q=q, channel_type=channel_type, qer=qer, snr=snr, rate=rate, L=L, n=n, maxListSize=maxListSize, numInfoIndices=numInfoQudits, numTrials=numTrials, use_log=use_log, verbosity=verbosity)
-                        write_result(file_name, q, qer, snr, theoretic_key_rate, n, N, L, "degradingUpgrading", numInfoQudits, rate, maxListSize, frame_error_prob, symbol_error_prob, key_rate, time_rate, numTrials, prob_result_list, verbosity=verbosity)
+                        frame_error_prob, symbol_error_prob, key_rate, time_rate, maxListSize, prob_result_list = test_ir_per_config(
+                            q=q, channel_type=channel_type, qer=qer, snr=snr, rate=rate, L=L, n=n,
+                            maxListSize=maxListSize, numInfoIndices=numInfoQudits, numTrials=numTrials, use_log=use_log,
+                            verbosity=verbosity)
+                        write_result(file_name, q, qer, snr, theoretic_key_rate, n, N, L, "degradingUpgrading",
+                                     numInfoQudits, rate, maxListSize, frame_error_prob, symbol_error_prob, key_rate,
+                                     time_rate, numTrials, prob_result_list, verbosity=verbosity)
                         prev_frame_error_prob = cur_frame_error_prob
                         cur_frame_error_prob = frame_error_prob
+
 
 # test(2)
 # test(3)
@@ -206,7 +237,9 @@ maxListRange = [1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683, 59049]
 n_range = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 use_log = False
 
-test_ir_and_record_range(file_name="../results/old/results_nospc.csv", q_range=[3], qer_range=[0.01], L=100, n_range=n_range, numTrials=100, rate_range=[0.94, 0.95], maxListRange=maxListRange, maxListSizeCompleteRange=True, use_log=use_log, verbosity=True)
+test_ir_and_record_range(file_name="../results/old/results_nospc.csv", q_range=[3], qer_range=[0.01], L=100,
+                         n_range=n_range, numTrials=100, rate_range=[0.94, 0.95], maxListRange=maxListRange,
+                         maxListSizeCompleteRange=True, use_log=use_log, verbosity=True)
 # test_ir_and_record_range(file_name="results_nospc.csv", q_range=[3], qer_range=[0.02], L=100, n_range=n_range, numTrials=100, rate_range=[0.9, 0.92], maxListRange=maxListRange, maxListSizeCompleteRange=True, use_log=use_log, verbosity=True)
 # test_ir_and_record_range(file_name="results_nospc.csv", q_range=[3], qer_range=[0.05], L=100, n_range=n_range, numTrials=100, rate_range=[0.79, 0.81], maxListRange=maxListRange, maxListSizeCompleteRange=True, use_log=use_log, verbosity=True)
 

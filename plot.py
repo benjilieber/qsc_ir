@@ -2,13 +2,15 @@ import math
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from matplotlib import ticker
 from matplotlib import colors
+from matplotlib import ticker
 
 pd.options.mode.chained_assignment = None  # default='warn'
 import numpy as np
 import seaborn as sns
+
 sns.set(style='ticks')
+
 
 def plot_results1(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_filter=None, errorType="frame"):
     df = pd.read_csv(file_name)
@@ -56,8 +58,10 @@ def plot_results1(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_
                 plt.scatter(keyRate, errorProb, label=str(N), s=cur_group.block_length)
 
             plt.legend()
-            plt.title('q=' + str(q) + ', qer=' + str(qer) + ', max_block_length=' + str(cur_qer_group.block_length.max()))
+            plt.title(
+                'q=' + str(q) + ', qer=' + str(qer) + ', max_block_length=' + str(cur_qer_group.block_length.max()))
             plt.show()
+
 
 def plot_results2(file_name, q_filter=None, qer_filter=None, n_filter=None):
     df = pd.read_csv(file_name)
@@ -96,7 +100,8 @@ def plot_results2(file_name, q_filter=None, qer_filter=None, n_filter=None):
             plt.show()
 
 
-def plot_results3(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_filter=None, rate_filter=None, max_list_size_filter=None, errorType="frame", adjustedKeyRate=False):
+def plot_results3(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_filter=None, rate_filter=None,
+                  max_list_size_filter=None, errorType="frame", adjustedKeyRate=False):
     df = pd.read_csv(file_name)
 
     if n_filter is not None:
@@ -119,7 +124,7 @@ def plot_results3(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_
             cur_qer_group = grouped_by_qer.get_group(qer)
 
             if not adjustedKeyRate:
-                cur_qer_group["origKeyRate"] = np.log2(cur_qer_group.q)*cur_qer_group.numInfoQudits/cur_qer_group.N
+                cur_qer_group["origKeyRate"] = np.log2(cur_qer_group.q) * cur_qer_group.numInfoQudits / cur_qer_group.N
                 minRate = np.min(cur_qer_group["origKeyRate"])
                 maxRate = np.max(cur_qer_group["origKeyRate"])
             else:
@@ -134,7 +139,7 @@ def plot_results3(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_
             elif errorType == "ml_lower_bound":
                 maxProb = np.max(cur_qer_group.FailActualSmallerThanMin)
             elif errorType == "frame_ml":
-                maxProb = np.max(1.0-cur_qer_group.SuccessActualIsMax)
+                maxProb = np.max(1.0 - cur_qer_group.SuccessActualIsMax)
 
             grouped_by_N = cur_qer_group.groupby("N")
             for N in grouped_by_N.groups.keys():
@@ -161,19 +166,22 @@ def plot_results3(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_
                         errorProb = cur_group.FailActualSmallerThanMin
                         plt.ylabel('ML lower bound error probability')
                     elif errorType == "frame_ml":
-                        errorProb = 1.0-cur_group.SuccessActualIsMax
+                        errorProb = 1.0 - cur_group.SuccessActualIsMax
                         plt.ylabel('frame list-decode ML error probability')
                     else:
                         raise "Unknown error type: " + errorType
 
-                    plt.scatter(keyRate, errorProb, label=str(round(rate*math.log2(q)/theoretic_key_rate, 2)) + ", maxListSize = " + str(np.max(cur_group.maxListSize)), s=10*np.log2(cur_group.maxListSize))
+                    plt.scatter(keyRate, errorProb, label=str(
+                        round(rate * math.log2(q) / theoretic_key_rate, 2)) + ", maxListSize = " + str(
+                        np.max(cur_group.maxListSize)), s=10 * np.log2(cur_group.maxListSize))
                     plt.plot(keyRate, errorProb)
 
                 plt.legend()
                 plt.title('q=' + str(q) + ', qer=' + str(qer) + ', N=' + str(N))
-                plt.xlim([max(0, minRate-0.1), maxRate+0.1])
+                plt.xlim([max(0, minRate - 0.1), maxRate + 0.1])
                 plt.ylim([0, maxProb])
                 plt.show()
+
 
 def plot_results4(file_name):
     df = pd.read_csv(file_name)
@@ -187,7 +195,8 @@ def plot_results4(file_name):
     grouped_by_q = df.groupby("q")
     for q in grouped_by_q.groups.keys():
         cur_q_group = grouped_by_q.get_group(q)
-        sns.relplot(data=cur_q_group, x='qer', y='key_rate_vs_theoretic_key_rate', hue='n', hue_order=n_list, size='block_length')
+        sns.relplot(data=cur_q_group, x='qer', y='key_rate_vs_theoretic_key_rate', hue='n', hue_order=n_list,
+                    size='block_length')
         plt.title('q=' + str(q), y=0.965)
         plt.axhline(y=0.0)
         plt.axhline(y=1.0)
@@ -196,18 +205,23 @@ def plot_results4(file_name):
         # plt.legend()
         plt.show()
 
+
 def add_yield(df):
     df['yield'] = df.success_rate * df.key_rate_success_only
+
+
 def add_efficiency(df):
     df.loc[df.p_err.eq(0.0), 'optimal_leak'] = np.log2(df.q - 1)
     df.loc[df.p_err.ne(0.0), 'optimal_leak'] = -df.p_err * np.log2(df.p_err) - (1 - df.p_err) * np.log2(
         (1 - df.p_err) / (df.q - 1))
     df['efficiency'] = df.encoding_size_rate * np.log2(df.q) / df.optimal_leak
 
+
 def get_theoretic_key_rate_single(q, p_err):
     if p_err == 0.0:
         return math.log2(q / (q - 1))
     return p_err * np.log2(p_err) + (1 - p_err) * np.log2((1 - p_err) / (q - 1)) + math.log2(q)
+
 
 def get_theoretic_key_rate(q, p_err_array):
     # p_err is a numpy array
@@ -221,12 +235,13 @@ def get_theoretic_key_rate(q, p_err_array):
 
     return theoretic_key_rate
 
+
 def plot_error_exponent(df, q_filter=None, p_err_filter=None):
     df["q"] = df.q
     df["qer"] = df.p_err * (-1) + 1
     df["n"] = np.ceil(np.log2(df.N))
     df["N"] = np.exp2(df.n).astype(int)
-    df["FER"] = 1-df.success_rate
+    df["FER"] = 1 - df.success_rate
 
     if q_filter is not None:
         df = df[df.q.isin(q_filter)]
@@ -248,7 +263,9 @@ def plot_error_exponent(df, q_filter=None, p_err_filter=None):
 
             max_key_rate_per_xy = cur_group.groupby(["N", "FER"]).key_rate_success_only.aggregate('max').reset_index()
 
-            scatter = ax.scatter(max_key_rate_per_xy.N, max_key_rate_per_xy.FER, s=10, c=max_key_rate_per_xy.key_rate_success_only, cmap='gist_rainbow', norm=colors.Normalize())
+            scatter = ax.scatter(max_key_rate_per_xy.N, max_key_rate_per_xy.FER, s=10,
+                                 c=max_key_rate_per_xy.key_rate_success_only, cmap='gist_rainbow',
+                                 norm=colors.Normalize())
 
             plt.axhline(y=0.0, color="red")
 
@@ -258,8 +275,10 @@ def plot_error_exponent(df, q_filter=None, p_err_filter=None):
             ax.add_artist(legend)
 
             plt.title("Error exponent - q={q},p_err={p_err}".format(q=q, p_err=p_err))
-            plt.savefig("error_exponent,q={q},p_err={p_err},color={color_name}.png".format(q=q, p_err=p_err, color_name=color_name))
+            plt.savefig("error_exponent,q={q},p_err={p_err},color={color_name}.png".format(q=q, p_err=p_err,
+                                                                                           color_name=color_name))
             plt.show()
+
 
 def plot_scaling_exponent(df, q_filter=None, p_err_filter=None, success_rate_filter=None):
     df["q"] = df.q
@@ -304,7 +323,8 @@ def plot_scaling_exponent(df, q_filter=None, p_err_filter=None, success_rate_fil
 
                 min_by_color = cur_group.groupby(["N", color_col]).gap.aggregate('min').reset_index()
                 if use_color_log:
-                    scatter = ax.scatter(min_by_color.N, min_by_color.gap, s=10, c=min_by_color[color_col], cmap='gist_rainbow', norm=colors.LogNorm())
+                    scatter = ax.scatter(min_by_color.N, min_by_color.gap, s=10, c=min_by_color[color_col],
+                                         cmap='gist_rainbow', norm=colors.LogNorm())
                 else:
                     scatter = ax.scatter(min_by_color.N, min_by_color.gap, s=10,
                                          c=min_by_color[color_col], cmap='gist_rainbow', norm=colors.Normalize())
@@ -317,9 +337,13 @@ def plot_scaling_exponent(df, q_filter=None, p_err_filter=None, success_rate_fil
                 ax.add_artist(legend)
                 # plt.title('q=' + str(q) + ', N=' + str(N))  # + ', max_block_length=' + str(grouped_by_N.block_length.max()))
 
-                plt.title("Scaling exponent - q={q},p_err={p_err},success_rate={success_rate}".format(q=q, p_err=p_err, success_rate=success_rate))
-                plt.savefig("scaling_exponent,q={q},p_err={p_err},success_rate={success_rate},color={color_name}.png".format(q=q, p_err=p_err, success_rate=success_rate, color_name=color_name))
+                plt.title("Scaling exponent - q={q},p_err={p_err},success_rate={success_rate}".format(q=q, p_err=p_err,
+                                                                                                      success_rate=success_rate))
+                plt.savefig(
+                    "scaling_exponent,q={q},p_err={p_err},success_rate={success_rate},color={color_name}.png".format(
+                        q=q, p_err=p_err, success_rate=success_rate, color_name=color_name))
                 plt.show()
+
 
 def plot_vs_qser(df, y_name, q_filter=None, n_filter=None):
     df["q"] = df.q
@@ -377,7 +401,8 @@ def plot_vs_qser(df, y_name, q_filter=None, n_filter=None):
 
                 max_by_color = cur_group.groupby(["p_err", color_col])[y_col_name].aggregate('max').reset_index()
                 if use_color_log:
-                    scatter = ax.scatter(max_by_color.p_err + 0.000001, max_by_color[y_col_name], s=10, c=max_by_color[color_col], cmap='gist_rainbow', norm=colors.LogNorm())
+                    scatter = ax.scatter(max_by_color.p_err + 0.000001, max_by_color[y_col_name], s=10,
+                                         c=max_by_color[color_col], cmap='gist_rainbow', norm=colors.LogNorm())
                 else:
                     scatter = ax.scatter(max_by_color.p_err + 0.000001, max_by_color[y_col_name], s=10,
                                          c=max_by_color[color_col], cmap='gist_rainbow', norm=colors.Normalize())
@@ -397,14 +422,15 @@ def plot_vs_qser(df, y_name, q_filter=None, n_filter=None):
 
                 max_by_color = cur_group.groupby(["p_err", color_col])[y_col_name].aggregate('max').reset_index()
                 if use_color_log:
-                    scatter = ax.scatter(max_by_color.p_err + 0.000001, max_by_color[y_col_name], s=10, c=max_by_color[color_col], cmap='gist_rainbow', norm=colors.LogNorm())
+                    scatter = ax.scatter(max_by_color.p_err + 0.000001, max_by_color[y_col_name], s=10,
+                                         c=max_by_color[color_col], cmap='gist_rainbow', norm=colors.LogNorm())
                 else:
                     scatter = ax.scatter(max_by_color.p_err + 0.000001, max_by_color[y_col_name], s=10,
                                          c=max_by_color[color_col], cmap='gist_rainbow', norm=colors.Normalize())
 
                 theoretic_key_rate_zero = math.log2(q / (q - 1))
                 theoretic_key_rate_non_zero = Q_range_non_zero * np.log2(Q_range_non_zero) + (
-                            1 - Q_range_non_zero) * np.log2(
+                        1 - Q_range_non_zero) * np.log2(
                     (1 - Q_range_non_zero) / (q - 1)) + math.log2(q)
                 theoretic_key_rate = np.concatenate(([theoretic_key_rate_zero], theoretic_key_rate_non_zero))
                 plt.plot(Q_range, theoretic_key_rate, 'r')
@@ -416,7 +442,8 @@ def plot_vs_qser(df, y_name, q_filter=None, n_filter=None):
                         return np.log2(q - 1)
                     else:
                         return (-(QSER + 0.000001) * np.log2(QSER + 0.000001) - (
-                            1 - (QSER + 0.000001)) * np.log2((1 - QSER) / (q - 1)))
+                                1 - (QSER + 0.000001)) * np.log2((1 - QSER) / (q - 1)))
+
                 cur_group["optimal_leak_rate"] = Q.apply(lambda QSER: calc_optimal_leak_rate(QSER))
 
                 cur_group[y_col_name] = cur_group.encoding_size_rate * np.log2(q) / cur_group.optimal_leak_rate
@@ -424,9 +451,11 @@ def plot_vs_qser(df, y_name, q_filter=None, n_filter=None):
                 # scatter = plt.scatter(Q, cur_group[y_col_name])
                 min_by_color = cur_group.groupby(["p_err", color_col])[y_col_name].aggregate('min').reset_index()
                 if use_color_log:
-                    scatter = ax.scatter(min_by_color.p_err + 0.000001, min_by_color[y_col_name], s=10, c=min_by_color[color_col], cmap='gist_rainbow', norm=colors.LogNorm())
+                    scatter = ax.scatter(min_by_color.p_err + 0.000001, min_by_color[y_col_name], s=10,
+                                         c=min_by_color[color_col], cmap='gist_rainbow', norm=colors.LogNorm())
                 else:
-                    scatter = ax.scatter(min_by_color.p_err + 0.000001, min_by_color[y_col_name], s=10, c=min_by_color[color_col], cmap='gist_rainbow', norm=colors.Normalize())
+                    scatter = ax.scatter(min_by_color.p_err + 0.000001, min_by_color[y_col_name], s=10,
+                                         c=min_by_color[color_col], cmap='gist_rainbow', norm=colors.Normalize())
                 plt.axhline(y=1.0, color="r")
             else:
                 raise "bad y_name!"
@@ -440,7 +469,7 @@ def plot_vs_qser(df, y_name, q_filter=None, n_filter=None):
             elif y_name == "efficiency":
                 ax.set_ylim(0.99, 1.3)
             ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x - 0.000001)))
-            ax.xaxis.set_major_locator(ticker.FixedLocator(Q+0.000001))
+            ax.xaxis.set_major_locator(ticker.FixedLocator(Q + 0.000001))
             plt.xlabel('QSER')
             plt.ylabel(y_name)
             legend = ax.legend(*scatter.legend_elements(), title=color_name)
@@ -448,15 +477,23 @@ def plot_vs_qser(df, y_name, q_filter=None, n_filter=None):
             # plt.title('q=' + str(q) + ', N=' + str(N))  # + ', max_block_length=' + str(grouped_by_N.block_length.max()))
 
             plt.title("N = " + str(N))
-            plt.savefig("{y_name}-vs-QSER,q={q},N={N},color={color_name}.png".format(y_name=y_name, q=q, N=N, color_name=color_name))
+            plt.savefig("{y_name}-vs-QSER,q={q},N={N},color={color_name}.png".format(y_name=y_name, q=q, N=N,
+                                                                                     color_name=color_name))
             plt.show()
+
 
 def plot_key_rate_vs_qser(file_name):
     return plot_vs_qser(file_name, "keyRate")
+
+
 def plot_yield_vs_qser(file_name):
     return plot_vs_qser(file_name, "yield")
+
+
 def plot_efficiency_vs_qser(file_name):
     return plot_vs_qser(file_name, "efficiency")
+
+
 # def plot_Kbps_vs_yield(df, q_filter=None, n_filter=None, color_col=None):
 #     return plot_y_vs_x(df, "yield", "Kbps", q_filter, n_filter, color_col=color_col)
 # def plot_communication_vs_yield(df, q_filter=None, n_filter=None, color_col=None):
@@ -487,12 +524,14 @@ def plot_time_vs_yield(df, q_filter=None, n_filter=None, p_err_filter=None):
             cur_group["yield_rate"] = cur_group.success_rate * cur_group.key_rate_success_only
 
             min_by_color = cur_group.groupby(["N", "time_rate"]).yield_rate.aggregate('min').reset_index()
-            scatter = ax.scatter(min_by_color.yield_rate, min_by_color.time_rate, s=1, c=min_by_color.N, cmap='gist_rainbow', norm=colors.LogNorm())
+            scatter = ax.scatter(min_by_color.yield_rate, min_by_color.time_rate, s=1, c=min_by_color.N,
+                                 cmap='gist_rainbow', norm=colors.LogNorm())
 
             if p_err == 0:
-                theoretic_key_rate = math.log2(q)-math.log2((q - 1))
+                theoretic_key_rate = math.log2(q) - math.log2((q - 1))
             else:
-                theoretic_key_rate = p_err * np.log2(p_err) + (1 - p_err) * np.log2((1 - p_err) / (q - 1)) + math.log2(q)
+                theoretic_key_rate = p_err * np.log2(p_err) + (1 - p_err) * np.log2((1 - p_err) / (q - 1)) + math.log2(
+                    q)
             plt.axvline(x=theoretic_key_rate, color="r")
 
             plt.xlabel('yield_rate')
@@ -504,6 +543,7 @@ def plot_time_vs_yield(df, q_filter=None, n_filter=None, p_err_filter=None):
             plt.title("Yield rate vs time rate - q={q},p_err={p_err}".format(q=q, p_err=p_err))
             plt.savefig("yield_rate-vs-time_rate,q={q},p_err={p_err},color=N.png".format(q=q, p_err=p_err))
             plt.show()
+
 
 def plot_time_vs_N(df, q_filter=None, n_filter=None, p_err_filter=None):
     df["q"] = df.q
@@ -530,7 +570,8 @@ def plot_time_vs_N(df, q_filter=None, n_filter=None, p_err_filter=None):
             cur_group["yield_rate"] = cur_group.success_rate * cur_group.key_rate_success_only
 
             max_by_color = cur_group.groupby(["N", "time_rate"]).yield_rate.aggregate('max').reset_index()
-            scatter = ax.scatter(max_by_color.N, max_by_color.time_rate, s=1, c=max_by_color.yield_rate, cmap='gist_rainbow', norm=colors.LogNorm())
+            scatter = ax.scatter(max_by_color.N, max_by_color.time_rate, s=1, c=max_by_color.yield_rate,
+                                 cmap='gist_rainbow', norm=colors.LogNorm())
 
             plt.xlabel('N, log scale')
             ax.set_xscale("log")
@@ -542,6 +583,7 @@ def plot_time_vs_N(df, q_filter=None, n_filter=None, p_err_filter=None):
             plt.title("N vs time rate - q={q},p_err={p_err}".format(q=q, p_err=p_err))
             plt.savefig("N-vs-time_rate,q={q},p_err={p_err},color=yield_rate.png".format(q=q, p_err=p_err))
             plt.show()
+
 
 def plot_time_vs_block_length(df, q_filter=None, n_filter=None, p_err_filter=None):
     df["q"] = df.q
@@ -570,7 +612,8 @@ def plot_time_vs_block_length(df, q_filter=None, n_filter=None, p_err_filter=Non
 
                 cur_group["yield_rate"] = cur_group.success_rate * cur_group.key_rate_success_only
 
-                scatter = ax.scatter(cur_group.block_length, cur_group.time_rate, s=1, c=cur_group.yield_rate, cmap='gist_rainbow', norm=colors.LogNorm())
+                scatter = ax.scatter(cur_group.block_length, cur_group.time_rate, s=1, c=cur_group.yield_rate,
+                                     cmap='gist_rainbow', norm=colors.LogNorm())
 
                 plt.xlabel('block length')
                 plt.ylabel("time_rate (s/N), log scale")
@@ -580,8 +623,11 @@ def plot_time_vs_block_length(df, q_filter=None, n_filter=None, p_err_filter=Non
                 ax.add_artist(legend)
 
                 plt.title("Block length vs time rate - q={q},p_err={p_err},N={N}".format(q=q, p_err=p_err, N=N))
-                plt.savefig("block_length-vs-time_rate,q={q},p_err={p_err},N={N},color=yield_rate.png".format(q=q, p_err=p_err, N=N))
+                plt.savefig(
+                    "block_length-vs-time_rate,q={q},p_err={p_err},N={N},color=yield_rate.png".format(q=q, p_err=p_err,
+                                                                                                      N=N))
                 plt.show()
+
 
 def sanity_checks(df):
     grouped_by_success_rate = df.groupby("success_rate")

@@ -43,5 +43,6 @@ class EncoderTest(unittest.TestCase):
         self.assertListEqual(self.encoder.get_missing_encoding_delta([1, 2, 0], [0, 0, 1]), [1, 2, 2])
         self.assertListEqual(self.encoder.get_missing_encoding_delta([2, 2, 0, 1, 0], [0, 1, 2, 0, 2]), [2, 1, 1, 1, 1])
 
+
 if __name__ == '__main__':
     unittest.main()
