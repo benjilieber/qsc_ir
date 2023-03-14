@@ -4,8 +4,14 @@ from enum import Enum
 import numpy as np
 import pandas as pd
 
+import cfg
 from cfg import CodeStrategy
+from ldpc import ldpc_cfg
+from ldpc.ldpc_cfg import LdpcCfg
+from mb import mb_cfg
 from mb.mb_cfg import MbCfg, PruningStrategy, RoundingStrategy
+from polar import polar_cfg
+from polar.polar_cfg import PolarCfg
 
 
 class Status(Enum):
@@ -104,187 +110,82 @@ class Result(object):
 
             self.sample_size = len(result_list)
 
+    def get_cfg_dict(self):
+        return self.cfg.log_dict()
+
+    def get_output_dict(self):
+        specific_dict = {"sample_size": self.sample_size,
+                "with_ml": self.with_ml,
+                "is_success": self.is_success,
+                "is_fail": self.is_fail,
+                "is_abort": self.is_abort,
+                "ser_completed_only": self.ser_completed_only,
+                "ser_fail_only": self.ser_fail_only,
+                "key_rate": self.key_rate,
+                "key_rate_completed_only": self.key_rate_completed_only,
+                "key_rate_success_only": self.key_rate_success_only,
+                "leak_rate": self.leak_rate,
+                "leak_rate_completed_only": self.leak_rate_completed_only,
+                "leak_rate_success_only": self.leak_rate_success_only,
+                "matrix_size_rate": self.matrix_size_rate,
+                "matrix_size_rate_success_only": self.matrix_size_rate_success_only,
+                "bob_communication_rate": self.bob_communication_rate,
+                "bob_communication_rate_success_only": self.bob_communication_rate_success_only,
+                "total_communication_rate": self.total_communication_rate,
+                "total_communication_rate_success_only": self.total_communication_rate_success_only,
+                "time_rate": self.time_rate,
+                "time_rate_success_only": self.time_rate_success_only}
+        assert (set(specific_dict.keys()) == set(specific_log_header()))
+        return specific_dict
+
+    def get_dict(self):
+        return {**self.get_cfg_dict(), **self.get_output_dict()}
+    def get_row(self):
+        return list(self.get_dict().values())
+    def get_header(self):
+        return list(self.get_dict().keys())
     def get_cfg_row(self):
-        return [self.cfg.q, self.cfg.N, self.cfg.block_length, self.cfg.num_blocks, self.cfg.p_err,
-                self.cfg.success_rate,
-                self.cfg.goal_candidates_num, self.cfg.max_candidates_num,
-                self.cfg.max_num_indices_to_encode, self.cfg.fixed_number_of_encodings, str(self.cfg.code_strategy),
-                str(self.cfg.rounding_strategy), str(self.cfg.pruning_strategy), self.cfg.radius_picking,
-                self.cfg.encoding_sample_size, self.cfg.theoretic_key_rate]
+        return self.get_cfg_dict().values()
+    def get_output_row(self):
+        return self.get_output_dict().values()
+    def get_cfg_header(self):
+        return self.get_cfg_dict().keys()
+    def get_output_header(self):
+        return self.get_output_dict().keys()
 
     def __str__(self):
         cfg_string = "cfg: "
-        for key, val in zip(get_cfg_header(), self.get_cfg_row()):
+        for key, val in self.get_cfg_dict().items():
             cfg_string += key + "=" + str(val) + ", "
         if self.is_success is not None:
             output_string = "output: "
-            for key, val in zip(get_output_header(), self.get_output_row()):
+            for key, val in self.get_output_dict().items():
                 output_string += key + "=" + str(val) + ", "
             return cfg_string.strip(", ") + "\n" + output_string.strip(", ")
         else:
             return cfg_string.strip(", ")
 
-    def get_output_row(self):
-        return [self.sample_size, self.with_ml, self.is_success, self.is_fail, self.is_abort, self.ser_completed_only,
-                self.ser_fail_only, self.key_rate, self.key_rate_completed_only, self.key_rate_success_only,
-                self.leak_rate, self.leak_rate_completed_only, self.leak_rate_success_only, self.matrix_size_rate,
-                self.matrix_size_rate_success_only,
-                self.bob_communication_rate, self.bob_communication_rate_success_only, self.total_communication_rate,
-                self.total_communication_rate_success_only, self.time_rate, self.time_rate_success_only]
-
-    def get_row(self):
-        return self.get_cfg_row() + self.get_output_row()
-
-
+def specific_log_header():
+    return ["sample_size",
+            "with_ml",
+            "is_success",
+            "is_fail",
+            "is_abort",
+            "ser_completed_only",
+            "ser_fail_only",
+            "key_rate",
+            "key_rate_completed_only",
+            "key_rate_success_only",
+            "leak_rate",
+            "leak_rate_completed_only",
+            "leak_rate_success_only",
+            "matrix_size_rate",
+            "matrix_size_rate_success_only",
+            "bob_communication_rate",
+            "bob_communication_rate_success_only",
+            "total_communication_rate",
+            "total_communication_rate_success_only",
+            "time_rate",
+            "time_rate_success_only"]
 def get_header():
-    return get_cfg_header() + get_output_header()
-
-
-def get_old_header():
-    header = get_header()
-    return header[:18] + [header[19]] + header[24:]
-
-
-def get_cfg_header():
-    return ["base", "N", "block_length", "num_blocks", "p_err", "success_rate", "goal_candidates_num",
-            "max_candidates_num",
-            "max_num_indices_to_encode", "predetermined_number_of_encodings", "code_strategy", "rounding_strategy",
-            "pruning_strategy", "radius_picking", "encoding_sample_size", "theoretic_key_rate"]
-
-
-def get_output_header():
-    return ["sample_size", "with_ml", "is_success", "is_fail", "is_abort", "ser_completed_only", "ser_fail_only",
-            "key_rate", "key_rate_completed_only", "key_rate_success_only",
-            "leak_rate", "leak_rate_completed_only", "leak_rate_success_only", "matrix_size_rate",
-            "matrix_size_rate_success_only", "bob_communication_rate", "bob_communication_rate_success_only",
-            "total_communication_rate", "total_communication_rate_success_only", "time_rate", "time_rate_success_only"]
-
-
-def str_to_result(row_string):
-    list_of_strings = row_string[1:-1].split(", ")
-    list_of_strings[10] = ' mb '
-    del list_of_strings[15]
-
-    row_map = {name: val for name, val in zip(get_header(), list_of_strings)}
-
-    int_rows = ["base", "block_length", "num_blocks", "goal_candidates_num", "max_candidates_num",
-                "max_num_indices_to_encode",
-                "encoding_sample_size", "sample_size"]
-    for int_row in int_rows:
-        row_map[int_row] = int(row_map[int_row])
-
-    float_rows = ["p_err", "success_rate", "key_rate", "leak_rate", "matrix_size_rate", "bob_communication_rate",
-                  "total_communication_rate", "time_rate"]
-    for float_row in float_rows:
-        row_map[float_row] = float(row_map[float_row])
-
-    bool_rows = ["predetermined_number_of_encodings", "radius_picking"]
-    for bool_row in bool_rows:
-        row_map[bool_row] = row_map[bool_row] in ["'True'", "True"]
-
-    metric_rows = [
-        "with_ml",
-        "is_success",
-        "is_fail",
-        "is_abort",
-        "ser_completed_only",
-        "ser_fail_only",
-        "key_rate_completed_only",
-        "key_rate_success_only",
-        "leak_rate_completed_only",
-        "leak_rate_success_only",
-        "matrix_size_rate_success_only",
-        "bob_communication_rate_success_only",
-        "total_communication_rate_success_only",
-        "time_rate_success_only"]
-    for metric_row in metric_rows:
-        row_map[metric_row] = metric_to_val(row_map[metric_row])
-
-    row_map['code_strategy'] = CodeStrategy[row_map['code_strategy'][1:-1]]
-    row_map['rounding_strategy'] = RoundingStrategy[row_map['rounding_strategy'][1:-1]]
-    row_map['pruning_strategy'] = PruningStrategy[row_map['pruning_strategy'][1:-1]]
-
-    cfg = MbCfg(q=row_map["base"], block_length=row_map["block_length"], num_blocks=row_map["num_blocks"],
-                p_err=row_map["p_err"],
-                success_rate=row_map["success_rate"],
-                goal_candidates_num=row_map["goal_candidates_num"],
-                rounding_strategy=row_map["rounding_strategy"],
-                pruning_strategy=row_map["pruning_strategy"],
-                fixed_number_of_encodings=row_map["predetermined_number_of_encodings"],
-                max_num_indices_to_encode=row_map["max_num_indices_to_encode"],
-                radius_picking=row_map["radius_picking"],
-                max_candidates_num=row_map["max_candidates_num"],
-                encoding_sample_size=row_map["encoding_sample_size"])
-    return Result(cfg=cfg,  with_ml=row_map["with_ml"],  is_success=row_map["is_success"],  is_fail=row_map["is_fail"],  is_abort=row_map["is_abort"],
-                  ser_completed_only=row_map["ser_completed_only"],  ser_fail_only=row_map["ser_fail_only"],  key_rate=row_map["key_rate"],
-                  key_rate_completed_only=row_map["key_rate_completed_only"],  key_rate_success_only=row_map["key_rate_success_only"],
-                  leak_rate=row_map["leak_rate"],  leak_rate_completed_only=row_map["leak_rate_completed_only"],
-                  leak_rate_success_only=row_map["leak_rate_success_only"],
-                  matrix_size_rate=row_map["matrix_size_rate"],  matrix_size_rate_success_only=row_map["matrix_size_rate_success_only"],
-                  bob_communication_rate=row_map["bob_communication_rate"],
-                  bob_communication_rate_success_only=row_map["bob_communication_rate_success_only"],
-                  total_communication_rate=row_map["total_communication_rate"],
-                  total_communication_rate_success_only=row_map["total_communication_rate_success_only"],  time_rate=row_map["time_rate"],
-                  time_rate_success_only=row_map["time_rate_success_only"],  result_list=None,  sample_size=row_map["sample_size"])
-
-def metric_to_val(metric):
-    if metric in [None, "None"]:
-        return None
-    if metric in ["'True'", "True"]:
-        return True
-    if metric in ["'False'", "False"]:
-        return False
-    return float(metric)
-
-
-def result_str_to_cfg_str(result_str):
-    list_of_strings = result_str[1:-1].split(", ")
-    cfg_strings = list_of_strings[:len(get_cfg_header()) - 1]
-    return "[" + ", ".join(cfg_strings) + "]"
-
-
-def result_csv_to_cfg_str(result_csv):
-    cfg_csv = result_csv[:len(get_cfg_header()) - 1]
-    return str(cfg_csv.tolist())
-
-
-def convert_output_file_to_cfg_string_list(input_file_name, input_format):
-    if input_format == "str":
-        input_txt_file = open(input_file_name, 'r')
-        input_txt_rows = input_txt_file.read().splitlines()
-        assert (input_txt_rows[0] in [str(get_header()), str(get_old_header())])
-
-        cfg_string_list = []
-        for input_txt_row in input_txt_rows[1:]:
-            if input_txt_row[0] != "[":
-                continue
-            cur_cfg_string = result_str_to_cfg_str(input_txt_row)
-            cfg_string_list.append(cur_cfg_string)
-
-        cfg_string_set = set(cfg_string_list)
-
-        return cfg_string_set
-
-    if input_format == "csv":
-        df = pd.read_csv(input_file_name)
-        assert (list(df) == get_header())
-
-        cfg_str_list = df.apply(func=result_csv_to_cfg_str, axis=1, raw=True).values.tolist()
-        cfg_str_set = set(cfg_str_list)
-
-        return cfg_str_set
-
-    raise "Unknown output file format"
-
-
-def convert_output_glob_to_cfg_string_list(input_files_glob, input_format):
-    input_file_names = glob.glob(input_files_glob)
-    list_of_cfg_sets = [convert_output_file_to_cfg_string_list(input_file_name, input_format) for input_file_name in
-                        input_file_names]
-    return set().union(*list_of_cfg_sets)
-
-
-def convert_output_files_to_cfg_string_list(input_files_globs, input_format):
-    list_of_cfg_sets = [convert_output_glob_to_cfg_string_list(input_files_glob, input_format) for input_files_glob in
-                        input_files_globs]
-    return set().union(*list_of_cfg_sets)
+    return cfg.specific_log_header() + mb_cfg.specific_log_header() + ldpc_cfg.specific_log_header() + polar_cfg.specific_log_header() + specific_log_header()

@@ -1,7 +1,4 @@
-import Guardbands
-import VectorDistribution
-from VectorDistributions import BinaryMemorylessVectorDistribution
-from VectorDistributions import BinaryTrellis
+from polar.vector_distribution import VectorDistribution
 
 
 class CollectionOfBinaryTrellises(VectorDistribution.VectorDistribution):
@@ -61,8 +58,8 @@ class CollectionOfBinaryTrellises(VectorDistribution.VectorDistribution):
         if self.length // 2 > self.numberOfTrellises:
             newCollectionOfBinaryTrellises = CollectionOfBinaryTrellises(self.length // 2, self.numberOfTrellises)
             for i in range(self.numberOfTrellises):
-                newCollectionOfBinaryTrellises.trellises[i] = self.trellises[i].minusTransform() if (
-                        decisionVector is None) else self.trellises[i].plusTransform(
+                newCollectionOfBinaryTrellises.trellises[i] = self.trellises[i].minus_transform() if (
+                        decisionVector is None) else self.trellises[i].plus_transform(
                     decisionVector[i * decisionVectorSubLength:(i + 1) * decisionVectorSubLength])
             return newCollectionOfBinaryTrellises
         else:
@@ -72,9 +69,9 @@ class CollectionOfBinaryTrellises(VectorDistribution.VectorDistribution):
                 self.numberOfTrellises)
 
             for i in range(self.numberOfTrellises):
-                tempTrellis = self.trellises[i].minusTransform() if (decisionVector is None) else self.trellises[
-                    i].plusTransform(decisionVector[i * decisionVectorSubLength:(i + 1) * decisionVectorSubLength])
-                marginalizedProbs = tempTrellis.calcMarginalizedProbabilities(normalize=False)
+                tempTrellis = self.trellises[i].minus_transform() if (decisionVector is None) else self.trellises[
+                    i].plus_transform(decisionVector[i * decisionVectorSubLength:(i + 1) * decisionVectorSubLength])
+                marginalizedProbs = tempTrellis.calc_marginalized_probs(normalize=False)
 
                 for x in range(2):
                     newBinaryMemorylessVectorDistribution.probs[i][x] = marginalizedProbs[x]
@@ -91,7 +88,7 @@ class CollectionOfBinaryTrellises(VectorDistribution.VectorDistribution):
         normalization = []
 
         for i in range(self.numberOfTrellises):
-            trellisNormalization = self.trellises[i].calcNormalizationVector()
+            trellisNormalization = self.trellises[i].calc_normalization_vec()
             normalization.append(trellisNormalization)
 
         return normalization
@@ -101,29 +98,3 @@ class CollectionOfBinaryTrellises(VectorDistribution.VectorDistribution):
 
         for i in range(self.numberOfTrellises):
             self.trellises[i].normalize(normalization[i])
-
-
-def buildCollectionOfBinaryTrellises_uniformInput_deletion(receivedWord, deletionProb, xi, n, n0,
-                                                           numberOfOnesToAddAtBothEndsOfGuardbands, verbosity=0):
-    trimmedSubwords = Guardbands.removeDeletionGuardBands(receivedWord, n, n0)
-
-    trellisLength = 2 ** n0
-    numberOfTrellises = 2 ** (n - n0)
-    totalLength = 2 ** n
-
-    collection = CollectionOfBinaryTrellises(totalLength, numberOfTrellises)
-    collection.trellises = []
-
-    trimmedZerosAtEdges = True
-    if verbosity > 0:
-        print("trimmed subwords")
-    for subword in trimmedSubwords:
-        if verbosity > 0:
-            print(subword)
-
-        tempTrellis = BinaryTrellis.buildTrellis_uniformInput_deletion(subword, trellisLength, deletionProb,
-                                                                       trimmedZerosAtEdges,
-                                                                       numberOfOnesToAddAtBothEndsOfGuardbands)
-        collection.trellises.append(tempTrellis)
-
-    return collection

@@ -3,10 +3,9 @@ import math
 import numpy as np
 from scipy.special import logsumexp
 
-import VectorDistribution
+from polar.vector_distribution import VectorDistribution
 
-
-class QaryMemorylessVectorDistribution(VectorDistribution.VectorDistribution):
+class QaryMemorylessVectorDistribution(VectorDistribution):
 
     def __init__(self, q, length, use_log=False):
         assert (q > 1)

@@ -6,10 +6,9 @@ import os.path
 
 import numpy as np
 
-import QaryPolarEncoderDecoder
-from ScalarDistributions import BinaryMemorylessDistribution
-from ScalarDistributions.BinaryMemorylessDistribution import eta, naturalEta
-from VectorDistributions import QaryMemorylessVectorDistribution
+from polar.scalar_distributions import BinaryMemorylessDistribution
+from polar.scalar_distributions.BinaryMemorylessDistribution import eta, naturalEta
+from polar.vector_distributions import QaryMemorylessVectorDistribution
 
 # constants
 lcrLeft = 0
@@ -956,8 +955,8 @@ def calcTVAndPe_degradingUpgrading(n, L, xDistribution, xyDistribution, director
                 for m in range(1, n + 1):
                     xDists.append([])
                     for dist in xDists[m - 1]:
-                        xDists[m].append(dist.minusTransform().upgrade(L))
-                        xDists[m].append(dist.plusTransform().upgrade(L))
+                        xDists[m].append(dist.minus_transform().upgrade(L))
+                        xDists[m].append(dist.plus_transform().upgrade(L))
 
             xyDists = []
             xyDists.append([])
@@ -966,8 +965,8 @@ def calcTVAndPe_degradingUpgrading(n, L, xDistribution, xyDistribution, director
             for m in range(1, n + 1):
                 xyDists.append([])
                 for dist in xyDists[m - 1]:
-                    xyDists[m].append(dist.minusTransform().degrade(L))
-                    xyDists[m].append(dist.plusTransform().degrade(L))
+                    xyDists[m].append(dist.minus_transform().degrade(L))
+                    xyDists[m].append(dist.plus_transform().degrade(L))
 
             N = 1 << n
             TVvec = []

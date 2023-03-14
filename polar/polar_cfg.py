@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from cfg import CodeStrategy, Cfg
-from ScalarDistributions import QaryMemorylessDistribution
+from polar.scalar_distributions.QaryMemorylessDistribution import QaryMemorylessDistribution
 
 
 class IndexType:
@@ -60,6 +60,22 @@ class PolarCfg(Cfg):
                   + ", numInfoQudits=" + str(self.num_info_indices)
                   + ", maxListSize=" + str(self.scl_l))
 
+
+    def log_dict(self):
+        super_dict = super().log_dict()
+        specific_dict = {"code_strategy": str(self.code_strategy),
+                         "polar_n": self.n,
+                         "polar_desired_key_rate": self.desired_key_rate,
+                         "polar_desired_relative_gap_rate": self.desired_relative_gap_rate,
+                         "polar_desired_success_rate": self.desired_success_rate,
+                         "polar_num_info_indices": self.num_info_indices,
+                         "polar_num_frozen_indices": self.num_frozen_indices,
+                         "polar_constr_l": self.constr_l,
+                         "polar_key_rate": self.key_rate,
+                         "polar_scl_l": self.scl_l}
+        assert (set(specific_dict.keys()) == set(specific_log_header()))
+        return {**super_dict, **specific_dict}
+
     def _calc_index_types(self):
         """
         Constructs the code, i.e. defines which bits are informational and which are frozen.
@@ -100,16 +116,16 @@ class PolarCfg(Cfg):
                 for m in range(1, self.n + 1):
                     x_dists.append([])
                     for dist in x_dists[m - 1]:
-                        x_dists[m].append(dist.minusTransform().upgrade(self.constr_l))
-                        x_dists[m].append(dist.plusTransform().upgrade(self.constr_l))
+                        x_dists[m].append(dist.minus_transform().upgrade(self.constr_l))
+                        x_dists[m].append(dist.plus_transform().upgrade(self.constr_l))
 
             # Degrade
             xy_dists = [[self.xy_dist]]
             for m in range(1, self.n + 1):
                 xy_dists.append([])
                 for dist in xy_dists[m - 1]:
-                    xy_dists[m].append(dist.minusTransform().degrade(self.constr_l))
-                    xy_dists[m].append(dist.plusTransform().degrade(self.constr_l))
+                    xy_dists[m].append(dist.minus_transform().degrade(self.constr_l))
+                    xy_dists[m].append(dist.plus_transform().degrade(self.constr_l))
 
             tv = []
             pe = []
@@ -173,3 +189,21 @@ class PolarCfg(Cfg):
                 print("fraction of info indices = ", 1.0 - len(frozen_set) / self.N)
 
         return index_types, frozen_set, info_set
+def specific_log_header():
+    return ["code_strategy",
+            "polar_n",
+            "polar_desired_key_rate",
+            "polar_desired_relative_gap_rate",
+            "polar_desired_success_rate",
+            "polar_num_info_indices",
+            "polar_num_frozen_indices",
+            "polar_constr_l",
+            "polar_key_rate",
+            "polar_scl_l"]
+def specific_log_header_params():
+    return ["code_strategy",
+            "polar_desired_key_rate",
+            "polar_desired_relative_gap_rate",
+            "polar_desired_success_rate",
+            "polar_constr_l",
+            "polar_scl_l"]

@@ -6,8 +6,11 @@ import numpy as np
 from cfg import Cfg, CodeStrategy
 
 class IndicesToEncodeStrategy(Enum):
-    ALL_MULTI_CANDIDATE_BLOCKS = 1
-    MOST_CANDIDATE_BLOCKS = 2
+    all_multi_candidate_blocks = "all_multi_candidate_blocks"
+    most_candidate_blocks = "most_candidate_blocks"
+
+    def __str__(self):
+        return self.value
 
 class RoundingStrategy(Enum):
     floor = 'floor'
@@ -36,7 +39,7 @@ class MbCfg(Cfg):
                  use_zeroes_in_encoding_matrix=True,
                  goal_candidates_num=None,
                  max_candidates_num=None,
-                 indices_to_encode_strategy=IndicesToEncodeStrategy.ALL_MULTI_CANDIDATE_BLOCKS,
+                 indices_to_encode_strategy=IndicesToEncodeStrategy.all_multi_candidate_blocks,
                  rounding_strategy=RoundingStrategy.ceil,
                  pruning_strategy=PruningStrategy.radii_probabilities,
                  fixed_number_of_encodings=None,
@@ -61,7 +64,6 @@ class MbCfg(Cfg):
         self.max_num_indices_to_encode = max_num_indices_to_encode or num_blocks
         self.max_candidates_num = max_candidates_num
         self.encoding_sample_size = encoding_sample_size
-        self.theoretic_key_rate = self._theoretic_key_rate()
         self.radius_picking = radius_picking
         if p_err == 0.0:
             self.fixed_radius = True
@@ -84,6 +86,25 @@ class MbCfg(Cfg):
         if fixed_number_of_encodings:
             self.number_of_encodings_list = self._determine_num_encodings_list()
 
+    def log_dict(self):
+        super_dict = super().log_dict()
+        specific_dict = {"code_strategy": str(self.code_strategy),
+                         "mb_success_rate": self.success_rate,
+                         "mb_block_length": self.block_length,
+                         "mb_num_blocks": self.num_blocks,
+                         "mb_full_rank_encoding": self.full_rank_encoding,
+                         "mb_use_zeroes_in_encoding_matrix": self.use_zeroes_in_encoding_matrix,
+                         "mb_goal_candidates_num": self.goal_candidates_num,
+                         "mb_indices_to_encode_strategy": str(self.indices_to_encode_strategy),
+                         "mb_rounding_strategy": str(self.rounding_strategy),
+                         "mb_pruning_strategy": str(self.pruning_strategy),
+                         "mb_max_num_indices_to_encode": self.max_num_indices_to_encode,
+                         "mb_max_candidates_num": self.max_candidates_num,
+                         "mb_encoding_sample_size": self.encoding_sample_size,
+                         "mb_radius_picking": self.radius_picking,
+                         "mb_predetermined_number_of_encodings": self.fixed_number_of_encodings}
+        assert (set(specific_dict.keys()) == set(specific_log_header()))
+        return {**super_dict, **specific_dict}
 
     def round(self, number):
         if self.rounding_strategy == RoundingStrategy.floor:
@@ -219,3 +240,35 @@ class MbCfg(Cfg):
 # def timeout_handler(signum, frame):
 #     print("Radii calculation out of time.")
 #     raise TimeoutError("Radii calculation out of time.")
+def specific_log_header():
+    return ["code_strategy",
+            "mb_success_rate",
+            "mb_block_length",
+            "mb_num_blocks",
+            "mb_full_rank_encoding",
+            "mb_use_zeroes_in_encoding_matrix",
+            "mb_goal_candidates_num",
+            "mb_indices_to_encode_strategy",
+            "mb_rounding_strategy",
+            "mb_pruning_strategy",
+            "mb_max_num_indices_to_encode",
+            "mb_max_candidates_num",
+            "mb_encoding_sample_size",
+            "mb_radius_picking",
+            "mb_predetermined_number_of_encodings"]
+def specific_log_header_params():
+    return ["code_strategy",
+            "mb_success_rate",
+            "mb_block_length",
+            "mb_num_blocks",
+            "mb_full_rank_encoding",
+            "mb_use_zeroes_in_encoding_matrix",
+            "mb_goal_candidates_num",
+            "mb_indices_to_encode_strategy",
+            "mb_rounding_strategy",
+            "mb_pruning_strategy",
+            "mb_max_num_indices_to_encode",
+            "mb_max_candidates_num",
+            "mb_encoding_sample_size",
+            "mb_radius_picking",
+            "mb_predetermined_number_of_encodings"]

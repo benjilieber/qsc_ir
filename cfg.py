@@ -27,6 +27,8 @@ class Cfg(object):
             self.raw_results_file_path = orig_cfg.raw_results_file_path
             self.agg_results_file_path = orig_cfg.agg_results_file_path
 
+            self.theoretic_key_rate = orig_cfg.theoretic_key_rate
+
         else:
             self.verbosity = verbosity
 
@@ -39,6 +41,8 @@ class Cfg(object):
             self.raw_results_file_path = raw_results_file_path
             self.agg_results_file_path = agg_results_file_path
 
+            self.theoretic_key_rate = self._theoretic_key_rate()
+
     def _theoretic_key_rate(self):
         if self.p_err == 0.0:
             return math.log(self.q/(self.q-1), 2)
@@ -48,3 +52,25 @@ class Cfg(object):
 
     def _theoretic_key_q_rate(self):
         return self._theoretic_key_rate() * self.log(2, self.q)
+
+    def log_dict(self):
+        specific_dict = {"q": self.q,
+                         "N": self.N,
+                         "p_err": self.p_err,
+                         "qer": 1 - self.p_err,
+                         "use_log": self.use_log,
+                         "theoretic_key_rate": self.theoretic_key_rate}
+        assert (set(specific_dict.keys()) == set(specific_log_header()))
+        return specific_dict
+def specific_log_header():
+    return ["q",
+            "N",
+            "p_err",
+            "qer",
+            "use_log",
+            "theoretic_key_rate"]
+def specific_log_header_params():
+    return ["q",
+            "N",
+            "p_err",
+            "use_log"]

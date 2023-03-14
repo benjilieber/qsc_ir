@@ -1,8 +1,17 @@
 import csv
+import glob
 import os
 import sys
 
+import pandas as pd
+
+import cfg
 import result
+from ldpc import ldpc_cfg
+from ldpc.ldpc_cfg import LdpcCfg
+from mb import mb_cfg
+from polar import polar_cfg
+from polar.polar_cfg import PolarCfg
 
 sys.path.append(os.getcwd())
 import numpy as np
@@ -109,16 +118,19 @@ def multi_run(args):
             print('starting computations in series')
 
     if args.previous_run_files is not None:
-        previous_cfg_string_list = result.convert_output_files_to_cfg_string_list(args.previous_run_files, args.previous_run_file_format)
-    else:
-        previous_cfg_string_list = []
+        assert (len(args.previous_run_files) <= 1)
+        previous_cfg_df = pd.read_csv(args.previous_run_files[0])
 
     for code_strategy in args.code_strategy_list:
         for q in args.q_list:
             for p_err in args.p_err_range:
                 for N in args.N_list:
-                    cfg = Cfg(q=q, N=N, p_err=p_err, raw_results_file_path=args.raw_results_file_path, agg_results_file_path=args.agg_results_file_path, verbosity=args.verbosity)
-                    for run_cfg in generate_cfg(code_strategy, args, cfg, previous_cfg_string_list):
+                    cfg = Cfg(q=q, N=N, p_err=p_err, use_log=args.use_log, raw_results_file_path=args.raw_results_file_path, agg_results_file_path=args.agg_results_file_path, verbosity=args.verbosity)
+                    for run_cfg in generate_cfg(code_strategy, args, cfg):
+                        if args.previous_run_files is not None and previous_cfg_df.apply(check_cfg_equality(run_cfg), axis=1).any(axis=None):
+                            if args.verbosity:
+                                print("skip cfg (previously run)")
+                            continue
                         if args.verbosity:
                             print(result.Result(run_cfg))
                         if args.run_mode == 'parallel':
@@ -139,56 +151,69 @@ def multi_run(args):
     if args.verbosity:
         print(f'elapsed time: {end - start}')
 
-def generate_cfg(code_strategy, args, cfg, previous_cfg_string_list):
+def generate_cfg(code_strategy, args, cfg):
     if code_strategy == CodeStrategy.mb:
-        for mb_cfg in generate_mb_cfg(args, cfg, previous_cfg_string_list):
+        for mb_cfg in generate_mb_cfg(args, cfg):
             yield mb_cfg
     elif code_strategy == CodeStrategy.ldpc:
-        for ldpc_cfg in generate_ldpc_cfg(args, cfg, previous_cfg_string_list):
+        for ldpc_cfg in generate_ldpc_cfg(args, cfg):
             yield ldpc_cfg
     elif code_strategy == CodeStrategy.polar:
-        for polar_cfg in generate_polar_cfg(args, cfg, previous_cfg_string_list):
+        for polar_cfg in generate_polar_cfg(args, cfg):
             yield polar_cfg
     else:
         raise "Unknown code strategy: " + str(code_strategy)
 
-def generate_mb_cfg(args, cfg, previous_cfg_string_list):
+def generate_mb_cfg(args, cfg):
     if cfg.p_err == 0.0:
         success_rate_range = [1.0]
-    elif args.success_rate_range is not None:
-        success_rate_range = args.success_rate_range
+    elif args.mb_success_rate_range is not None:
+        success_rate_range = args.mb_success_rate_range
     else:
         success_rate_range = [1.0 - 1.0 / args.N]
     for success_rate in success_rate_range:
-        for block_size in args.block_size_range:
+        for block_size in args.mb_block_size_range:
             num_blocks = cfg.N // block_size
             actual_N = num_blocks * block_size
-            for rounding_strategy in args.rounding_strategy_list:
-                if args.goal_candidates_num is not None:
-                    goal_candidates_num_range = [args.goal_candidates_num]
+            for rounding_strategy in args.mb_rounding_strategy_list:
+                if args.mb_goal_candidates_num is not None:
+                    goal_candidates_num_range = [args.mb_goal_candidates_num]
                 else:
                     goal_candidates_num_range = [3, 9, 27, 81, 243, 729, 2187, math.ceil(math.sqrt(actual_N))]
                 for goal_candidates_num in goal_candidates_num_range:
-                    for max_num_indices_to_encode in args.max_num_indices_to_encode_range:
-                        run_cfg = MbCfg(orig_cfg=cfg, success_rate=success_rate, block_length=block_size, num_blocks=num_blocks,
-                                        goal_candidates_num=goal_candidates_num,
-                                        indices_to_encode_strategy=IndicesToEncodeStrategy.MOST_CANDIDATE_BLOCKS,
-                                        rounding_strategy=rounding_strategy,
-                                        pruning_strategy=args.pruning_strategy,
-                                        fixed_number_of_encodings=args.fixed_number_of_encodings,
-                                        max_num_indices_to_encode=max_num_indices_to_encode,
-                                        radius_picking=args.radius_picking,
-                                        max_candidates_num=args.max_candidates_num,
-                                        encoding_sample_size=args.encoding_sample_size)
-                        if str(Result(run_cfg).get_cfg_row()[:-1]) in previous_cfg_string_list:
-                            if args.verbosity:
-                                print("skip cfg (previously run)")
-                            continue
-                        else:
-                            yield run_cfg
+                    for max_num_indices_to_encode in args.mb_max_num_indices_to_encode_range:
+                        yield MbCfg(orig_cfg=cfg, success_rate=success_rate, block_length=block_size, num_blocks=num_blocks,
+                                    goal_candidates_num=goal_candidates_num,
+                                    indices_to_encode_strategy=IndicesToEncodeStrategy.most_candidate_blocks,
+                                    rounding_strategy=rounding_strategy,
+                                    pruning_strategy=args.mb_pruning_strategy,
+                                    fixed_number_of_encodings=args.mb_fixed_number_of_encodings,
+                                    max_num_indices_to_encode=max_num_indices_to_encode,
+                                    radius_picking=args.mb_radius_picking,
+                                    max_candidates_num=args.mb_max_candidates_num,
+                                    encoding_sample_size=args.mb_encoding_sample_size)
 
-def generate_ldpc_cfg(args, cfg, previous_cfg_string_list):
-    use_log = args.use_log
+def generate_ldpc_cfg(args, cfg):
+    for sparsity in args.ldpc_sparsity_range:
+        yield LdpcCfg(orig_cfg=cfg, sparsity=sparsity)
 
-def generate_polar_cfg(args, cfg, previous_cfg_string_list):
-    use_log = args.use_log
+def generate_polar_cfg(args, cfg):
+    for relative_gap_rate in args.polar_relative_gap_rate_list:
+        if args.polar_scl_l_list is not None:
+            scl_l_list = args.polar_scl_l_list
+        else:
+            scl_l_list = [3, 9, 27, 81, 243, 729, 2187]
+        for scl_l in scl_l_list:
+            yield PolarCfg(orig_cfg=cfg, constr_l=args.polar_constr_l, relative_gap_rate=relative_gap_rate, scl_l=scl_l)
+
+
+def check_cfg_equality(cfg1):
+    dict1 = cfg1.log_dict()
+    specific_log_header_params = cfg.specific_log_header_params() + mb_cfg.specific_log_header_params() + ldpc_cfg.specific_log_header_params() + polar_cfg.specific_log_header_params()
+    cfg_params = list(set(specific_log_header_params) & set(dict1.keys()))
+    def check_cfg_equality_nested(cfg2):
+        for key in cfg_params:
+            if cfg2[key] != dict1[key]:
+                return False
+        return True
+    return check_cfg_equality_nested

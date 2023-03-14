@@ -1,9 +1,9 @@
 import numpy as np
 
-import VectorDistribution
+from polar.vector_distribution import VectorDistribution
 
 
-class BinaryMemorylessVectorDistribution(VectorDistribution.VectorDistribution):
+class BinaryMemorylessVectorDistribution(VectorDistribution):
 
     def __init__(self, length):
         assert (length > 0)

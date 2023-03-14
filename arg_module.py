@@ -77,7 +77,6 @@ def parse_args():
 def create_args(q_list,
                 p_err_range,
                 N_list,
-                success_rate_range,
                 code_strategy_list,
                 use_log,
                 # Run environment parameters
@@ -90,28 +89,28 @@ def create_args(q_list,
                 run_mode,
                 sample_size,
                 # Multi-block parameters
-                block_size_range,
-                goal_candidates_num,
-                max_candidates_num,
-                fixed_number_of_encodings,
-                max_num_indices_to_encode_range,
-                radius_picking,
-                rounding_strategy_list,
-                pruning_strategy,
-                encoding_sample_size,
+                mb_success_rate_range,
+                mb_block_size_range,
+                mb_goal_candidates_num,
+                mb_max_candidates_num,
+                mb_fixed_number_of_encodings,
+                mb_max_num_indices_to_encode_range,
+                mb_radius_picking,
+                mb_rounding_strategy_list,
+                mb_pruning_strategy,
+                mb_encoding_sample_size,
                 # LDPC parameters
-                sparsity_range,
+                ldpc_sparsity_range,
                 # Polar codes parameters
-                constr_l,
-                relative_gap_rate_list,
-                scl_l
+                polar_constr_l,
+                polar_relative_gap_rate_list,
+                polar_scl_l_list
                 ):
     class Args(object):
         def __init__(self):
             self.q_list = q_list
             self.p_err_range = p_err_range
             self.N_list = N_list
-            self.success_rate_range = success_rate_range
             self.code_strategy_list = code_strategy_list
             self.use_log = use_log
             # Run environment parameters
@@ -124,21 +123,22 @@ def create_args(q_list,
             self.run_mode = run_mode
             self.sample_size = sample_size
             # Multi-block parameters
-            self.block_size_range = block_size_range
-            self.goal_candidates_num = goal_candidates_num
-            self.max_candidates_num = max_candidates_num
-            self.fixed_number_of_encodings = fixed_number_of_encodings
-            self.max_num_indices_to_encode_range = max_num_indices_to_encode_range
-            self.radius_picking = radius_picking
-            self.rounding_strategy_list = rounding_strategy_list
-            self.pruning_strategy = pruning_strategy
-            self.encoding_sample_size = encoding_sample_size
+            self.mb_success_rate_range = mb_success_rate_range
+            self.mb_block_size_range = mb_block_size_range
+            self.mb_goal_candidates_num = mb_goal_candidates_num
+            self.mb_max_candidates_num = mb_max_candidates_num
+            self.mb_fixed_number_of_encodings = mb_fixed_number_of_encodings
+            self.mb_max_num_indices_to_encode_range = mb_max_num_indices_to_encode_range
+            self.mb_radius_picking = mb_radius_picking
+            self.mb_rounding_strategy_list = mb_rounding_strategy_list
+            self.mb_pruning_strategy = mb_pruning_strategy
+            self.mb_encoding_sample_size = mb_encoding_sample_size
             # LDPC parameters
-            self.sparsity_range = sparsity_range
+            self.ldpc_sparsity_range = ldpc_sparsity_range
             # Polar codes parameters
-            self.constr_l = constr_l
-            self.relative_gap_rate_list = relative_gap_rate_list
-            self.scl_l = scl_l
+            self.polar_constr_l = polar_constr_l
+            self.polar_relative_gap_rate_list = polar_relative_gap_rate_list
+            self.polar_scl_l_list = polar_scl_l_list
 
     return Args()
 

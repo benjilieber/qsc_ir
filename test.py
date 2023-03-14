@@ -8,13 +8,13 @@ import sys
 
 is_slurm = False
 verbosity = True
-run_mode = "parallel"
-p_err = float(sys.argv[1])
-# p_err = 0.0
+run_mode = "series"
+# p_err = float(sys.argv[1])
+p_err = 0.0
 
 # previous_run_files = [r'/tmp/history/{p_err}/slurm-*.out'.format(p_err=p_err)]
 # previous_run_file_format = "str"
-previous_run_files = ["/cs/usr/benjilieber/PycharmProjects/multi_block_protocol/results/run_results_agg.csv"]
+previous_run_files = ["results/run_results_agg.csv"]
 previous_run_file_format = "csv"
 # previous_run_files = None
 # previous_run_file_format = None
@@ -26,35 +26,33 @@ use_log = True
 sample_size = 10
 # raw_results_file_path = "results/old/fake_results.csv"
 # agg_results_file_path = "results/old/fake_results_agg.csv"
-raw_results_file_path = "/cs/usr/benjilieber/PycharmProjects/multi_block_protocol/results/run_results.csv"
-agg_results_file_path = "/cs/usr/benjilieber/PycharmProjects/multi_block_protocol/results/run_results_agg.csv"
+raw_results_file_path = "results/run_results.csv"
+agg_results_file_path = "results/run_results_agg.csv"
 
 code_strategy_list = [CodeStrategy.mb]
 
 # Multi-block parameters
-success_rate_range = [0.9, 0.99, 0.999, 0.9999]
-block_size_range = list(range(3, 20))
-goal_candidates_num = None
-max_candidates_num = 100_000
-max_num_indices_to_encode_range = [2, 4, 8, None]
-fixed_number_of_encodings = False
-radius_picking = False
-rounding_strategy_list = [RoundingStrategy.floor]
-pruning_strategy = PruningStrategy.relative_weights
-encoding_sample_size = 1
+mb_success_rate_range = [0.9, 0.99, 0.999, 0.9999]
+mb_block_size_range = list(range(3, 20))
+mb_goal_candidates_num = None
+mb_max_candidates_num = 100_000
+mb_max_num_indices_to_encode_range = [2, 4, 8, None]
+mb_fixed_number_of_encodings = False
+mb_radius_picking = False
+mb_rounding_strategy_list = [RoundingStrategy.floor]
+mb_pruning_strategy = PruningStrategy.relative_weights
+mb_encoding_sample_size = 1
 
 # LDPC parameters
-sparsity_range = None
+ldpc_sparsity_range = None
 
 # Polar codes parameters
-constr_l = 100
-relative_gap_rate_list = [0.95, 0.975, 1.0, 1.025, 1.05]
-scl_l = None
+polar_constr_l = 100
+polar_relative_gap_rate_list = [0.95, 0.975, 1.0, 1.025, 1.05]
+polar_scl_l_list = None
 
 args = arg_module.create_args(N_list=N_list,
-                              block_size_range=block_size_range,
                               p_err_range=p_err_range,
-                              success_rate_range=success_rate_range,
                               q_list=q_list,
                               code_strategy_list=code_strategy_list,
                               use_log=use_log,
@@ -68,20 +66,22 @@ args = arg_module.create_args(N_list=N_list,
                               run_mode=run_mode,
                               sample_size=sample_size,
                               # Multi-block parameters
-                              goal_candidates_num=goal_candidates_num,
-                              max_candidates_num=max_candidates_num,
-                              fixed_number_of_encodings=fixed_number_of_encodings,
-                              max_num_indices_to_encode_range=max_num_indices_to_encode_range,
-                              radius_picking=radius_picking,
-                              rounding_strategy_list=rounding_strategy_list,
-                              pruning_strategy=pruning_strategy,
-                              encoding_sample_size=encoding_sample_size,
+                              mb_success_rate_range=mb_success_rate_range,
+                              mb_block_size_range=mb_block_size_range,
+                              mb_goal_candidates_num=mb_goal_candidates_num,
+                              mb_max_candidates_num=mb_max_candidates_num,
+                              mb_fixed_number_of_encodings=mb_fixed_number_of_encodings,
+                              mb_max_num_indices_to_encode_range=mb_max_num_indices_to_encode_range,
+                              mb_radius_picking=mb_radius_picking,
+                              mb_rounding_strategy_list=mb_rounding_strategy_list,
+                              mb_pruning_strategy=mb_pruning_strategy,
+                              mb_encoding_sample_size=mb_encoding_sample_size,
                               # LDPC parameters
-                              sparsity_range=sparsity_range,
+                              ldpc_sparsity_range=ldpc_sparsity_range,
                               # Polar codes parameters
-                              constr_l=constr_l,
-                              relative_gap_rate_list=relative_gap_rate_list,
-                              scl_l=scl_l)
+                              polar_constr_l=polar_constr_l,
+                              polar_relative_gap_rate_list=polar_relative_gap_rate_list,
+                              polar_scl_l_list=polar_scl_l_list)
 run_module.multi_run(args)
 
 # import plot

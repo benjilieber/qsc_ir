@@ -3,7 +3,7 @@ import random
 import numpy as np
 import scipy.special
 
-import VectorDistribution
+from polar.vector_distribution import VectorDistribution
 
 
 class Vertex():
@@ -100,7 +100,7 @@ class Edge():
         return self.toString()
 
 
-class BinaryTrellis(VectorDistribution.VectorDistribution):
+class BinaryTrellis(VectorDistribution):
     def __init__(self, length):
         """Initialize an empty trellis
 

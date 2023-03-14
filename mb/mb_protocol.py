@@ -105,9 +105,9 @@ class MbProtocol(object):
     def pick_indices_to_encode(self, num_candidates_per_block, encode_new_block):
         if encode_new_block:
             num_candidates_per_block = num_candidates_per_block + [math.inf]
-        if self.cfg.indices_to_encode_strategy == IndicesToEncodeStrategy.ALL_MULTI_CANDIDATE_BLOCKS or not encode_new_block:
+        if self.cfg.indices_to_encode_strategy == IndicesToEncodeStrategy.all_multi_candidate_blocks or not encode_new_block:
             return [i for i, e in enumerate(num_candidates_per_block) if e > 1]
-        if self.cfg.indices_to_encode_strategy == IndicesToEncodeStrategy.MOST_CANDIDATE_BLOCKS:
+        if self.cfg.indices_to_encode_strategy == IndicesToEncodeStrategy.most_candidate_blocks:
             num_indices_to_encode = min(self.cfg.max_num_indices_to_encode,
                                         len(num_candidates_per_block) - num_candidates_per_block.count(1))
             return sorted(range(len(num_candidates_per_block)), key=lambda sub: num_candidates_per_block[sub])[
