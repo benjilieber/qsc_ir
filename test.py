@@ -5,7 +5,7 @@ from mb.mb_cfg import RoundingStrategy, PruningStrategy
 import sys
 
 is_slurm = False
-verbosity = False
+verbosity = True
 run_mode = "parallel"
 p_err = float(sys.argv[1])
 # p_err = 0.0
@@ -17,15 +17,15 @@ previous_run_file_format = "str"
 previous_run_files = None
 previous_run_file_format = None
 
-q_list = [5]
+q_list = [3]
 p_err_range = [p_err]  # [0.0, 0.0001, 0.001, 0.01, 0.02, 0.05, 0.1]
 N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
 use_log = True
 sample_size = 10
 # raw_results_file_path = "results/old/fake_results.csv"
 # agg_results_file_path = "results/old/fake_results_agg.csv"
-raw_results_file_path = "results/test_results.csv"
-agg_results_file_path = "results/test_results_agg.csv"
+raw_results_file_path = "/cs/usr/benjilieber/PycharmProjects/multi_block_protocol/results/test_results.csv"
+agg_results_file_path = "/cs/usr/benjilieber/PycharmProjects/multi_block_protocol/results/test_results_agg.csv"
 
 code_strategy_list = [CodeStrategy.mb]
 
