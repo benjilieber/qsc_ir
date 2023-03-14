@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import arg_module
 import run_module
 from cfg import CodeStrategy
@@ -10,22 +12,22 @@ run_mode = "parallel"
 p_err = float(sys.argv[1])
 # p_err = 0.0
 
-previous_run_files = [r'/tmp/history/{p_err}/slurm-*.out'.format(p_err=p_err)]
-previous_run_file_format = "str"
-# previous_run_files = ["/tmp/history/history_agg.csv"]
-# previous_run_file_format = "txt"
-previous_run_files = None
-previous_run_file_format = None
+# previous_run_files = [r'/tmp/history/{p_err}/slurm-*.out'.format(p_err=p_err)]
+# previous_run_file_format = "str"
+previous_run_files = ["/cs/usr/benjilieber/PycharmProjects/multi_block_protocol/results/run_results_agg.csv"]
+previous_run_file_format = "csv"
+# previous_run_files = None
+# previous_run_file_format = None
 
-q_list = [3]
+q_list = [7]
 p_err_range = [p_err]  # [0.0, 0.0001, 0.001, 0.01, 0.02, 0.05, 0.1]
 N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
 use_log = True
 sample_size = 10
 # raw_results_file_path = "results/old/fake_results.csv"
 # agg_results_file_path = "results/old/fake_results_agg.csv"
-raw_results_file_path = "/cs/usr/benjilieber/PycharmProjects/multi_block_protocol/results/test_results.csv"
-agg_results_file_path = "/cs/usr/benjilieber/PycharmProjects/multi_block_protocol/results/test_results_agg.csv"
+raw_results_file_path = "/cs/usr/benjilieber/PycharmProjects/multi_block_protocol/results/run_results.csv"
+agg_results_file_path = "/cs/usr/benjilieber/PycharmProjects/multi_block_protocol/results/run_results_agg.csv"
 
 code_strategy_list = [CodeStrategy.mb]
 

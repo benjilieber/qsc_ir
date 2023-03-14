@@ -55,7 +55,7 @@ class MbProtocol(object):
 
         ml_result = self.get_result(time=end-start, is_ml=True)
 
-        if self.cfg.verbosity:
+        if self.cfg.verbosity and self.cur_candidates_num > 0:
             print("hamming distance x and most probable x', pre-reducing: " + str(
                 util.hamming_multi_block(self.bob.a_candidates[np.argmin(self.bob.a_candidates_errors)], self.alice.a)))
 
