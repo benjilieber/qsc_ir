@@ -1,12 +1,10 @@
 import math
-import os.path
 import sys
 from enum import Enum
 from math import floor
 
 import numpy as np
 
-from polar.polar_encoder_decoder import PolarEncoderDecoder
 from polar.scalar_distributions.binary_memoryless_distribution import eta, naturalEta, BinaryMemorylessDistribution
 from polar.vector_distributions.qary_memoryless_vector_distribution import QaryMemorylessVectorDistribution
 
@@ -107,7 +105,7 @@ class QaryMemorylessDistribution:
 
         # create q-1 "empty" channels
         for i in range(q - 1):
-            binaryMemorylessDistributions.append(BinaryMemorylessDistribution.BinaryMemorylessDistribution())
+            binaryMemorylessDistributions.append(BinaryMemorylessDistribution())
             binaryMemorylessDistributions[i].auxiliary = []
 
         # calculate the marginals p(X = j)
@@ -178,7 +176,7 @@ class QaryMemorylessDistribution:
         return sum(self.probs[y])
 
     # polar transforms
-    def minusTransform(self):
+    def minus_transform(self):
         newDistribution = QaryMemorylessDistribution(self.q)
 
         for y1 in self.probs:
@@ -194,7 +192,7 @@ class QaryMemorylessDistribution:
 
         return newDistribution
 
-    def plusTransform(self):
+    def plus_transform(self):
         newDistribution = QaryMemorylessDistribution(self.q)
 
         for y1 in self.probs:
@@ -754,7 +752,7 @@ class QaryMemorylessDistribution:
         return M
 
     def makeQaryMemorylessVectorDistribution(self, length, yvec, use_log=False):
-        qmvd = QaryMemorylessVectorDistribution.QaryMemorylessVectorDistribution(self.q, length, use_log)
+        qmvd = QaryMemorylessVectorDistribution(self.q, length, use_log)
 
         if yvec is not None:
             assert (len(yvec) == length)
@@ -907,91 +905,3 @@ def upgrade_cost_lower_bound(q, L):
     kappa = (q - 1) / (2 * math.pi * (q + 1)) * (math.gamma(1 + (q - 1) / 2) / math.factorial(q - 1))
 
     return kappa * (L ** (-2 / (q - 1))) / math.log(2)
-
-
-def calcFrozenSet_degradingUpgrading(n, L, xDistribution, xyDistribution, directory_name=None,
-                                     upperBoundOnErrorProbability=None, numInfoIndices=None, verbosity=False):
-    """Calculate the frozen set by degrading and upgrading the a-priori and joint distributions, respectively
-
-    Args:
-        n (int): number of polar transforms
-
-        L (int): number of quantization levels, for both encoding and decoding
-
-        upperBoundOnErrorProbability (float): select an index i to be unfrozen if the total-variation K(U_i|U^{i-1}) \leq epsilon/(2N) and the probatility of error Pe(U_i | U^{i-1}, Y^{N-1}) \leq epsilon/(2N), where epsilon is short for upperBoundOnErrorProbability
-
-        xVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-priori entries for P(X=j) for all j in range(q). If this is set to None, then we assume a uniform input distribution, in which case the above criterion for i being unfrozen is simplified to Pe(U_i | U^{i-1}, Y^{N-1}) \leq epsilon/N.
-
-        xyVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-posteriori entries for P(X=j) for all j in range(q). That is, entry i contains P(X=j,Y=y_i) for all j in range(q).
-    Returns:
-        frozenSet (set): the set of frozen indices
-    """
-    assert (n >= 0)
-    assert (L > 0)
-    assert (upperBoundOnErrorProbability is None or upperBoundOnErrorProbability > 0)
-    assert (xyDistribution is not None)
-    TVvec, Pevec = calcTVAndPe_degradingUpgrading(n, L, xDistribution, xyDistribution, directory_name,
-                                                  verbosity=verbosity)
-    frozenSet = PolarEncoderDecoder.frozenSetFromTVAndPe(TVvec, Pevec, upperBoundOnErrorProbability, numInfoIndices,
-                                                         verbosity=verbosity)
-    return frozenSet
-
-
-def calcTVAndPe_degradingUpgrading(n, L, xDistribution, xyDistribution, directory_name=None, verbosity=False):
-    if directory_name is not None:
-        tv_construction_name = directory_name + '{}.npy'.format("DegradingUpgrading_L=" + str(L) + "_tv")
-        pe_construction_name = directory_name + '{}.npy'.format("DegradingUpgrading_L=" + str(L) + "_pe")
-        if verbosity:
-            print(tv_construction_name)
-            print(pe_construction_name)
-        # If the files with data exist, load them
-        if os.path.isfile(tv_construction_name) and os.path.isfile(pe_construction_name):
-            tv = np.load(tv_construction_name)
-            pe = np.load(pe_construction_name)
-            return tv, pe
-        # Otherwise, obtain construction and save them to the files
-        else:
-            if verbosity:
-                print("Calculating TV and Pe vectors...")
-
-            if xDistribution is not None:
-                xDists = []
-                xDists.append([])
-                xDists[0].append(xDistribution)
-
-                for m in range(1, n + 1):
-                    xDists.append([])
-                    for dist in xDists[m - 1]:
-                        xDists[m].append(dist.minus_transform().upgrade(L))
-                        xDists[m].append(dist.plus_transform().upgrade(L))
-
-            xyDists = []
-            xyDists.append([])
-            xyDists[0].append(xyDistribution)
-
-            for m in range(1, n + 1):
-                xyDists.append([])
-                for dist in xyDists[m - 1]:
-                    xyDists[m].append(dist.minus_transform().degrade(L))
-                    xyDists[m].append(dist.plus_transform().degrade(L))
-
-            N = 1 << n
-            TVvec = []
-            Pevec = []
-
-            for i in range(N):
-                if xDistribution is not None:
-                    TVvec.append(xDists[n][i].totalVariation())
-                else:
-                    TVvec.append(0.0)
-
-                Pevec.append(xyDists[n][i].errorProb())
-
-            if verbosity:
-                print("Done calculating!")
-            if not os.path.exists(directory_name):
-                os.makedirs(directory_name)
-            np.save(tv_construction_name, TVvec)
-            np.save(pe_construction_name, Pevec)
-
-            return TVvec, Pevec

@@ -23,7 +23,7 @@ class QaryMemorylessVectorDistribution(VectorDistribution):
         else:
             self.default_marginal_probs = [1 / self.q] * self.q
 
-    def minusTransform(self):
+    def minus_transform(self):
         assert (self.length % 2 == 0)
         halfLength = self.length // 2
 
@@ -43,7 +43,7 @@ class QaryMemorylessVectorDistribution(VectorDistribution):
                     newVector.probs[:, u1] += self.probs[::2, x1] * self.probs[1::2, x2]
         return newVector
 
-    def plusTransform(self, uminusDecisions):
+    def plus_transform(self, uminusDecisions):
         assert (self.length % 2 == 0)
         halfLength = self.length // 2
 

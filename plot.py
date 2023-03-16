@@ -50,7 +50,7 @@ def plot_results1(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_
                     errorProb = cur_group.symbolErrorProb
                     plt.ylabel('symbol error probability')
                 elif errorType == "ml_lower_bound":
-                    errorProb = cur_group.FailActualSmallerThanMin
+                    errorProb = cur_group.fail_actual_smaller_than_min
                     plt.ylabel('ML lower bound error probability')
                 else:
                     raise "Unknown error type: " + errorType
@@ -137,9 +137,9 @@ def plot_results3(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_
             elif errorType == "symbol":
                 maxProb = np.max(cur_qer_group.symbolErrorProb)
             elif errorType == "ml_lower_bound":
-                maxProb = np.max(cur_qer_group.FailActualSmallerThanMin)
+                maxProb = np.max(cur_qer_group.fail_actual_smaller_than_min)
             elif errorType == "frame_ml":
-                maxProb = np.max(1.0 - cur_qer_group.SuccessActualIsMax)
+                maxProb = np.max(1.0 - cur_qer_group.success_actual_is_max)
 
             grouped_by_N = cur_qer_group.groupby("N")
             for N in grouped_by_N.groups.keys():
@@ -163,10 +163,10 @@ def plot_results3(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_
                         errorProb = cur_group.symbolErrorProb
                         plt.ylabel('symbol error probability')
                     elif errorType == "ml_lower_bound":
-                        errorProb = cur_group.FailActualSmallerThanMin
+                        errorProb = cur_group.fail_actual_smaller_than_min
                         plt.ylabel('ML lower bound error probability')
                     elif errorType == "frame_ml":
-                        errorProb = 1.0 - cur_group.SuccessActualIsMax
+                        errorProb = 1.0 - cur_group.success_actual_is_max
                         plt.ylabel('frame list-decode ML error probability')
                     else:
                         raise "Unknown error type: " + errorType

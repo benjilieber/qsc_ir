@@ -218,7 +218,7 @@ class BinaryMemorylessDistribution:
         return bmvd
 
     # polar transforms
-    def minusTransform(self):
+    def minus_transform(self):
 
         newDistribution = BinaryMemorylessDistribution()
 
@@ -230,7 +230,7 @@ class BinaryMemorylessDistribution:
 
         return newDistribution
 
-    def plusTransform(self):
+    def plus_transform(self):
 
         newDistribution = BinaryMemorylessDistribution()
 

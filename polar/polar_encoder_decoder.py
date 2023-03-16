@@ -1,28 +1,14 @@
 import itertools
-from enum import Enum
-from timeit import default_timer as timer
-
 import numpy as np
 
 from polar.polar_cfg import IndexType
 
 
-class ProbResult(Enum):
-    SuccessActualIsMax = 0
-    SuccessActualSmallerThanMax = 1
-    FailActualLargerThanMax = 2
-    FailActualIsMax = 3
-    FailActualWithinRange = 4
-    FailActualSmallerThanMin = 5
-
-
 class PolarEncoderDecoder:
-    def __init__(self, cfg, use_log=False):
+    def __init__(self, cfg):
         self.cfg = cfg
 
         self.prob_list = None
-        self.actual_prob = None
-        self.cfg.use_log = use_log
 
     def encode(self, x_vec_dist, information_vec):
         u_index = 0
@@ -47,17 +33,18 @@ class PolarEncoderDecoder:
 
         assert (len(x_vec_dist) == len(xy_vec_dist) == self.cfg.N)
 
-        (encoded_vector, next_u_index, next_info_vec_index) = self.recursive_encode_decode(info_vec, u_index,
-                                                                                           info_vec_index,
-                                                                                           x_vec_dist,
-                                                                                           xy_vec_dist)
+        (encoded_vec, next_u_index, next_info_vec_index) = self.recursive_encode_decode(info_vec,
+                                                                                        u_index,
+                                                                                        info_vec_index,
+                                                                                        x_vec_dist,
+                                                                                        xy_vec_dist)
 
-        assert (next_u_index == len(encoded_vector) == self.cfg.N)
+        assert (next_u_index == len(encoded_vec) == self.cfg.N)
         assert (next_info_vec_index == len(info_vec) == self.cfg.num_info_indices)
 
-        return info_vec
+        return info_vec, encoded_vec
 
-    def list_decode(self, xy_vec_dist, frozen_values, check_matrix, check_value, actual_info_vec=None):
+    def list_decode(self, xy_vec_dist, frozen_values):
         u_index = 0
         info_vec_index = 0
 
@@ -68,21 +55,22 @@ class PolarEncoderDecoder:
 
         assert (len(xy_vec_dist) == self.cfg.N)
 
-        self.actual_info_vec = actual_info_vec
         if self.cfg.use_log:
-            self.actual_prob = 0.0
             self.prob_list = np.array([0.0])
         else:
-            self.actual_prob = 1.0
             self.prob_list = np.array([1.0])
 
-        start = timer()
-        (info_vec_list, encoded_vector_list, next_u_index, next_information_vector_index, final_list_size,
-         original_indices_map, actual_encoding) = self.recursive_list_decode(info_vec_list, u_index, info_vec_index,
-                                                                             [xy_vec_dist], frozen_values_iterator,
-                                                                             in_list_size=1,
-                                                                             actual_xy_vec_dist=xy_vec_dist)
-        end = timer()
+        (info_vec_list,
+         encoded_vector_list,
+         next_u_index,
+         next_information_vector_index,
+         final_list_size,
+         original_indices_map) = self.recursive_list_decode(info_vec_list,
+                                                            u_index,
+                                                            info_vec_index,
+                                                            [xy_vec_dist],
+                                                            frozen_values_iterator,
+                                                            in_list_size=1)
 
         assert (1 <= final_list_size <= self.cfg.scl_l)
         assert (len(encoded_vector_list) == final_list_size)
@@ -91,45 +79,7 @@ class PolarEncoderDecoder:
         assert (len(original_indices_map) == final_list_size)
         assert (np.count_nonzero(original_indices_map) == 0)
 
-        if actual_info_vec is not None:
-            explicit_probs, normalization = normalize(
-                [self.calc_explicit_prob(information, frozen_values, xy_vec_dist) for information
-                 in info_vec_list[:self.cfg.scl_l]], use_log=self.cfg.use_log)
-            actual_explicit_prob = self.calc_explicit_prob(actual_info_vec, frozen_values, xy_vec_dist)
-            if self.cfg.use_log:
-                actual_explicit_prob = actual_explicit_prob - normalization
-            else:
-                actual_explicit_prob = actual_explicit_prob / normalization
-
-            for i, information in enumerate(info_vec_list[:self.cfg.scl_l]):
-                if np.array_equal(information, actual_info_vec):
-                    max_prob = max(self.prob_list)
-                    if self.prob_list[i] == max_prob:
-                        prob_result = ProbResult.SuccessActualIsMax
-                    else:
-                        prob_result = ProbResult.SuccessActualSmallerThanMax
-                    return information, prob_result
-
-            max_prob = max(self.prob_list)
-            if self.actual_prob > max_prob:
-                prob_result = ProbResult.FailActualLargerThanMax
-            elif self.actual_prob == max_prob:
-                prob_result = ProbResult.FailActualIsMax
-            elif self.actual_prob >= min(self.prob_list):
-                prob_result = ProbResult.FailActualWithinRange
-            else:
-                prob_result = ProbResult.FailActualSmallerThanMin
-            return info_vec_list[0], prob_result
-
-        candidate_list = np.array(
-            [np.array_equal(np.matmul(info_vec, check_matrix) % self.cfg.q, check_value) for info_vec in
-             info_vec_list[:self.cfg.scl_l]])
-        if True in candidate_list:
-            for i, val in enumerate(candidate_list):
-                if val:
-                    return info_vec_list[i], None
-
-        return info_vec_list[0], None
+        return info_vec_list[:final_list_size], encoded_vector_list
 
     def calc_explicit_prob(self, information, frozen_vec, xy_vec_dist):
         guess = polar_transform(self.cfg.q, self.merge_info_frozen(information, frozen_vec))
@@ -140,9 +90,9 @@ class PolarEncoderDecoder:
             guess_prob = np.prod(probs_list)
         return guess_prob
 
-    def merge_info_frozen(self, actual_info_vec, frozen_vec):
+    def merge_info_frozen(self, info_vec, frozen_vec):
         merged_vec = np.empty(self.cfg.N, dtype=np.int)
-        merged_vec[list(self.cfg.info_set)] = actual_info_vec
+        merged_vec[list(self.cfg.info_set)] = info_vec
         merged_vec[list(self.cfg.frozen_set)] = frozen_vec
         return merged_vec
 
@@ -169,7 +119,7 @@ class PolarEncoderDecoder:
                 next_u_index = u_index + 1
                 next_info_vec_index = info_vec_index
 
-            return (encoded_vec, next_u_index, next_info_vec_index)
+            return encoded_vec, next_u_index, next_info_vec_index
         else:
             x_minus_vec_dist = x_vec_dist.minus_transform()
             x_minus_vec_dist.normalize()
@@ -207,11 +157,10 @@ class PolarEncoderDecoder:
                 encoded_vec[2 * half_i] = (minus_encoded_vec[half_i] + plus_encoded_vec[half_i]) % self.cfg.q
                 encoded_vec[2 * half_i + 1] = (-plus_encoded_vec[half_i] + self.cfg.q) % self.cfg.q
 
-            return (encoded_vec, next_u_index, next_info_vec_index)
+            return encoded_vec, next_u_index, next_info_vec_index
 
     def recursive_list_decode(self, info_vec_list, u_index, info_vec_index,
-                              xy_vec_dist_list, frozen_vec_iterator=None, in_list_size=1,
-                              actual_xy_vec_dist=None):
+                              xy_vec_dist_list, frozen_vec_iterator=None, in_list_size=1):
         assert (in_list_size <= self.cfg.scl_l)
         assert (in_list_size == len(self.prob_list))
         segment_size = len(xy_vec_dist_list[0])
@@ -223,7 +172,6 @@ class PolarEncoderDecoder:
                 for i in range(in_list_size):
                     info_vec = info_vec_list[i]
                     marginalized_vec = xy_vec_dist_list[i].calc_marginalized_probs()
-                    start = timer()
                     for s in range(self.cfg.q):
                         if s > 0:
                             info_vec_list[s * in_list_size + i] = info_vec  # branch the paths q times
@@ -233,8 +181,6 @@ class PolarEncoderDecoder:
                             new_prob_list[s * in_list_size + i] = self.prob_list[i] + marginalized_vec[s]
                         else:
                             new_prob_list[s * in_list_size + i] = self.prob_list[i] * marginalized_vec[s]
-                    end = timer()
-                    self.info_time += end - start
                 new_list_size = in_list_size * self.cfg.q
                 next_u_index = u_index + 1
                 next_info_vec_index = info_vec_index + 1
@@ -246,32 +192,18 @@ class PolarEncoderDecoder:
                         new_list_size = min(np.count_nonzero(new_prob_list), self.cfg.scl_l)
                     indices_to_keep = np.argpartition(new_prob_list, -new_list_size)[-new_list_size:]
                     orig_indices_map = indices_to_keep % in_list_size
-                    start = timer()
                     info_vec_list[0:new_list_size] = info_vec_list[indices_to_keep]
                     info_vec_list[new_list_size:, :] = -1
-                    end = timer()
-                    self.info_time += end - start
                     encoded_vec_list = encoded_vec_list[indices_to_keep]
                     new_prob_list = new_prob_list[indices_to_keep]
                 else:
                     orig_indices_map = np.tile(np.arange(in_list_size), self.cfg.q)
 
                 self.prob_list, norm_wt = normalize(new_prob_list, use_log=self.cfg.use_log)
-
-                if actual_xy_vec_dist is not None:
-                    actual_encoded_vec = [self.actual_info_vec[info_vec_index]]
-                    if self.cfg.use_log:
-                        self.actual_prob += actual_xy_vec_dist.calc_marginalized_probs()[
-                                                actual_encoded_vec[0]] - norm_wt
-                    else:
-                        self.actual_prob *= actual_xy_vec_dist.calc_marginalized_probs()[
-                                                actual_encoded_vec[0]] / norm_wt
             else:
                 new_list_size = in_list_size
                 frozen_val = frozen_vec_iterator[0]
                 encoded_vec_list = np.full((in_list_size, segment_size), frozen_val, dtype=np.int64)
-                if actual_xy_vec_dist is not None:
-                    actual_encoded_vec = [frozen_val]
                 frozen_vec_iterator.iternext()
                 # encoded_vec_list = np.full((inListSize, segment_size), 0, dtype=np.int64)
                 next_u_index = u_index + 1
@@ -281,15 +213,13 @@ class PolarEncoderDecoder:
                     self.prob_list, norm_wt = normalize(
                         [prob + xy_vec_dist_list[i].calc_marginalized_probs()[frozen_val] for i, prob in
                          enumerate(self.prob_list)], use_log=self.cfg.use_log)
-                    self.actual_prob += actual_xy_vec_dist.calc_marginalized_probs()[frozen_val] - norm_wt
                 else:
                     self.prob_list, norm_wt = normalize(
                         [prob * xy_vec_dist_list[i].calc_marginalized_probs()[frozen_val] for i, prob in
                          enumerate(self.prob_list)], use_log=self.cfg.use_log)
-                    self.actual_prob *= actual_xy_vec_dist.calc_marginalized_probs()[frozen_val] / norm_wt
 
             return (info_vec_list, encoded_vec_list, next_u_index, next_info_vec_index, new_list_size,
-                    orig_indices_map, actual_encoded_vec)
+                    orig_indices_map)
         else:
             num_info_symbols = np.sum((self.cfg.index_types[u_index:u_index + segment_size] == IndexType.info))
 
@@ -305,23 +235,18 @@ class PolarEncoderDecoder:
                     new_prob_list = [prob + np.sum([xy_vec_dist.probs[i, encoded_vec[i]] for i in range(segment_size)])
                                      for xy_vec_dist, prob in zip(xy_vec_dist_list, self.prob_list)]
                     self.prob_list, norm_wt = normalize(new_prob_list, use_log=self.cfg.use_log)
-                    self.actual_prob += np.sum(
-                        [actual_xy_vec_dist.probs[i, encoded_vec[i]] for i in range(segment_size)]) - norm_wt
                 else:
                     new_prob_list = [
                         prob * np.product([xy_vec_dist.probs[i, encoded_vec[i]] for i in range(segment_size)]) for
                         xy_vec_dist, prob in zip(xy_vec_dist_list, self.prob_list)]
                     self.prob_list, norm_wt = normalize(new_prob_list, use_log=self.cfg.use_log)
-                    self.actual_prob *= np.product([actual_xy_vec_dist.probs[i, encoded_vec[i]] for i in
-                                                    range(segment_size)]) / norm_wt
 
                 next_u_index = u_index + segment_size
                 next_info_vec_index = info_vec_index
                 new_list_size = in_list_size
                 orig_indices_map = np.arange(in_list_size)
-                actual_encoded_vec = encoded_vec
                 return (info_vec_list, encoded_vec_list, next_u_index, next_info_vec_index, new_list_size,
-                        orig_indices_map, actual_encoded_vec)
+                        orig_indices_map)
 
             # Rep node
             if num_info_symbols == 1:
@@ -338,7 +263,6 @@ class PolarEncoderDecoder:
                 new_prob_list = np.empty(in_list_size * self.cfg.q, dtype=np.float)
                 for i in range(in_list_size):
                     info_vec = info_vec_list[i]
-                    start = timer()
                     for s in range(self.cfg.q):
                         if s > 0:
                             info_vec_list[s * in_list_size + i] = info_vec  # branch the paths q times
@@ -349,8 +273,6 @@ class PolarEncoderDecoder:
                         else:
                             new_prob_list[s * in_list_size + i] = self.prob_list[i] * np.product(
                                 [xy_vec_dist_list[i].probs[j, encoded_vec_splits[s, j]] for j in range(segment_size)])
-                    end = timer()
-                    self.info_time += end - start
                 new_list_size = in_list_size * self.cfg.q
 
                 if new_list_size > self.cfg.scl_l:
@@ -360,11 +282,8 @@ class PolarEncoderDecoder:
                         new_list_size = min(np.count_nonzero(new_prob_list), self.cfg.scl_l)
                     indices_to_keep = np.argpartition(new_prob_list, -new_list_size)[-new_list_size:]
                     orig_indices_map = indices_to_keep % in_list_size
-                    start = timer()
                     info_vec_list[0:new_list_size] = info_vec_list[indices_to_keep]
                     info_vec_list[new_list_size:, :] = -1
-                    end = timer()
-                    self.info_time += end - start
                     encoded_vec_list = encoded_vec_splits[indices_to_keep // in_list_size]
                     new_prob_list = new_prob_list[indices_to_keep]
                 else:
@@ -373,19 +292,10 @@ class PolarEncoderDecoder:
 
                 self.prob_list, norm_wt = normalize(new_prob_list, use_log=self.cfg.use_log)
 
-                if actual_xy_vec_dist is not None:
-                    actual_encoded_vec = encoded_vec_splits[self.actual_info_vec[info_vec_index]]
-                    if self.cfg.use_log:
-                        self.actual_prob += np.sum(
-                            [actual_xy_vec_dist.probs[i, actual_encoded_vec[i]] for i in range(segment_size)]) - norm_wt
-                    else:
-                        self.actual_prob *= np.product(
-                            [actual_xy_vec_dist.probs[i, actual_encoded_vec[i]] for i in range(segment_size)]) / norm_wt
-
                 next_u_index = u_index + segment_size
                 next_info_vec_index = info_vec_index + 1
                 return (info_vec_list, encoded_vec_list, next_u_index, next_info_vec_index, new_list_size,
-                        orig_indices_map, actual_encoded_vec)
+                        orig_indices_map)
 
             # Rate-1 node
             if num_info_symbols == segment_size:
@@ -416,114 +326,34 @@ class PolarEncoderDecoder:
 
                 # Normalize
                 self.prob_list, norm_wt = normalize(new_prob_list, use_log=self.cfg.use_log)
-                if actual_xy_vec_dist is not None:
-                    actual_encoded_vec = polar_transform(self.cfg.q, self.actual_info_vec[
-                                                                     info_vec_index:info_vec_index + segment_size])
-                    if self.cfg.use_log:
-                        self.actual_prob += np.sum([actual_xy_vec_dist.probs[i, actual_encoded_vec[i]] for i in
-                                                    range(segment_size)]) - norm_wt
-                    else:
-                        self.actual_prob *= np.product([actual_xy_vec_dist.probs[i, actual_encoded_vec[i]] for i in
-                                                        range(segment_size)]) / norm_wt
 
                 # Update informationList
-                start = timer()
                 info_vec_list[0:new_list_size] = info_vec_list[orig_indices_map]
                 info_vec_list[0:new_list_size, info_vec_index:info_vec_index + segment_size] = [
                     polar_transform(self.cfg.q, encodedVector) for encodedVector in encoded_vec_list]
                 info_vec_list[new_list_size:] = -1
-                end = timer()
-                self.info_time += end - start
 
                 next_u_index = u_index + segment_size
                 next_info_vec_index = info_vec_index + segment_size
 
                 return (info_vec_list, encoded_vec_list, next_u_index, next_info_vec_index, new_list_size,
-                        orig_indices_map, actual_encoded_vec)
+                        orig_indices_map)
 
-            # SPC node
-            if num_info_symbols == segment_size - 1:
-                num_forked_indices = 3
-
-                fork_size = self.cfg.q ** num_forked_indices
-                encoded_vec_list = np.empty((in_list_size * fork_size, segment_size), dtype=np.int64)
-                new_prob_list = np.empty(in_list_size * fork_size, dtype=np.float)
-                frozen_val = frozen_vec_iterator[0]
-                for i in range(in_list_size):
-                    # Pick the least reliable indices
-                    leastReliableIndices = self.pick_least_reliable_indices(xy_vec_dist_list[i].probs,
-                                                                            num_forked_indices + 1)
-                    # Fork there
-                    encoded_vec_list[fork_size * i: fork_size * (i + 1)], new_prob_list[fork_size * i: fork_size * (
-                                i + 1)] = self.fork_indices_spc(self.prob_list[i], xy_vec_dist_list[i].probs,
-                                                                segment_size, leastReliableIndices, frozen_val)
-                frozen_vec_iterator.iternext()
-                new_list_size = in_list_size * fork_size
-
-                # Prune
-                if new_list_size > self.cfg.scl_l:
-                    if self.cfg.use_log:
-                        new_list_size = min(new_list_size - np.isneginf(new_prob_list).sum(), self.cfg.scl_l)
-                    else:
-                        new_list_size = min(np.count_nonzero(new_prob_list), self.cfg.scl_l)
-                    indices_to_keep = np.argpartition(new_prob_list, -new_list_size)[-new_list_size:]
-                    encoded_vec_list = encoded_vec_list[indices_to_keep]
-                    new_prob_list = new_prob_list[indices_to_keep]
-                    orig_indices_map = indices_to_keep // fork_size
-                else:
-                    orig_indices_map = np.repeat(np.arange(in_list_size), fork_size)
-
-                # Normalize
-                self.prob_list, norm_wt = normalize(new_prob_list, use_log=self.cfg.use_log)
-                if actual_xy_vec_dist is not None:
-                    actual_encoded_vec = polar_transform(self.cfg.q, np.concatenate(
-                        ([frozen_val], self.actual_info_vec[info_vec_index:info_vec_index + segment_size - 1]),
-                        axis=None))
-                    if self.cfg.use_log:
-                        self.actual_prob += np.sum([actual_xy_vec_dist.probs[i, actual_encoded_vec[i]] for i in
-                                                    range(segment_size)]) - norm_wt
-                    else:
-                        self.actual_prob *= np.product([actual_xy_vec_dist.probs[i, actual_encoded_vec[i]] for i in
-                                                        range(segment_size)]) / norm_wt
-
-                # Update informationList
-                start = timer()
-                info_vec_list[0:new_list_size] = info_vec_list[orig_indices_map]
-                info_vec_list[0:new_list_size, info_vec_index:info_vec_index + segment_size - 1] = [
-                    polar_transform(self.cfg.q, encodedVector)[1:] for encodedVector in encoded_vec_list]
-                info_vec_list[new_list_size:] = -1
-                end = timer()
-                self.info_time += end - start
-
-                next_u_index = u_index + segment_size
-                next_info_vec_index = info_vec_index + segment_size - 1
-
-                return (info_vec_list, encoded_vec_list, next_u_index, next_info_vec_index, new_list_size,
-                        orig_indices_map, actual_encoded_vec)
-
-            start = timer()
             xy_minus_vec_dist_list = []
             for i in range(in_list_size):
                 xy_minus_vec_dist = xy_vec_dist_list[i].minus_transform()
                 xy_minus_vec_dist.normalize()
                 xy_minus_vec_dist_list.append(xy_minus_vec_dist)
             # xy_minus_vec_dist_list, xyMinusNormalizationVector = normalizeDistList(xy_minus_vec_dist_list)
-            end = timer()
-            self.transform_time += end - start
-            if actual_xy_vec_dist is not None:
-                actual_xy_minus_vec_dist = actual_xy_vec_dist.minus_transform()
-                actual_xy_minus_vec_dist.normalize()
-                # actual_xy_minus_vec_dist.normalize(xyMinusNormalizationVector)
 
             (minus_info_list, minus_encoded_vec_list, next_u_index, next_info_vec_index, minus_list_size,
-             minus_orig_indices_map, minus_actual_encoded_vec) = self.recursive_list_decode(info_vec_list, u_index,
-                                                                                            info_vec_index,
-                                                                                            xy_minus_vec_dist_list,
-                                                                                            frozen_vec_iterator,
-                                                                                            in_list_size,
-                                                                                            actual_xy_vec_dist=actual_xy_minus_vec_dist)
+             minus_orig_indices_map) = self.recursive_list_decode(info_vec_list,
+                                                                  u_index,
+                                                                  info_vec_index,
+                                                                  xy_minus_vec_dist_list,
+                                                                  frozen_vec_iterator,
+                                                                  in_list_size)
 
-            start = timer()
             xy_plus_vec_dist_list = []
             for i in range(minus_list_size):
                 origI = minus_orig_indices_map[i]
@@ -532,47 +362,32 @@ class PolarEncoderDecoder:
                 xy_plus_vec_dist.normalize()
                 xy_plus_vec_dist_list.append(xy_plus_vec_dist)
             # xy_plus_vec_dist_list, xyPlusNormalizationVector = normalizeDistList(xy_plus_vec_dist_list)
-            end = timer()
-            self.transform_time += end - start
-            if actual_xy_vec_dist is not None:
-                actual_xy_plus_vec_dist = actual_xy_vec_dist.plus_transform(minus_actual_encoded_vec)
-                actual_xy_plus_vec_dist.normalize()
-                # actual_xy_plus_vec_dist.normalize(xyPlusNormalizationVector)
 
             u_index = next_u_index
             info_vec_index = next_info_vec_index
             (plus_info_list, plus_encoded_vec_list, next_u_index, next_info_vec_index, plus_list_size,
-             plus_orig_indices_map, plus_actual_encoded_vec) = self.recursive_list_decode(minus_info_list, u_index,
-                                                                                          info_vec_index,
-                                                                                          xy_plus_vec_dist_list,
-                                                                                          frozen_vec_iterator,
-                                                                                          minus_list_size,
-                                                                                          actual_xy_vec_dist=actual_xy_plus_vec_dist)
+             plus_orig_indices_map) = self.recursive_list_decode(minus_info_list,
+                                                                 u_index,
+                                                                 info_vec_index,
+                                                                 xy_plus_vec_dist_list,
+                                                                 frozen_vec_iterator,
+                                                                 minus_list_size)
 
             new_list_size = plus_list_size
 
             encoded_vec_list = np.full((new_list_size, segment_size), -1, dtype=np.int64)
             # halfLength = segment_size // 2
 
-            start = timer()
             for i in range(new_list_size):
                 minus_i = plus_orig_indices_map[i]
                 encoded_vec_list[i][::2] = minus_encoded_vec_list[minus_i] + plus_encoded_vec_list[i]
                 encoded_vec_list[i][1::2] = -plus_encoded_vec_list[i]
                 encoded_vec_list[i] %= self.cfg.q
-            end = timer()
-            self.encoding_time += end - start
-
-            if actual_xy_vec_dist is not None:
-                actual_encoded_vec = np.full(segment_size, -1, dtype=np.int64)
-                actual_encoded_vec[::2] = np.add(minus_actual_encoded_vec, plus_actual_encoded_vec)
-                actual_encoded_vec[1::2] = np.array(plus_actual_encoded_vec) * (-1)
-                actual_encoded_vec %= self.cfg.q
 
             orig_indices_map = minus_orig_indices_map[plus_orig_indices_map]
 
             return (plus_info_list, encoded_vec_list, next_u_index, next_info_vec_index, new_list_size,
-                    orig_indices_map, actual_encoded_vec)
+                    orig_indices_map)
 
     def pick_least_reliable_indices(self, xy_dist, num_unreliable_indices):
         scores = [self.reliability(cur_probs) for cur_probs in xy_dist]

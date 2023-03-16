@@ -12,7 +12,7 @@ class BinaryMemorylessVectorDistribution(VectorDistribution):
         self.probs[:] = np.nan
         self.length = length
 
-    def minusTransform(self):
+    def minus_transform(self):
         assert (self.length % 2 == 0)
         halfLength = self.length // 2
 
@@ -28,7 +28,7 @@ class BinaryMemorylessVectorDistribution(VectorDistribution):
 
         return newVector
 
-    def plusTransform(self, uminusDecisions):
+    def plus_transform(self, uminusDecisions):
         assert (self.length % 2 == 0)
         halfLength = self.length // 2
 

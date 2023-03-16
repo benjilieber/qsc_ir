@@ -13,7 +13,7 @@ from mb.bob import Bob
 from mb.encoder import Encoder
 from mb.linear_code_generator import LinearCodeGenerator
 from mb.mb_cfg import IndicesToEncodeStrategy, LinearCodeFormat
-from result import Result, Status
+from result import Result, Status, ResultType, ListResultStatus
 
 
 class MbProtocol(object):
@@ -54,7 +54,7 @@ class MbProtocol(object):
                 self.run_single_round(encode_new_block=False, goal_list_size=self.cfg.goal_candidates_num)
         end = timer()
 
-        ml_result = self.get_result(time=end - start, is_ml=True)
+        full_list_result = self.get_result(time=end - start, result_type=ResultType.full_list)
 
         if self.cfg.verbosity and self.cur_candidates_num > 0:
             print("hamming distance x and most probable x', pre-reducing: " + str(
@@ -80,9 +80,9 @@ class MbProtocol(object):
                 sum(self.num_encodings_history)) + " (theoretic: " + str(
                 util.required_checks(self.cfg.N, self.cfg.q, self.cfg.p_err)) + ")")
             print("num_encoded_blocks_history: " + str(self.num_encoded_blocks_history))
-        non_ml_result = self.get_result(time=end - start, is_ml=False)
+        reduced_result = self.get_result(time=end - start, result_type=ResultType.reduced)
 
-        return [non_ml_result, ml_result]
+        return [reduced_result, full_list_result]
 
     def run_single_round(self, encode_new_block, goal_list_size=None):
         encoded_blocks_indices = self.pick_indices_to_encode(self.num_candidates_per_block, encode_new_block)
@@ -283,51 +283,79 @@ class MbProtocol(object):
         self.total_communication_size = self.matrix_communication_size + self.total_leak * math.log(self.cfg.q, 2) + \
                                         self.bob_communication_size
 
-    def get_result(self, time, is_ml):
-        if self.cur_candidates_num:
-            assert ((self.cur_candidates_num == 1) or is_ml)
+    def get_result(self, time, result_type):
+        if self.cur_candidates_num > 0:
+            assert ((self.cur_candidates_num == 1) or result_type == ResultType.full_list)
             a_guess = self.bob.a_candidates[np.argmin(self.bob.a_candidates_errors)]
             ser = self.get_ser(a_guess)
             if ser == 0.0:
-                return Result(cfg=self.cfg, with_ml=is_ml, result_status=Status.success, ser_completed_only=0.0,
+                if result_type != ResultType.reduced:
+                    list_result_status = ListResultStatus.in_list_and_max
+                else:
+                    list_result_status = None
+                return Result(cfg=self.cfg,
+                              result_type=result_type,
+                              result_status=Status.success,
+                              list_result_status=list_result_status,
+                              ser=0.0,
                               key_rate=self.calculate_key_rate(final=False),
-                              key_rate_success_only=self.calculate_key_rate(final=False),
-                              key_rate_completed_only=self.calculate_key_rate(final=False),
-                              leak_rate=self.calculate_key_rate(final=False),
-                              leak_rate_completed_only=self.total_leak / self.cfg.N,
-                              leak_rate_success_only=self.total_leak / self.cfg.N,
+                              leak_rate=self.calculate_leak_rate(),
                               matrix_size_rate=self.matrix_communication_size / self.cfg.N,
-                              matrix_size_rate_success_only=self.matrix_communication_size / self.cfg.N,
                               bob_communication_rate=self.bob_communication_size / self.cfg.N,
-                              bob_communication_rate_success_only=self.bob_communication_size / self.cfg.N,
                               total_communication_rate=self.total_communication_size / self.cfg.N,
-                              total_communication_rate_success_only=self.total_communication_size / self.cfg.N,
                               time_rate=time / self.cfg.N)
             else:
-                return Result(cfg=self.cfg, with_ml=is_ml, result_status=Status.fail, ser_completed_only=ser,
-                              ser_fail_only=ser,
+                if result_type != ResultType.reduced:
+                    actual_error = util.closeness_single_block(self.a, self.b)
+                    if 0 in [util.hamming_multi_block(self.alice.a, a_guess) for a_guess in self.bob.a_candidates]:
+                        if actual_error == np.min(self.bob.a_candidates_errors):
+                            if sum(self.bob.a_candidates_errors == actual_error) == 1:
+                                list_result_status = ListResultStatus.in_list_single_max
+                            else:
+                                list_result_status = ListResultStatus.in_list_multi_max
+                        else:
+                            list_result_status = ListResultStatus.in_list_not_max
+                    else:
+                        if actual_error < np.min(self.bob.a_candidates_errors):
+                            list_result_status = ListResultStatus.out_of_list_and_gt
+                        elif actual_error <= np.max(self.bob.a_candidates_errors):
+                            list_result_status = ListResultStatus.out_of_list_and_in_range
+                        else:
+                            list_result_status = ListResultStatus.out_of_list_and_lt
+                else:
+                    list_result_status = None
+
+                return Result(cfg=self.cfg,
+                              result_type=result_type,
+                              result_status=Status.fail,
+                              list_result_status=list_result_status,
+                              ser=ser,
                               key_rate=self.calculate_key_rate(final=False),
-                              key_rate_completed_only=self.calculate_key_rate(final=False),
-                              leak_rate=self.calculate_key_rate(final=False),
-                              leak_rate_completed_only=self.total_leak / self.cfg.N,
+                              leak_rate=self.calculate_leak_rate(),
                               matrix_size_rate=self.matrix_communication_size / self.cfg.N,
                               bob_communication_rate=self.bob_communication_size / self.cfg.N,
                               total_communication_rate=self.total_communication_size / self.cfg.N,
                               time_rate=time / self.cfg.N)
         else:
-            return Result(cfg=self.cfg, with_ml=is_ml, result_status=Status.abort,
+            return Result(cfg=self.cfg,
+                          result_type=result_type,
+                          result_status=Status.abort,
                           key_rate=self.calculate_key_rate(final=False),
-                          leak_rate=self.calculate_key_rate(final=False),
+                          leak_rate=self.calculate_leak_rate(),
                           matrix_size_rate=self.matrix_communication_size / self.cfg.N,
                           bob_communication_rate=self.bob_communication_size / self.cfg.N,
                           total_communication_rate=self.total_communication_size / self.cfg.N,
                           time_rate=time / self.cfg.N)
 
     def calculate_key_rate(self, final=True):
-        if final and (not self.is_success()):
+        if final and (self.get_status() != Status.success):
             return 0
         key_size = (self.cfg.N - self.total_leak) * math.log(self.cfg.q, 2)
         return key_size / self.cfg.N
+
+    def calculate_leak_rate(self):
+        leak_size = self.total_leak * math.log(self.cfg.q, 2)
+        return leak_size / self.cfg.N
 
     def get_ser(self, a_guess):
         return util.hamming_multi_block(a_guess, self.alice.a) / self.cfg.N
@@ -341,6 +369,3 @@ class MbProtocol(object):
             return Status.success
         else:
             return Status.fail
-
-    def is_success(self, a_guess=None):
-        return self.get_status(a_guess=a_guess) == Status.success

@@ -56,8 +56,7 @@ class MbCfg(Cfg):
                  raw_results_file_path=None,
                  agg_results_file_path=None,
                  verbosity=False):
-        self.code_strategy = CodeStrategy.mb
-        super().__init__(orig_cfg=orig_cfg, q=q, N=num_blocks * block_length, p_err=p_err,
+        super().__init__(orig_cfg=orig_cfg, q=q, N=num_blocks * block_length, p_err=p_err, code_strategy = CodeStrategy.mb,
                          raw_results_file_path=raw_results_file_path, agg_results_file_path=agg_results_file_path,
                          verbosity=verbosity)
 
@@ -98,8 +97,7 @@ class MbCfg(Cfg):
 
     def log_dict(self):
         super_dict = super().log_dict()
-        specific_dict = {"code_strategy": str(self.code_strategy),
-                         "mb_success_rate": self.success_rate,
+        specific_dict = {"mb_desired_success_rate": self.success_rate,
                          "mb_block_length": self.block_length,
                          "mb_num_blocks": self.num_blocks,
                          "mb_full_rank_encoding": self.full_rank_encoding,
@@ -258,8 +256,7 @@ class MbCfg(Cfg):
 #     print("Radii calculation out of time.")
 #     raise TimeoutError("Radii calculation out of time.")
 def specific_log_header():
-    return ["code_strategy",
-            "mb_success_rate",
+    return ["mb_desired_success_rate",
             "mb_block_length",
             "mb_num_blocks",
             "mb_full_rank_encoding",
@@ -276,8 +273,7 @@ def specific_log_header():
 
 
 def specific_log_header_params():
-    return ["code_strategy",
-            "mb_success_rate",
+    return ["mb_desired_success_rate",
             "mb_block_length",
             "mb_num_blocks",
             "mb_full_rank_encoding",

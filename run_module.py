@@ -8,9 +8,11 @@ import cfg
 import result
 from ldpc import ldpc_cfg
 from ldpc.ldpc_cfg import LdpcCfg
+from ldpc.ldpc_protocol import LdpcProtocol
 from mb import mb_cfg
 from polar import polar_cfg
 from polar.polar_cfg import PolarCfg
+from polar.polar_protocol import PolarProtocol
 
 sys.path.append(os.getcwd())
 import numpy as np
@@ -30,41 +32,36 @@ import math
 def write_header(file_name):
     try:
         with open(file_name, 'r') as f:
-            for row in f:
-                assert (row.rstrip('\n').split(",") == result.get_header())
-                return
+            csv_reader = csv.DictReader(f)
+            dict_from_csv = dict(list(csv_reader)[0])
+            list_of_column_names = set(dict_from_csv.keys())
+            assert (list_of_column_names == set(result.get_header()))
     except FileNotFoundError:
         with open(file_name, 'a', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(result.get_header())
+            csv_writer = csv.DictWriter(f, fieldnames=result.get_header())
+            csv_writer.writeheader()
     except AssertionError:
         raise AssertionError(f"Header of {file_name} is bad.")
 
 
-def write_results(result_pair_list, is_slurm=False, verbosity=False):
-    non_ml_result_list = [result_pair[0] for result_pair in result_pair_list]
-    ml_result_list = [result_pair[1] for result_pair in result_pair_list]
+def write_results(result_list, is_slurm=False, verbosity=False):
     if verbosity:
         print("writing results")
     if is_slurm:
-        for single_result_pair in result_pair_list:
-            print(single_result_pair[0].get_row())
-            print(single_result_pair[1].get_row())
-        print(Result(non_ml_result_list[0].cfg, with_ml=False, result_list=non_ml_result_list).get_row(), flush=True)
-        print(Result(ml_result_list[0].cfg, with_ml=True, result_list=ml_result_list).get_row(), flush=True)
+        for single_result in result_list:
+            print(single_result.get_row())
+        print(Result(result_list[0].cfg, result_list=result_list).get_row(), flush=True)
         return
-    raw_results_file_name = result_pair_list[0][0].cfg.raw_results_file_path
+    raw_results_file_name = result_list[0].cfg.raw_results_file_path
     with open(raw_results_file_name, 'a', newline='') as f1:
-        writer = csv.writer(f1)
-        for single_result_pair in result_pair_list:
-            writer.writerow(single_result_pair[0].get_row())
-            writer.writerow(single_result_pair[1].get_row())
+        writer = csv.DictWriter(f1, fieldnames=result.get_header())
+        for single_result in result_list:
+            writer.writerow(single_result.get_dict())
 
-    agg_results_file_name = result_pair_list[0][0].cfg.agg_results_file_path
+    agg_results_file_name = result_list[0].cfg.agg_results_file_path
     with open(agg_results_file_name, 'a', newline='') as f2:
-        writer = csv.writer(f2)
-        writer.writerow(Result(non_ml_result_list[0].cfg, with_ml=False, result_list=non_ml_result_list).get_row())
-        writer.writerow(Result(ml_result_list[0].cfg, with_ml=True, result_list=ml_result_list).get_row())
+        writer = csv.DictWriter(f2, fieldnames=result.get_header())
+        writer.writerow(Result(result_list[0].cfg, result_list=result_list).get_dict())
 
 
 def single_run(cfg):
@@ -72,25 +69,30 @@ def single_run(cfg):
     np.random.seed([os.getppid(), int(str(time.time() % 1)[2:10])])
     key_generator = KeyGenerator(p_err=cfg.p_err, N=cfg.N, base=cfg.q)
     a, b = key_generator.generate_keys()
-    protocol = MbProtocol(cfg, a, b)
-    result_pair = protocol.run()
+    if cfg.code_strategy == CodeStrategy.mb:
+        protocol = MbProtocol(cfg, a, b)
+    elif cfg.code_strategy == CodeStrategy.ldpc:
+        protocol = LdpcProtocol(cfg, a, b)
+    elif cfg.code_strategy == CodeStrategy.polar:
+        protocol = PolarProtocol(cfg, a, b)
+    else:
+        raise "Unknown code strategy: " + str(cfg.code_strategy)
+    result_tuple = protocol.run()
     # print(f"Ended process {os.getpid()}", flush=True)
-    return result_pair
+    return result_tuple
 
 
 def multi_run_series(cfg, sample_size, is_slurm, verbosity=False):
-    result_pair_list = []
+    result_list = []
     for single_sample_run in range(sample_size):
-        result_pair = single_run(cfg)
+        result_tuple = single_run(cfg)
         if verbosity:
-            print(result_pair)
-        result_pair_list.append(result_pair)
+            print(result_tuple)
+        result_list.extend(result_tuple)
     if verbosity:
-        non_ml_result_list = [result_pair[0] for result_pair in result_pair_list]
-        ml_result_list = [result_pair[1] for result_pair in result_pair_list]
-        print(Result(cfg, result_list=non_ml_result_list))
-        print(Result(cfg, result_list=ml_result_list))
-    write_results(result_pair_list, is_slurm=is_slurm, verbosity=verbosity)
+        print(result_list)
+        print(Result(cfg, result_list=result_list))
+    write_results(result_list, is_slurm=is_slurm, verbosity=verbosity)
 
 
 def multi_run_parallel(cfg, sample_size, is_slurm, verbosity=False):
@@ -121,8 +123,11 @@ def multi_run(args):
             print('starting computations in series')
 
     if args.previous_run_files is not None:
-        assert (len(args.previous_run_files) <= 1)
-        previous_cfg_df = pd.read_csv(args.previous_run_files[0])
+        if os.path.isfile(args.previous_run_files[0]):
+            assert (len(args.previous_run_files) <= 1)
+            previous_cfg_df = pd.read_csv(args.previous_run_files[0])
+        else:
+            args.previous_run_files = None
 
     for code_strategy in args.code_strategy_list:
         for q in args.q_list:
@@ -138,7 +143,7 @@ def multi_run(args):
                                 print("skip cfg (previously run)")
                             continue
                         if args.verbosity:
-                            print(result.Result(run_cfg))
+                            print(run_cfg)
                         if args.run_mode == 'parallel':
                             # r_list.append(multi_run_parallel(cfg, args.sample_size))
                             multi_run_parallel(run_cfg, args.sample_size, is_slurm=args.is_slurm,
@@ -211,13 +216,35 @@ def generate_ldpc_cfg(args, cfg):
 
 
 def generate_polar_cfg(args, cfg):
-    for relative_gap_rate in args.polar_relative_gap_rate_list:
+    if args.polar_key_rate_list is None:
+        args.polar_key_rate_list = [None]
+    if args.polar_num_info_indices_list is None:
+        args.polar_num_info_indices_list = [None]
+    if args.polar_success_rate_list is None:
+        args.polar_success_rate_list = [None]
+    if args.polar_relative_gap_rate_list is None:
+        args.polar_relative_gap_rate_list = [None]
+
+
+    for key_rate, num_info_indices, success_rate, relative_gap_rate in zip(args.polar_key_rate_list, args.polar_num_info_indices_list, args.polar_success_rate_list, args.polar_relative_gap_rate_list):
         if args.polar_scl_l_list is not None:
             scl_l_list = args.polar_scl_l_list
         else:
             scl_l_list = [3, 9, 27, 81, 243, 729, 2187]
         for scl_l in scl_l_list:
-            yield PolarCfg(orig_cfg=cfg, constr_l=args.polar_constr_l, relative_gap_rate=relative_gap_rate, scl_l=scl_l)
+            if scl_l > 1:
+                check_length_list = [0, int(math.ceil(math.log(scl_l, cfg.q)))]
+            else:
+                check_length_list = [0]
+            for check_length in check_length_list:
+                yield PolarCfg(orig_cfg=cfg,
+                               constr_l=args.polar_constr_l,
+                               key_rate=key_rate,
+                               num_info_indices=num_info_indices,
+                               success_rate=success_rate,
+                               relative_gap_rate=relative_gap_rate,
+                               scl_l=scl_l,
+                               check_length=check_length)
 
 
 def check_cfg_equality(cfg1):

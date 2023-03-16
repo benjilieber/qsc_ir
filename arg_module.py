@@ -107,6 +107,9 @@ def create_args(q_list,
                 ldpc_sparsity_range,
                 # Polar codes parameters
                 polar_constr_l,
+                polar_key_rate_list,
+                polar_num_info_indices_list,
+                polar_success_rate_list,
                 polar_relative_gap_rate_list,
                 polar_scl_l_list
                 ):
@@ -141,6 +144,9 @@ def create_args(q_list,
             self.ldpc_sparsity_range = ldpc_sparsity_range
             # Polar codes parameters
             self.polar_constr_l = polar_constr_l
+            self.polar_key_rate_list = polar_key_rate_list
+            self.polar_num_info_indices_list = polar_num_info_indices_list
+            self.polar_success_rate_list = polar_success_rate_list
             self.polar_relative_gap_rate_list = polar_relative_gap_rate_list
             self.polar_scl_l_list = polar_scl_l_list
 

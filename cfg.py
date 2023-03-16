@@ -13,7 +13,7 @@ class CodeStrategy(Enum):
 
 class Cfg(object):
 
-    def __init__(self, orig_cfg=None, q=None, N=None, p_err=0, use_log=None,
+    def __init__(self, orig_cfg=None, q=None, N=None, p_err=0, use_log=None, code_strategy=None,
                  raw_results_file_path=None,
                  agg_results_file_path=None,
                  verbosity=False):
@@ -23,6 +23,8 @@ class Cfg(object):
             self.q = orig_cfg.q
             self.N = orig_cfg.N
             self.p_err = orig_cfg.p_err
+            self.qer = orig_cfg.qer
+            self.code_strategy = code_strategy
 
             self.use_log = orig_cfg.use_log
 
@@ -37,6 +39,8 @@ class Cfg(object):
             self.q = q
             self.N = N
             self.p_err = p_err
+            self.qer = 1 - p_err
+            self.code_strategy = code_strategy
 
             self.use_log = use_log
 
@@ -54,7 +58,7 @@ class Cfg(object):
             (1 - self.p_err) / (self.q - 1), 2)
 
     def _theoretic_key_q_rate(self):
-        return self._theoretic_key_rate() * self.log(2, self.q)
+        return self._theoretic_key_rate() * math.log(2, self.q)
 
     def log_dict(self):
         specific_dict = {"q": self.q,
@@ -62,9 +66,16 @@ class Cfg(object):
                          "p_err": self.p_err,
                          "qer": 1 - self.p_err,
                          "use_log": self.use_log,
-                         "theoretic_key_rate": self.theoretic_key_rate}
+                         "theoretic_key_rate": self.theoretic_key_rate,
+                         "code_strategy": str(self.code_strategy)}
         assert (set(specific_dict.keys()) == set(specific_log_header()))
         return specific_dict
+
+    def __str__(self):
+        cfg_string = "cfg:\n"
+        for key, val in self.log_dict().items():
+            cfg_string += "\t" + key + ": " + str(val) + "\n"
+        return cfg_string
 
 
 def specific_log_header():
@@ -73,11 +84,13 @@ def specific_log_header():
             "p_err",
             "qer",
             "use_log",
-            "theoretic_key_rate"]
+            "theoretic_key_rate",
+            "code_strategy"]
 
 
 def specific_log_header_params():
     return ["q",
             "N",
             "p_err",
-            "use_log"]
+            "use_log",
+            "code_strategy"]

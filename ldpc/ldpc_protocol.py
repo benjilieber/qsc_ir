@@ -1,0 +1,2 @@
+class LdpcProtocol(object):
+    pass

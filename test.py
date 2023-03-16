@@ -9,7 +9,7 @@ is_slurm = False
 verbosity = True
 run_mode = "series"
 # p_err = float(sys.argv[1])
-p_err = 0.0
+p_err = 0.0001
 
 # previous_run_files = [r'/tmp/history/{p_err}/slurm-*.out'.format(p_err=p_err)]
 # previous_run_file_format = "str"
@@ -18,9 +18,10 @@ previous_run_file_format = "csv"
 # previous_run_files = None
 # previous_run_file_format = None
 
-q_list = [7]
+q_list = [3]
 p_err_range = [p_err]  # [0.0, 0.0001, 0.001, 0.01, 0.02, 0.05, 0.1]
-N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
+N_list = [32]
+# N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
 use_log = True
 sample_size = 10
 # raw_results_file_path = "results/old/fake_results.csv"
@@ -29,6 +30,7 @@ raw_results_file_path = "results/run_results.csv"
 agg_results_file_path = "results/run_results_agg.csv"
 
 code_strategy_list = [CodeStrategy.mb]
+code_strategy_list = [CodeStrategy.polar]
 
 # Multi-block parameters
 mb_success_rate_range = [0.9, 0.99, 0.999, 0.9999]
@@ -47,8 +49,11 @@ ldpc_sparsity_range = None
 
 # Polar codes parameters
 polar_constr_l = 100
+polar_key_rate_list = None
+polar_num_info_indices_list = None
+polar_success_rate_list = None
 polar_relative_gap_rate_list = [0.95, 0.975, 1.0, 1.025, 1.05]
-polar_scl_l_list = None
+polar_scl_l_list = [1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683, 59049]
 
 args = arg_module.create_args(N_list=N_list,
                               p_err_range=p_err_range,
@@ -79,6 +84,9 @@ args = arg_module.create_args(N_list=N_list,
                               ldpc_sparsity_range=ldpc_sparsity_range,
                               # Polar codes parameters
                               polar_constr_l=polar_constr_l,
+                              polar_key_rate_list = polar_key_rate_list,
+                              polar_num_info_indices_list = polar_num_info_indices_list,
+                              polar_success_rate_list = polar_success_rate_list,
                               polar_relative_gap_rate_list=polar_relative_gap_rate_list,
                               polar_scl_l_list=polar_scl_l_list)
 run_module.multi_run(args)

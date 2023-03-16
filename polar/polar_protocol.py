@@ -1,3 +1,4 @@
+import math
 import os
 import time
 from timeit import default_timer as timer
@@ -5,7 +6,10 @@ from timeit import default_timer as timer
 import numpy as np
 
 import util
+from polar.polar_encoder_decoder import PolarEncoderDecoder
+from result import Status, ResultType, Result, ListResultStatus
 
+from polar.scalar_distributions.qary_memoryless_distribution import QaryMemorylessDistribution
 
 class PolarProtocol(object):
     def __init__(self, cfg, a, b):
@@ -21,69 +25,118 @@ class PolarProtocol(object):
         self.cur_candidates_num = 1
 
     def run(self):
-        make_xyVectorDistribution = make_xyVectorDistribution_fromQaryMemorylessDistribution(self.xy_dist, use_log)
-
         start = timer()
 
-        # def irSimulation(q, length, simulateChannel, make_xyVectorDistribution, numberOfTrials,
-        #                  frozenSet, maxListSize=1, checkSize=0,
-        #                  use_log=False, verbosity=0):
+        encoder_decoder = PolarEncoderDecoder(self.cfg)
+        w, u = encoder_decoder.calculate_syndrome_and_complement(self.a)
+        a_key = encoder_decoder.get_message_info_bits(u)
+        x_b = self.b
+        # x_b = np.mod(np.add(b, polarTransformOfQudits(self.cfg.q, w)), self.cfg.q)
+        xy_vec_dist = self.xy_vec_dist_given_input_vec(x_b)
+        frozen_vec = (encoder_decoder.get_message_frozen_bits(w) * (self.cfg.q - 1)) % self.cfg.q
 
-        w, u = self.calculate_syndrome_and_complement(a)
-        a_key = self.get_message_info_bits(u)
-        x_b = b
-        # x_b = np.mod(np.add(b, polarTransformOfQudits(self.q, w)), self.q)
-        frozen_values = (self.get_message_frozen_bits(w) * (self.q - 1)) % self.q
-        # print(w)
-        # print(self.frozenSet)
-        # print(frozen_values)
-
-        # if list_size == 1:
-        #     b_key = self.decode(xVectorDistribution, make_xyVectorDistribution(x_b))
-        # else:
-        check_matrix = np.random.choice(range(self.q), (self.k, check_size))
-        check_value = np.matmul(a_key, check_matrix) % self.q
-        b_key, prob_result = self.listDecode(make_xyVectorDistribution(x_b), frozenValues=frozen_values,
-                                             maxListSize=list_size, check_matrix=check_matrix, check_value=check_value,
-                                             actualInformation=a_key, verbosity=verbosity)
-
-        return a_key, b_key, prob_result
-
-        probResultList.append(prob_result)
-
-        if not np.array_equal(a_key, b_key):
-            badKeys += 1
-            badSymbols += util.hamming_single_block(a_key, b_key)
-
-        assert (len(a_key) == length - len(frozenSet))
-        # rate = (math.log(q, 2)*len(a_key) - math.log(maxListSize, 2))/length
-        rate = (math.log2(q) * len(a_key) - math.log2(maxListSize)) / length
-        frame_error_prob = badKeys / numberOfTrials
-        symbol_error_prob = badSymbols / (numberOfTrials * encDec.length)
-
-        if verbosity:
-            print("Rate: ", rate)
-            print("Frame error probability = ", badKeys, "/", numberOfTrials, " = ", frame_error_prob)
-            print("Symbol error probability = ", badSymbols, "/ (", numberOfTrials, " * ", encDec.length, ") = ",
-                  symbol_error_prob)
+        b_key_list, a_guess_list = encoder_decoder.list_decode(xy_vec_dist=xy_vec_dist,
+                                                               frozen_values=frozen_vec)
 
         end = timer()
-        time_rate = (end - start) / self.N
 
-        ml_result = self.get_result(time=end - start, is_ml=True)
+        full_list_result = self.get_result(time=end - start,
+                                               result_type=ResultType.full_list,
+                                               b_key_list=b_key_list,
+                                               a_guess_list=a_guess_list,
+                                               a_key=a_key)
+        if self.cfg.check_length == 0:
+            return [full_list_result]
 
-        if self.cfg.verbosity:
-            print("hamming distance x and most probable x', pre-reducing: " + str(
-                util.hamming_multi_block(self.bob.a_candidates[np.argmin(self.bob.a_candidates_errors)], self.alice.a)))
+        else:
+            check_matrix = np.random.choice(range(self.cfg.q), (self.cfg.num_info_indices, self.cfg.check_length))
+            check_value = np.matmul(a_key, check_matrix) % self.cfg.q
+            guesses_check_values = [np.matmul(b_key, check_matrix) % self.cfg.q for b_key in b_key_list]
+            guesses_passing_check = [i for i in range(len(b_key_list)) if util.hamming_single_block(guesses_check_values[i], check_value) == 0]
+            checked_list_result = self.get_result(time=end - start,
+                                                  result_type=ResultType.checked_list,
+                                                  b_key_list=[b_key_list[i] for i in guesses_passing_check],
+                                                  a_guess_list=[a_guess_list[i] for i in guesses_passing_check],
+                                                  a_key=a_key)
 
-        while self.cur_candidates_num > 1:
-            self.run_single_round(encode_new_block=False)
+            return [full_list_result, checked_list_result]
 
-        if self.cfg.verbosity:
-            print("actual_closeness: ", util.closeness_single_block(self.a, self.b))
-        non_ml_result = self.get_result(time=end - start, is_ml=False)
+    def xy_vec_dist_given_input_vec(self, received_vec):
+        return self.cfg.xy_dist.makeQaryMemorylessVectorDistribution(self.cfg.N, received_vec, self.cfg.use_log)
 
-        return [non_ml_result, ml_result]
+    def x_vec_dist(self):
+        x_dist = QaryMemorylessDistribution(self.cfg.q)
+        x_dist.probs = [self.cfg.xy_dist.calcXMarginals()]
+        x_vec_dist = x_dist.makeQaryMemorylessVectorDistribution(self.cfg.N, None, use_log=self.cfg.use_log)
+        return x_vec_dist
 
-    def make_xy_vec_dist(self, received_vec):
-        return self.xy_dist.makeQaryMemorylessVectorDistribution(self.N, received_vec, self.cfg.use_log)
+    def get_result(self, time, result_type, b_key_list, a_guess_list, a_key):
+        time_rate = time / self.cfg.N
+        bob_communication_size = 1.0 / self.cfg.N
+        if result_type == ResultType.full_list:
+            key_rate = self.cfg.num_info_indices * math.log2(self.cfg.q) / self.cfg.N
+            leak_rate = self.cfg.num_frozen_indices * math.log2(self.cfg.q) / self.cfg.N
+            matrix_size_rate = 0.0
+            total_communication_rate = self.cfg.num_frozen_indices / self.cfg.N
+        else:
+            key_rate = self.cfg.key_rate
+            leak_rate = self.cfg.leak_rate
+            matrix_size_rate = self.cfg.check_length * self.cfg.num_info_indices * math.log2(self.cfg.q) / self.cfg.N
+            total_communication_rate = self.cfg.leak_rate + matrix_size_rate
+
+        if len(b_key_list) == 0:
+            return Result(cfg=self.cfg,
+                          result_type=result_type,
+                          result_status=Status.abort,
+                          key_rate=key_rate,
+                          leak_rate=leak_rate,
+                          matrix_size_rate=matrix_size_rate,
+                          bob_communication_rate=bob_communication_size,
+                          total_communication_rate=total_communication_rate,
+                          time_rate=time_rate)
+
+        if self.cfg.p_err < 1 / self.cfg.q:
+            actual_pm = util.closeness_single_block(self.b, self.a)
+            pm_list = [util.closeness_single_block(self.b, a_guess) for a_guess in a_guess_list]
+        else:
+            actual_pm = util.hamming_single_block(self.b, self.a)
+            pm_list = [util.hamming_single_block(self.b, a_guess) for a_guess in a_guess_list]
+        se_list = [util.hamming_single_block(a_key, b_key) for b_key in b_key_list]
+        ml_index = np.argmax(pm_list)
+        ml_b_key = b_key_list[ml_index]
+        ser_b_key = util.hamming_single_block(a_key, ml_b_key) / self.cfg.num_info_indices
+        ml_a_guess = a_guess_list[ml_index]
+        ser_a_guess = util.hamming_single_block(self.a, ml_a_guess) / self.cfg.N
+
+        if ser_b_key == 0.0:
+            result_status = Status.success
+        else:
+            result_status = Status.fail
+        if 0 in se_list:
+            if actual_pm == np.max(pm_list):
+                if pm_list.count(actual_pm) == 1:
+                    list_result_status = ListResultStatus.in_list_unique_max
+                else:
+                    list_result_status = ListResultStatus.in_list_multi_max
+            else:
+                list_result_status = ListResultStatus.in_list_not_max
+        else:
+            if actual_pm > np.max(pm_list):
+                list_result_status = ListResultStatus.out_of_list_and_gt
+            elif actual_pm >= np.min(pm_list):
+                list_result_status = ListResultStatus.out_of_list_and_in_range
+            else:
+                list_result_status = ListResultStatus.out_of_list_and_lt
+
+        return Result(cfg=self.cfg,
+                      result_type=result_type,
+                      result_status=result_status,
+                      list_result_status=list_result_status,
+                      ser=ser_b_key,
+                      ser2=ser_a_guess,
+                      key_rate=key_rate,
+                      leak_rate=leak_rate,
+                      matrix_size_rate=matrix_size_rate,
+                      bob_communication_rate=bob_communication_size,
+                      total_communication_rate=total_communication_rate,
+                      time_rate=time_rate)

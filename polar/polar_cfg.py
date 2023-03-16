@@ -1,10 +1,11 @@
 import math
 import os
+import platform
 
 import numpy as np
 
 from cfg import CodeStrategy, Cfg
-from polar.scalar_distributions.qary_memoryless_distribution import QaryMemorylessDistribution
+from polar.scalar_distributions import qary_memoryless_distribution
 
 
 class IndexType:
@@ -14,37 +15,49 @@ class IndexType:
 
 class PolarCfg(Cfg):
 
-    def __init__(self, orig_cfg=None, q=None, p_err=None, N=None, key_rate=None, success_rate=None,
-                 constr_l=None,
+    def __init__(self,
+                 orig_cfg=None,
+                 q=None,
+                 p_err=None,
+                 N=None,
+                 key_rate=None,
+                 num_info_indices=None,
+                 success_rate=None,
                  relative_gap_rate=None,
+                 constr_l=None,
                  scl_l=None,
+                 check_length=0,
                  use_log=None,
                  raw_results_file_path=None,
                  agg_results_file_path=None,
                  verbosity=False):
-        self.code_strategy = CodeStrategy.polar
-        super().__init__(orig_cfg=orig_cfg, q=q, N=N, p_err=p_err, use_log=use_log,
+        super().__init__(orig_cfg=orig_cfg, q=q, N=N, p_err=p_err, use_log=use_log, code_strategy=CodeStrategy.polar,
                          raw_results_file_path=raw_results_file_path, agg_results_file_path=agg_results_file_path,
                          verbosity=verbosity)
 
         self.n = int(math.log2(self.N))
 
+        assert ((key_rate is not None) + (relative_gap_rate is not None) + (success_rate is not None) + (num_info_indices is not None) == 1)
         self.desired_key_rate = key_rate
         self.desired_relative_gap_rate = relative_gap_rate
         self.desired_success_rate = success_rate
-        assert ((key_rate is not None) + (relative_gap_rate is not None) + (success_rate is not None) == 3)
-        if key_rate is not None:
-            self.num_info_indices = math.ceil(key_rate * math.log(2, self.q) * self.N)
+        self.desired_num_info_indices = num_info_indices
+        self.check_length = int(check_length)
+        if num_info_indices is not None:
+            self.num_info_indices = num_info_indices
+        elif key_rate is not None:
+            self.num_info_indices = int(math.ceil(key_rate * math.log(2, self.q) * self.N)) + self.check_length
         elif relative_gap_rate is not None:
-            self.num_info_indices = math.ceil(self._theoretic_key_q_rate() * relative_gap_rate * self.N)
+            self.num_info_indices = int(math.ceil(self._theoretic_key_q_rate() * relative_gap_rate * self.N)) + self.check_length
         else:
             self.num_info_indices = None  # Will be set during the polar code construction below
         self.constr_l = constr_l
         self.x_dist = None
-        self.xy_dist = QaryMemorylessDistribution.makeQSC(self.q, self.p_err)
+        self.xy_dist = qary_memoryless_distribution.makeQSC(self.q, self.qer)
         self.index_types, self.frozen_set, self.info_set = self._calc_index_types()
-        self.key_rate = self.num_info_indices * math.log(self.q, 2) / self.N
         self.num_frozen_indices = self.N - self.num_info_indices
+        self.key_rate = (self.num_info_indices - self.check_length) * math.log(self.q, 2) / self.N
+        self.leak_rate = (self.num_frozen_indices + self.check_length) * math.log(self.q, 2) / self.N
 
         if scl_l is not None:
             self.scl_l = scl_l
@@ -54,16 +67,18 @@ class PolarCfg(Cfg):
 
     def log_dict(self):
         super_dict = super().log_dict()
-        specific_dict = {"code_strategy": str(self.code_strategy),
-                         "polar_n": self.n,
+        specific_dict = {"polar_n": self.n,
                          "polar_desired_key_rate": self.desired_key_rate,
+                         "polar_desired_num_info_indices": self.desired_num_info_indices,
                          "polar_desired_relative_gap_rate": self.desired_relative_gap_rate,
                          "polar_desired_success_rate": self.desired_success_rate,
                          "polar_num_info_indices": self.num_info_indices,
                          "polar_num_frozen_indices": self.num_frozen_indices,
                          "polar_constr_l": self.constr_l,
                          "polar_key_rate": self.key_rate,
-                         "polar_scl_l": self.scl_l}
+                         "polar_leak_rate": self.key_rate,
+                         "polar_scl_l": self.scl_l,
+                         "polar_check_length": self.check_length}
         assert (set(specific_dict.keys()) == set(specific_log_header()))
         return {**super_dict, **specific_dict}
 
@@ -138,13 +153,20 @@ class PolarCfg(Cfg):
 
     def get_construction_path(self):
         construction_path = os.path.dirname(os.path.abspath(__file__))
-        construction_path += '/polar_codes_constructions/'
-        construction_path += 'q={}/'.format(self.q)
-        construction_path += 'N={}/'.format(self.N)
-        construction_path += 'QER={}/'.format(self.qer)
+
+        if platform.system() == 'Windows':
+            sep = '\\'
+        else:
+            sep = '/'
+        construction_path += sep + 'polar_codes_constructions' + sep
+        construction_path += 'q={}'.format(self.q) + sep
+        construction_path += 'N={}'.format(self.N) + sep
+        construction_path += 'QER={}'.format(self.qer) + sep
         return construction_path
 
     def _calc_index_types_from_tv_pe(self, tv, pe):
+        if self.verbosity:
+            print("num_info_indices = ", self.num_info_indices)
         tv_plus_pe = np.add(tv, pe)
         sorted_indices = sorted(range(self.N), key=lambda k: tv_plus_pe[k])
 
@@ -163,6 +185,7 @@ class PolarCfg(Cfg):
 
         index_types = np.zeros(self.N, dtype=bool)
         index_types[sorted_indices[self.num_info_indices:]] = IndexType.frozen
+        index_types[sorted_indices[:self.num_info_indices]] = IndexType.info
         segment_size = self.N
         while segment_size > 1:
             for i in range(self.N // segment_size):
@@ -183,22 +206,22 @@ class PolarCfg(Cfg):
 
 
 def specific_log_header():
-    return ["code_strategy",
-            "polar_n",
+    return ["polar_n",
             "polar_desired_key_rate",
+            "polar_desired_num_info_indices",
             "polar_desired_relative_gap_rate",
             "polar_desired_success_rate",
             "polar_num_info_indices",
             "polar_num_frozen_indices",
             "polar_constr_l",
             "polar_key_rate",
-            "polar_scl_l"]
+            "polar_leak_rate",
+            "polar_scl_l",
+            "polar_check_length"]
 
 
 def specific_log_header_params():
-    return ["code_strategy",
-            "polar_desired_key_rate",
-            "polar_desired_relative_gap_rate",
-            "polar_desired_success_rate",
+    return ["polar_num_info_indices",
             "polar_constr_l",
-            "polar_scl_l"]
+            "polar_scl_l",
+            "polar_check_length"]
