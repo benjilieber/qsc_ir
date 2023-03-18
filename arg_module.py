@@ -104,7 +104,16 @@ def create_args(q_list,
                 mb_pruning_strategy,
                 mb_encoding_sample_size,
                 # LDPC parameters
+                ldpc_key_rate_list,
+                ldpc_syndrome_length_list,
+                ldpc_success_rate_list,
+                ldpc_relative_gap_rate_list,
                 ldpc_sparsity_range,
+                ldpc_decoder_list,
+                ldpc_max_num_rounds_list,
+                ldpc_L_list,
+                ldpc_use_forking_list,
+                ldpc_use_hints_list,
                 # Polar codes parameters
                 polar_constr_l,
                 polar_key_rate_list,
@@ -141,7 +150,16 @@ def create_args(q_list,
             self.mb_pruning_strategy = mb_pruning_strategy
             self.mb_encoding_sample_size = mb_encoding_sample_size
             # LDPC parameters
+            self.ldpc_key_rate_list = ldpc_key_rate_list
+            self.ldpc_syndrome_length_list = ldpc_syndrome_length_list
+            self.ldpc_success_rate_list = ldpc_success_rate_list
+            self.ldpc_relative_gap_rate_list = ldpc_relative_gap_rate_list
             self.ldpc_sparsity_range = ldpc_sparsity_range
+            self.ldpc_decoder_list = ldpc_decoder_list
+            self.ldpc_max_num_rounds_list = ldpc_max_num_rounds_list
+            self.ldpc_L_list = ldpc_L_list
+            self.ldpc_use_forking_list = ldpc_use_forking_list
+            self.ldpc_use_hints_list = ldpc_use_hints_list
             # Polar codes parameters
             self.polar_constr_l = polar_constr_l
             self.polar_key_rate_list = polar_key_rate_list

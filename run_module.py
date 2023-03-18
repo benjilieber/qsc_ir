@@ -83,16 +83,13 @@ def single_run(cfg):
 
 
 def multi_run_series(cfg, sample_size, is_slurm, verbosity=False):
-    result_list = []
+    result_tuple_list = []
     for single_sample_run in range(sample_size):
         result_tuple = single_run(cfg)
-        if verbosity:
-            print(result_tuple)
-        result_list.extend(result_tuple)
-    if verbosity:
-        print(result_list)
-        print(Result(cfg, result_list=result_list))
-    write_results(result_list, is_slurm=is_slurm, verbosity=verbosity)
+        result_tuple_list.append(result_tuple)
+    for i in range(len(result_tuple_list[0])):
+        result_i_list = [result_tuple[i] for result_tuple in result_tuple_list]
+        write_results(result_i_list, is_slurm=is_slurm, verbosity=verbosity)
 
 
 def multi_run_parallel(cfg, sample_size, is_slurm, verbosity=False):
@@ -211,8 +208,36 @@ def generate_mb_cfg(args, cfg):
 
 
 def generate_ldpc_cfg(args, cfg):
-    for sparsity in args.ldpc_sparsity_range:
-        yield LdpcCfg(orig_cfg=cfg, sparsity=sparsity)
+    if args.ldpc_key_rate_list is None:
+        args.ldpc_key_rate_list = [None]
+    if args.ldpc_syndrome_length_list is None:
+        args.ldpc_syndrome_length_list = [None]
+    if args.ldpc_success_rate_list is None:
+        args.ldpc_success_rate_list = [None]
+    if args.ldpc_relative_gap_rate_list is None:
+        args.ldpc_relative_gap_rate_list = [None]
+
+    for key_rate, syndrome_length, success_rate, relative_gap_rate in zip(args.ldpc_key_rate_list,
+                                                                          args.ldpc_syndrome_length_list,
+                                                                          args.ldpc_success_rate_list,
+                                                                          args.ldpc_relative_gap_rate_list):
+        for sparsity in args.ldpc_sparsity_range:
+            for decoder in args.ldpc_decoder_list:
+                for max_num_rounds in args.ldpc_max_num_rounds_list:
+                    for L in args.ldpc_L_list:
+                        for use_forking in args.ldpc_use_forking_list:
+                            for use_hints in args.ldpc_use_hints_list:
+                                yield LdpcCfg(orig_cfg=cfg,
+                                              key_rate=key_rate,
+                                              syndrome_length=syndrome_length,
+                                              success_rate=success_rate,
+                                              relative_gap_rate=relative_gap_rate,
+                                              sparsity=sparsity,
+                                              decoder=decoder,
+                                              max_num_rounds=max_num_rounds,
+                                              L=L,
+                                              use_forking=use_forking,
+                                              use_hints=use_hints)
 
 
 def generate_polar_cfg(args, cfg):
@@ -225,8 +250,10 @@ def generate_polar_cfg(args, cfg):
     if args.polar_relative_gap_rate_list is None:
         args.polar_relative_gap_rate_list = [None]
 
-
-    for key_rate, num_info_indices, success_rate, relative_gap_rate in zip(args.polar_key_rate_list, args.polar_num_info_indices_list, args.polar_success_rate_list, args.polar_relative_gap_rate_list):
+    for key_rate, num_info_indices, success_rate, relative_gap_rate in zip(args.polar_key_rate_list,
+                                                                           args.polar_num_info_indices_list,
+                                                                           args.polar_success_rate_list,
+                                                                           args.polar_relative_gap_rate_list):
         if args.polar_scl_l_list is not None:
             scl_l_list = args.polar_scl_l_list
         else:

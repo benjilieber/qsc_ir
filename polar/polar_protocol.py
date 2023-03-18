@@ -46,8 +46,11 @@ class PolarProtocol(object):
                                                a_guess_list=a_guess_list,
                                                a_key=a_key)
         if self.cfg.check_length == 0:
-            return [full_list_result]
-
+            checked_list_result = self.get_result(time=end - start,
+                                                  result_type=ResultType.checked_list,
+                                                  b_key_list=b_key_list,
+                                                  a_guess_list=a_guess_list,
+                                                  a_key=a_key)
         else:
             check_matrix = np.random.choice(range(self.cfg.q), (self.cfg.num_info_indices, self.cfg.check_length))
             check_value = np.matmul(a_key, check_matrix) % self.cfg.q
@@ -59,7 +62,7 @@ class PolarProtocol(object):
                                                   a_guess_list=[a_guess_list[i] for i in guesses_passing_check],
                                                   a_key=a_key)
 
-            return [full_list_result, checked_list_result]
+        return [full_list_result, checked_list_result]
 
     def xy_vec_dist_given_input_vec(self, received_vec):
         return self.cfg.xy_dist.makeQaryMemorylessVectorDistribution(self.cfg.N, received_vec, self.cfg.use_log)

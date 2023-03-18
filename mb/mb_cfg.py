@@ -42,8 +42,16 @@ class LinearCodeFormat(Enum):
 
 class MbCfg(Cfg):
 
-    def __init__(self, orig_cfg=None, q=None, block_length=None, num_blocks=None, p_err=0, success_rate=1.0,
-                 prefix_radii=None, radius_picking=None, full_rank_encoding=True,
+    def __init__(self,
+                 orig_cfg=None,
+                 q=None,
+                 block_length=None,
+                 num_blocks=None,
+                 p_err=0,
+                 success_rate=1.0,
+                 prefix_radii=None,
+                 radius_picking=None,
+                 full_rank_encoding=True,
                  use_zeroes_in_encoding_matrix=True,
                  goal_candidates_num=None,
                  max_candidates_num=None,
@@ -56,8 +64,13 @@ class MbCfg(Cfg):
                  raw_results_file_path=None,
                  agg_results_file_path=None,
                  verbosity=False):
-        super().__init__(orig_cfg=orig_cfg, q=q, N=num_blocks * block_length, p_err=p_err, code_strategy = CodeStrategy.mb,
-                         raw_results_file_path=raw_results_file_path, agg_results_file_path=agg_results_file_path,
+        super().__init__(orig_cfg=orig_cfg,
+                         q=q,
+                         N=num_blocks * block_length,
+                         p_err=p_err,
+                         code_strategy=CodeStrategy.mb,
+                         raw_results_file_path=raw_results_file_path,
+                         agg_results_file_path=agg_results_file_path,
                          verbosity=verbosity)
 
         self.success_rate = success_rate
@@ -167,38 +180,6 @@ class MbCfg(Cfg):
             return self.radius
         return self.max_block_error[last_block_index]
 
-    def _is_within_fixed_radius_single_block(self, x, y):
-        return util.closeness_single_block(x, y) <= self.radius
-
-    def _is_within_fixed_radius_multi_block(self, x, y):
-        return all([(self._is_within_fixed_radius_single_block(x_i, y_i)) for x_i, y_i in zip(x, y)])
-
-    def _is_within_max_radius_single_block(self, x, y, block_index):
-        return util.closeness_single_block(x, y) <= self.max_block_error[block_index]
-
-    def _is_within_max_radius_multi_block(self, x, y):
-        return all([(self._is_within_max_radius_single_block(x_i, y_i, i)) for i, (x_i, y_i) in enumerate(zip(x, y))])
-
-    def _is_within_radius_multi_block(self, x, y):
-        num_blocks_considered = min(len(x), len(y))
-        return util.closeness_multi_block(x[:num_blocks_considered], y[:num_blocks_considered]) <= self.prefix_radii[
-            num_blocks_considered - 1]
-
-    def is_within_radius_all_blocks(self, x, y):
-        if self.fixed_radius:
-            return self._is_within_fixed_radius_multi_block(x, y)
-        num_blocks_considered = min(len(x), len(y))
-        return all([self._is_within_radius_multi_block(x[:k], y[:k]) for k in
-                    range(num_blocks_considered)]) and self._is_within_max_radius_multi_block(x, y)
-
-    def is_within_radius_new_block(self, x, y):
-        last_index = min(len(x), len(y)) - 1
-        if self.fixed_radius:
-            return self._is_within_fixed_radius_single_block(x[last_index], y[last_index])
-        return self._is_within_radius_multi_block(x, y) and self._is_within_max_radius_single_block(x[last_index],
-                                                                                                    y[last_index],
-                                                                                                    last_index)
-
     def _determine_num_encodings_list(self):
         total_checks = util.required_checks(self.N, self.q, self.p_err)
         num_encodings_list = []
@@ -208,53 +189,7 @@ class MbCfg(Cfg):
             num_encodings_list.append(cur_num_encodings)
             tot_num_encodings += cur_num_encodings
         return num_encodings_list
-        # Old way:
-        # checks_per_block_ceil = math.ceil(total_checks / self.num_blocks)
-        # checks_per_block_floor = checks_per_block_ceil - 1
-        # m_ceil = total_checks - self.num_blocks * checks_per_block_floor
-        # return [checks_per_block_floor] * (self.num_blocks - m_ceil) + [checks_per_block_ceil] * m_ceil
 
-    # def determine_cur_radius(self, min_candidate_error, last_block_index):
-    #     if self.fixed_radius:
-    #         return self.radius
-    #     return min(self.prefix_radii[last_block_index] - min_candidate_error, self.max_block_error)
-
-    # def _calculate_radii(self, factor=1, delta=0):
-    #     avg_errors_per_block = factor * self._overall_radius_key_error() / self.num_blocks
-    #     return [math.ceil(avg_errors_per_block * j) + 1 + delta for j in range(self.num_blocks + 1)]
-
-    # def _determine_prefix_radii_old(self, timeout=None):
-    #     if timeout is not None:
-    #         signal.signal(signal.SIGALRM, timeout_handler)
-    #         signal.alarm(timeout)
-    #
-    #     factor = 1
-    #     delta = 0
-    #
-    #     while not self._check_overall_prefixes_error(factor, delta):
-    #         delta += 1
-    #
-    #     if timeout is not None:
-    #         signal.alarm(0)
-    #
-    #     return self._calculate_radii(factor, delta)
-    #
-    # def _check_overall_prefixes_error(self, factor=1, delta=0):
-    #     max_prefix_errors = self._calculate_radii(factor, delta)
-    #     max_block_errors = self.max_block_error
-    #
-    #     p = [binom.pmf(i, self.block_length, self.p_err) for i in range(min(max_prefix_errors[1], max_block_errors))]
-    #     for j in range(2, self.num_blocks+1):
-    #         p = [sum([p[k] * binom.pmf(i-k, self.block_length, self.p_err) for k in range(max(i - max_block_errors, 0), min(len(p), i+1))]) for i in range(max_prefix_errors[j])]
-    #         p_sum = sum(p)
-    #         if p_sum < self.success_rate:
-    #             return False
-    #     return True
-
-
-# def timeout_handler(signum, frame):
-#     print("Radii calculation out of time.")
-#     raise TimeoutError("Radii calculation out of time.")
 def specific_log_header():
     return ["mb_desired_success_rate",
             "mb_block_length",

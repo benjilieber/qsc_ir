@@ -1,23 +1,22 @@
 import math
 import random
-
 import numpy as np
 import scipy
 from scipy.sparse import csr_matrix
 
-from ldpc_matrix import LdpcMatrix
+from ldpc.ldpc_matrix import LdpcMatrix
 
 
 class LdpcGenerator(object):
-    def __init__(self, protocol_configs):
-        self.cfg = protocol_configs
+    def __init__(self, cfg):
+        self.cfg = cfg
 
     def generate_gallagher_matrix(self, num_encoding_columns):
         """
         Generate random LDPC sparse matrix M of size n_m*num_encoding_columns with max rank.
         According to Gallagher algorithm.
         """
-        n = self.cfg.block_length
+        n = self.cfg.N
         s = self.cfg.sparsity
         t = max(math.floor(s * num_encoding_columns / n), 1)
 
@@ -39,7 +38,7 @@ class LdpcGenerator(object):
         return csr_matrix((data, indices, indptr), shape=(num_subgraph_encodings, n))
 
     def generate_rand_matrix(self, num_encoding_columns):
-        n = self.cfg.block_length
+        n = self.cfg.N
         p = self.cfg.sparsity / n
 
         check_degs = [max(1, raw_deg) for raw_deg in np.random.binomial(n, p, num_encoding_columns)]

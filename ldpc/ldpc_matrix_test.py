@@ -1,9 +1,8 @@
 import unittest
-
 import numpy as np
 from scipy.sparse import csr_matrix
 
-from ldpc_matrix import LdpcMatrix
+from ldpc.ldpc_matrix import LdpcMatrix
 
 
 class LdpcMatrixTest(unittest.TestCase):

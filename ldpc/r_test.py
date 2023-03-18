@@ -5,8 +5,8 @@ from scipy.sparse import csr_matrix
 
 from ldpc.f import F
 from ldpc_matrix import LdpcMatrix
-from q import Q
-from r import R
+from ldpc.q import Q
+from ldpc.r import R
 
 
 class RTest(unittest.TestCase):

@@ -3,6 +3,7 @@
 import arg_module
 import run_module
 from cfg import CodeStrategy
+from ldpc.ldpc_cfg import Decoder
 from mb.mb_cfg import RoundingStrategy, PruningStrategy
 
 is_slurm = False
@@ -31,6 +32,7 @@ agg_results_file_path = "results/run_results_agg.csv"
 
 code_strategy_list = [CodeStrategy.mb]
 code_strategy_list = [CodeStrategy.polar]
+code_strategy_list = [CodeStrategy.ldpc]
 
 # Multi-block parameters
 mb_success_rate_range = [0.9, 0.99, 0.999, 0.9999]
@@ -45,7 +47,16 @@ mb_pruning_strategy = PruningStrategy.relative_weights
 mb_encoding_sample_size = 1
 
 # LDPC parameters
-ldpc_sparsity_range = None
+ldpc_key_rate_list = [None]
+ldpc_syndrome_length_list = [None]
+ldpc_success_rate_list = [None]
+ldpc_relative_gap_rate_list = [0.9]
+ldpc_sparsity_range = [4]
+ldpc_decoder_list = [Decoder.bp]
+ldpc_max_num_rounds_list = [20]
+ldpc_L_list = [1]
+ldpc_use_forking_list = [False]
+ldpc_use_hints_list = [False]
 
 # Polar codes parameters
 polar_constr_l = 100
@@ -81,12 +92,21 @@ args = arg_module.create_args(N_list=N_list,
                               mb_pruning_strategy=mb_pruning_strategy,
                               mb_encoding_sample_size=mb_encoding_sample_size,
                               # LDPC parameters
+                              ldpc_key_rate_list=ldpc_key_rate_list,
+                              ldpc_syndrome_length_list=ldpc_syndrome_length_list,
+                              ldpc_success_rate_list=ldpc_success_rate_list,
+                              ldpc_relative_gap_rate_list=ldpc_relative_gap_rate_list,
                               ldpc_sparsity_range=ldpc_sparsity_range,
+                              ldpc_decoder_list=ldpc_decoder_list,
+                              ldpc_max_num_rounds_list=ldpc_max_num_rounds_list,
+                              ldpc_L_list=ldpc_L_list,
+                              ldpc_use_forking_list=ldpc_use_forking_list,
+                              ldpc_use_hints_list=ldpc_use_hints_list,
                               # Polar codes parameters
                               polar_constr_l=polar_constr_l,
-                              polar_key_rate_list = polar_key_rate_list,
-                              polar_num_info_indices_list = polar_num_info_indices_list,
-                              polar_success_rate_list = polar_success_rate_list,
+                              polar_key_rate_list=polar_key_rate_list,
+                              polar_num_info_indices_list=polar_num_info_indices_list,
+                              polar_success_rate_list=polar_success_rate_list,
                               polar_relative_gap_rate_list=polar_relative_gap_rate_list,
                               polar_scl_l_list=polar_scl_l_list)
 run_module.multi_run(args)

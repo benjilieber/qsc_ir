@@ -11,7 +11,6 @@ import unittest
 from ldpc_decoder import LdpcDecoder
 import numpy as np
 from ldpc_generator import LdpcGenerator
-from protocol_configs import CodeGenerationStrategy
 from key_generator import KeyGenerator
 from scipy.sparse import csr_matrix
 
@@ -224,8 +223,7 @@ class LdpcDecoderTest(unittest.TestCase):
 
 
 def run_single_test_bp(n, m, p_err, sparsity):
-    cfg = cfg(base=3, block_length=n, num_blocks=1,
-              code_generation_strategy=CodeGenerationStrategy.ldpc, sparsity=sparsity)
+    cfg = cfg(base=3, block_length=n, num_blocks=1, sparsity=sparsity)
     code_gen = LdpcGenerator(cfg)
     np.random.seed([os.getppid(), int(str(time.time() % 1)[2:10])])
     encoding_matrix = code_gen.generate_gallagher_matrix(m)
@@ -240,8 +238,7 @@ def run_single_test_bp(n, m, p_err, sparsity):
 
 
 def run_single_test_it(n, m, p_err, sparsity, max_candidates_num=None, success_rate=None):
-    cfg = cfg(base=3, block_length=n, num_blocks=1,
-              code_generation_strategy=CodeGenerationStrategy.ldpc, sparsity=sparsity)
+    cfg = ldpcCfg(base=3, block_length=n, num_blocks=1, sparsity=sparsity)
     code_gen = LdpcGenerator(cfg)
     np.random.seed([os.getppid(), int(str(time.time() % 1)[2:10])])
     encoding_matrix = code_gen.generate_gallagher_matrix(m)

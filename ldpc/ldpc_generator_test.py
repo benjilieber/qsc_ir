@@ -1,6 +1,6 @@
 import unittest
 
-from ldpc_generator import LdpcGenerator
+from ldpc.ldpc_generator import LdpcGenerator
 
 
 class LdpcGeneratorTest(unittest.TestCase):

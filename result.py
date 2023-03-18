@@ -106,7 +106,7 @@ class Result(object):
             self.time_rate_success_only = time_rate if self.is_success else None
             self.sample_size = 1
         else:
-            result_type = result_list[0].result_type
+            self.result_type = result_list[0].result_type
             assert ([cfg == result_list[i].cfg for i in range(len(result_list))])
             assert ([result_type == result_list[i].result_type for i in range(len(result_list))])
 

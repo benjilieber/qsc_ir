@@ -7,17 +7,16 @@ import scipy
 
 import util
 from ldpc.f import F
-from q import Q
-from r import R
-from stats import Stats
+from ldpc.q import Q
+from ldpc.r import R
+from ldpc.stats import Stats
 
 
 class LdpcDecoder(object):
 
-    def __init__(self, base, p_err, encoding_matrix, encoded_a, a=None, use_forking=False, use_hints=False,
+    def __init__(self, cfg, encoding_matrix, encoded_a, a=None, use_forking=False, use_hints=False,
                  max_candidates_num=None, success_rate=None):
-        self.base = base
-        self.p_err = p_err
+        self.cfg = cfg
         self.encoded_a = encoded_a
         assert (not (use_forking and use_hints))
         self.use_forking = use_forking
@@ -38,7 +37,7 @@ class LdpcDecoder(object):
         Belief propagation algorithm to list-decode a.
         """
         cur_candidate_status_list = [True]
-        f_init = F(self.base, self.p_err, b)
+        f_init = F(self.cfg.q, self.cfg.p_err, b)
         f_list = [f_init]
         q_list = [Q(f_init, self.encoding_matrix)]
         r = R(self.encoding_matrix, self.encoded_a)
@@ -74,14 +73,14 @@ class LdpcDecoder(object):
                 if stats.should_get_hint(i, cur_round):
                     max_entropy_index = np.argmax(stats.entropies_list[0])
                     hint_value = self.a[max_entropy_index]
-                    f_list = self.generate_forked_f(f, max_entropy_index, [hint_value])
+                    f_list = f.fork(max_entropy_index, [hint_value])
                     q_list = q.fork(max_entropy_index, [hint_value], f_list)
                     stats.add_hint(max_entropy_index, hint_value)
 
                 if stats.should_fork(i, cur_round):
                     max_entropy_index = np.argmax(stats.entropies_list[i])
                     forked_values = self.determine_forked_values(f, max_entropy_index)
-                    forked_f_list = self.generate_forked_f(f, max_entropy_index, forked_values)
+                    forked_f_list = f.fork(max_entropy_index, forked_values)
                     f_list = f_list + forked_f_list
                     q_list = q_list + q.fork(max_entropy_index, forked_values, forked_f_list)
                     num_forks = len(forked_values)
@@ -110,10 +109,10 @@ class LdpcDecoder(object):
         return False
 
     def determine_forked_values(self, f, forked_index):
-        return [s for s in range(self.base) if f[forked_index][s]]
+        return [s for s in range(self.cfg.q) if f[forked_index][s]]
 
     def decode_iteratively(self, b):
-        f_init = F(self.base, self.p_err, b, use_log=True)
+        f_init = F(self.cfg.q, self.cfg.p_err, b, use_log=True)
         index_to_id_map = dict()
         id_to_candidate_block_map = dict()
 
@@ -121,7 +120,7 @@ class LdpcDecoder(object):
             i_list = self.encoding_matrix.j_to_i[j]
             base_candidates_mask = (f_init[j] != -math.inf)
             new_candidate_block = CandidateBlock(np.array([j]),
-                                                 np.array([[k] for k in range(self.base) if base_candidates_mask[k]]),
+                                                 np.array([[k] for k in range(self.cfg.q) if base_candidates_mask[k]]),
                                                  f_init[j][base_candidates_mask])
             index_to_id_map[j] = j
             id_to_candidate_block_map[j] = new_candidate_block
@@ -188,7 +187,7 @@ class LdpcDecoder(object):
                               new_candidate_log_probs_raw[indices_to_keep])
 
     def check_condition(self, candidate, i):
-        return (np.inner(self.encoding_matrix[i], candidate) % self.base) == self.encoded_a[i]
+        return (np.inner(self.encoding_matrix[i], candidate) % self.cfg.q) == self.encoded_a[i]
 
 
 class CandidateBlock(object):
