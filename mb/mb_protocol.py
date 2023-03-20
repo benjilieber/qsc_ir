@@ -7,20 +7,18 @@ import numpy as np
 import scipy
 from scipy.stats import entropy
 
-import util
 from mb.alice import Alice
 from mb.bob import Bob
 from mb.encoder import Encoder
 from mb.linear_code_generator import LinearCodeGenerator
 from mb.mb_cfg import IndicesToEncodeStrategy, LinearCodeFormat
-from result import Result, Status, ResultType, ListResultStatus
+from protocol import Protocol
 
 
-class MbProtocol(object):
+class MbProtocol(Protocol):
     def __init__(self, cfg, a, b):
-        self.cfg = cfg
-        self.a = a
-        self.b = b
+        super().__init__(cfg=cfg, a=a, b=b)
+
         self.alice = Alice(cfg, a)
         self.bob = Bob(cfg, b)
 
@@ -46,43 +44,22 @@ class MbProtocol(object):
         start = timer()
         for block_index in range(self.cfg.num_blocks):
             self.run_single_round(encode_new_block=True)
-
             if self.cur_candidates_num == 0:
                 break
 
             if self.cfg.max_candidates_num and (self.cur_candidates_num > self.cfg.max_candidates_num):
-                self.run_single_round(encode_new_block=False, goal_list_size=self.cfg.goal_candidates_num)
+                self.run_single_round(encode_new_block=False, goal_list_size=self.cfg.list_size)
         end = timer()
-
-        full_list_result = self.get_result(time=end - start, result_type=ResultType.full_list)
-
-        if self.cfg.verbosity and self.cur_candidates_num > 0:
-            print("hamming distance x and most probable x', pre-reducing: " + str(
-                util.hamming_multi_block(self.bob.a_candidates[np.argmin(self.bob.a_candidates_errors)], self.alice.a)))
-
-        while self.cur_candidates_num > 1:
-            self.run_single_round(encode_new_block=False)
-
-        if self.cfg.verbosity:
-            print("error_blocks_indices: " + str(
-                [sum(a_block == b_block) for a_block, b_block in zip(self.alice.a, self.bob.b)]))
-            print("candidates_num_history: " + str(self.candidates_num_history))
-            print("candidates_buckets_num_history: " + str(self.bob.candidates_buckets_num_history))
-            print("mean_avg_candidates_per_img: " + str(sum(self.bob.avg_candidates_per_img_history) / len(
-                self.bob.avg_candidates_per_img_history)) + ", avg_candidates_per_img_history: " + str(
-                self.bob.avg_candidates_per_img_history))
-            print("mean_pruning_rate: " + str(1 - np.product([1 - pr for pr in self.bob.pruning_rate_history]) ** (
-                        1 / (len(self.bob.pruning_rate_history) or 1))) + ", pruning_rate_history: " + str(
-                self.bob.pruning_rate_history))
-            print("pruning_fail_prob_history: " + str(self.bob.pruning_fail_prob_history))
-            print("radii_list: " + str(self.r_list))
-            print("num_encodings_history: " + str(self.num_encodings_history) + ", total: " + str(
-                sum(self.num_encodings_history)) + " (theoretic: " + str(
-                util.required_checks(self.cfg.N, self.cfg.q, self.cfg.p_err)) + ")")
-            print("num_encoded_blocks_history: " + str(self.num_encoded_blocks_history))
-        reduced_result = self.get_result(time=end - start, result_type=ResultType.reduced)
-
-        return [reduced_result, full_list_result]
+        a_guess_list = [[int(a_guess_val) for a_guess_block in a_guess for a_guess_val in a_guess_block] for a_guess in
+                        self.bob.a_candidates]
+        return self.get_results(key_length=self.cfg.N,  # in q-ary bits
+                                a_guess_list=a_guess_list,
+                                a_key=self.a,
+                                b_key_list=a_guess_list,
+                                leak_size=self.total_leak * math.log2(self.cfg.q),  # in bits
+                                matrix_size=self.matrix_communication_size,  # in bits
+                                bob_communication_size=self.bob_communication_size,  # in bits
+                                time=end - start)
 
     def run_single_round(self, encode_new_block, goal_list_size=None):
         encoded_blocks_indices = self.pick_indices_to_encode(self.num_candidates_per_block, encode_new_block)
@@ -90,8 +67,6 @@ class MbProtocol(object):
                                                                  encoded_blocks_indices[-1],
                                                                  goal_list_size=goal_list_size)
         encoding_format = self.determine_encoding_format(encode_new_block, encoded_blocks_indices, number_of_encodings)
-        # if self.cfg.verbosity:
-        #     print(encoding_format)
 
         encoding_matrix_prefix = self.pick_encoding_matrix_prefix(encode_new_block, encoded_blocks_indices,
                                                                   number_of_encodings, encoding_format)
@@ -104,13 +79,6 @@ class MbProtocol(object):
         self.candidates_num_history.append(self.cur_candidates_num)
         self.num_encodings_history.append(number_of_encodings)
         self.num_encoded_blocks_history.append(len(encoded_blocks_indices))
-
-        # print(min([util.hamming_multi_block(a_candidate, self.alice.a, False) for a_candidate in self.bob.a_candidates]))
-        # if all([util.hamming_multi_block(a_candidate, self.alice.a, False) for a_candidate in self.bob.a_candidates]):
-        #     print("lost the right candidate at block: " + str(encoded_blocks_indices[-1]))
-        #     print("number of candidates: " + str(len(self.bob.a_candidates)))
-        #     # print("max number of errors at this stage: " + str(max([util.closeness_multi_block(a_candidate, self.bob.b, False) for a_candidate in self.bob.a_candidates])))
-        #     # print("actual number of errors at this stage: " + str(util.closeness_multi_block(self.alice.a[:encoded_blocks_indices[-1]], self.bob.b, False)))
 
     def pick_indices_to_encode(self, num_candidates_per_block, encode_new_block):
         if encode_new_block:
@@ -141,7 +109,7 @@ class MbProtocol(object):
 
             # old version of encoding-number picking
             required_number_of_encodings_raw = max(self.cfg.round(
-                complement_space_size_log - math.log(self.cfg.goal_candidates_num,
+                complement_space_size_log - math.log(self.cfg.list_size,
                                                      self.cfg.q) + math.log(
                     self.cur_candidates_num, self.cfg.q)), 1)
             required_number_of_encodings = min(required_number_of_encodings_raw, self.cfg.block_length)
@@ -177,14 +145,14 @@ class MbProtocol(object):
                 expected_matrix_complexity_log = self.cfg.block_length * math.log(self.cfg.q - 1)
             else:
                 expected_matrix_complexity_log = math.log(sum([scipy.special.binom(self.cfg.block_length, err) * (
-                            self.cfg.q - 1) ** (self.cfg.block_length - err) for err in range(
+                        self.cfg.q - 1) ** (self.cfg.block_length - err) for err in range(
                     self.cfg.determine_cur_radius(latest_block_index) + 1)]))
             # expected_num_buckets = np.unique([candidate[indices_to_encode] for candidate in self.bob.a_candidates], axis=0)
             expected_prefix_num_buckets_log = min(math.log(self.cur_candidates_num), np.sum(
                 [math.log(self.num_candidates_per_block[i]) for i in indices_to_encode[:-1]]),
                                                   number_of_encodings * math.log(self.cfg.q))
             expected_affine_subspace_complexity_log = expected_prefix_num_buckets_log + (
-                        self.cfg.block_length - number_of_encodings) * math.log(self.cfg.q)
+                    self.cfg.block_length - number_of_encodings) * math.log(self.cfg.q)
 
             if expected_matrix_complexity_log < expected_affine_subspace_complexity_log:
                 return LinearCodeFormat.MATRIX
@@ -272,7 +240,7 @@ class MbProtocol(object):
             self.total_leak += len(encoding.encoded_vector)
         elif encoding.format == LinearCodeFormat.AFFINE_SUBSPACE:
             self.matrix_communication_size += (
-                                                          encoding.prefix_encoding_matrix.size + encoding.image_base_source.size + encoding.kernel_base.size) * math.log(
+                                                      encoding.prefix_encoding_matrix.size + encoding.image_base_source.size + encoding.kernel_base.size) * math.log(
                 self.cfg.q, 2)
             self.total_leak += len(encoding.image_base_source)
         else:
@@ -282,90 +250,3 @@ class MbProtocol(object):
                                             enumerate(self.num_candidates_per_block)])
         self.total_communication_size = self.matrix_communication_size + self.total_leak * math.log(self.cfg.q, 2) + \
                                         self.bob_communication_size
-
-    def get_result(self, time, result_type):
-        if self.cur_candidates_num > 0:
-            assert ((self.cur_candidates_num == 1) or result_type == ResultType.full_list)
-            a_guess = self.bob.a_candidates[np.argmin(self.bob.a_candidates_errors)]
-            ser = self.get_ser(a_guess)
-            if ser == 0.0:
-                if result_type != ResultType.reduced:
-                    list_result_status = ListResultStatus.in_list_and_max
-                else:
-                    list_result_status = None
-                return Result(cfg=self.cfg,
-                              result_type=result_type,
-                              result_status=Status.success,
-                              list_result_status=list_result_status,
-                              ser=0.0,
-                              key_rate=self.calculate_key_rate(final=False),
-                              leak_rate=self.calculate_leak_rate(),
-                              matrix_size_rate=self.matrix_communication_size / self.cfg.N,
-                              bob_communication_rate=self.bob_communication_size / self.cfg.N,
-                              total_communication_rate=self.total_communication_size / self.cfg.N,
-                              time_rate=time / self.cfg.N)
-            else:
-                if result_type != ResultType.reduced:
-                    actual_error = util.closeness_single_block(self.a, self.b)
-                    if 0 in [util.hamming_multi_block(self.alice.a, a_guess) for a_guess in self.bob.a_candidates]:
-                        if actual_error == np.min(self.bob.a_candidates_errors):
-                            if sum(self.bob.a_candidates_errors == actual_error) == 1:
-                                list_result_status = ListResultStatus.in_list_single_max
-                            else:
-                                list_result_status = ListResultStatus.in_list_multi_max
-                        else:
-                            list_result_status = ListResultStatus.in_list_not_max
-                    else:
-                        if actual_error < np.min(self.bob.a_candidates_errors):
-                            list_result_status = ListResultStatus.out_of_list_and_gt
-                        elif actual_error <= np.max(self.bob.a_candidates_errors):
-                            list_result_status = ListResultStatus.out_of_list_and_in_range
-                        else:
-                            list_result_status = ListResultStatus.out_of_list_and_lt
-                else:
-                    list_result_status = None
-
-                return Result(cfg=self.cfg,
-                              result_type=result_type,
-                              result_status=Status.fail,
-                              list_result_status=list_result_status,
-                              ser=ser,
-                              key_rate=self.calculate_key_rate(final=False),
-                              leak_rate=self.calculate_leak_rate(),
-                              matrix_size_rate=self.matrix_communication_size / self.cfg.N,
-                              bob_communication_rate=self.bob_communication_size / self.cfg.N,
-                              total_communication_rate=self.total_communication_size / self.cfg.N,
-                              time_rate=time / self.cfg.N)
-        else:
-            return Result(cfg=self.cfg,
-                          result_type=result_type,
-                          result_status=Status.abort,
-                          key_rate=self.calculate_key_rate(final=False),
-                          leak_rate=self.calculate_leak_rate(),
-                          matrix_size_rate=self.matrix_communication_size / self.cfg.N,
-                          bob_communication_rate=self.bob_communication_size / self.cfg.N,
-                          total_communication_rate=self.total_communication_size / self.cfg.N,
-                          time_rate=time / self.cfg.N)
-
-    def calculate_key_rate(self, final=True):
-        if final and (self.get_status() != Status.success):
-            return 0
-        key_size = (self.cfg.N - self.total_leak) * math.log(self.cfg.q, 2)
-        return key_size / self.cfg.N
-
-    def calculate_leak_rate(self):
-        leak_size = self.total_leak * math.log(self.cfg.q, 2)
-        return leak_size / self.cfg.N
-
-    def get_ser(self, a_guess):
-        return util.hamming_multi_block(a_guess, self.alice.a) / self.cfg.N
-
-    def get_status(self, a_guess=None):
-        if (a_guess is None) and (self.cur_candidates_num == 0):
-            return Status.abort
-        assert ((a_guess is not None) or (len(self.bob.a_candidates) == 1))
-        a_guess = a_guess if (a_guess is not None) else self.bob.a_candidates[0]
-        if self.get_ser(a_guess) == 0.0:
-            return Status.success
-        else:
-            return Status.fail

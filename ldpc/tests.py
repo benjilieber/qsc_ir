@@ -1,5 +1,6 @@
 import math
 import unittest
+
 import numpy as np
 
 from key_generator import KeyGenerator

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 
 import arg_module
 import run_module
@@ -6,11 +7,10 @@ from cfg import CodeStrategy
 from ldpc.ldpc_cfg import Decoder
 from mb.mb_cfg import RoundingStrategy, PruningStrategy
 
-is_slurm = False
 verbosity = True
-run_mode = "series"
-# p_err = float(sys.argv[1])
-p_err = 0.0001
+run_mode = "parallel"
+p_err = float(sys.argv[1])
+# p_err = 0.001
 
 # previous_run_files = [r'/tmp/history/{p_err}/slurm-*.out'.format(p_err=p_err)]
 # previous_run_file_format = "str"
@@ -21,8 +21,7 @@ previous_run_file_format = "csv"
 
 q_list = [3]
 p_err_range = [p_err]  # [0.0, 0.0001, 0.001, 0.01, 0.02, 0.05, 0.1]
-N_list = [32]
-# N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
+N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
 use_log = True
 sample_size = 10
 # raw_results_file_path = "results/old/fake_results.csv"
@@ -30,9 +29,8 @@ sample_size = 10
 raw_results_file_path = "results/run_results.csv"
 agg_results_file_path = "results/run_results_agg.csv"
 
-code_strategy_list = [CodeStrategy.mb]
+code_strategy_list = [CodeStrategy.mb, CodeStrategy.polar, CodeStrategy.ldpc]
 code_strategy_list = [CodeStrategy.polar]
-code_strategy_list = [CodeStrategy.ldpc]
 
 # Multi-block parameters
 mb_success_rate_range = [0.9, 0.99, 0.999, 0.9999]
@@ -50,10 +48,10 @@ mb_encoding_sample_size = 1
 ldpc_key_rate_list = [None]
 ldpc_syndrome_length_list = [None]
 ldpc_success_rate_list = [None]
-ldpc_relative_gap_rate_list = [0.9]
-ldpc_sparsity_range = [4]
+ldpc_relative_gap_rate_list = [0.5, 0.6, 0.7, 0.8, 1.0]
+ldpc_sparsity_range = [3]
 ldpc_decoder_list = [Decoder.bp]
-ldpc_max_num_rounds_list = [20]
+ldpc_max_num_rounds_list = [30]
 ldpc_L_list = [1]
 ldpc_use_forking_list = [False]
 ldpc_use_hints_list = [False]
@@ -73,7 +71,6 @@ args = arg_module.create_args(N_list=N_list,
                               use_log=use_log,
                               # Running environment parameters
                               verbosity=verbosity,
-                              is_slurm=is_slurm,
                               previous_run_files=previous_run_files,
                               previous_run_file_format=previous_run_file_format,
                               raw_results_file_path=raw_results_file_path,

@@ -60,7 +60,6 @@ def parse_args():
                         help='The upper threshold for the list size, from which the list should be reduced when reached.')
     parser.add_argument('--encoding_sample_size', type=int,
                         help='The number of encodings sampled to pick the best one.')
-    parser.add_argument('--is_slurm', type=bool, required=True, help='Whether we are running on slurm.')
     parser.add_argument('--previous_run_files', required=False, type=str,
                         help='Paths of raw results of previous runs. If they exist, the new run will start where the previous ones left off.')
     parser.add_argument('--previous_run_file_format', default="str", required=False, type=str,
@@ -85,7 +84,6 @@ def create_args(q_list,
                 use_log,
                 # Run environment parameters
                 verbosity,
-                is_slurm,
                 previous_run_files,
                 previous_run_file_format,
                 raw_results_file_path,
@@ -131,7 +129,6 @@ def create_args(q_list,
             self.use_log = use_log
             # Run environment parameters
             self.verbosity = verbosity
-            self.is_slurm = is_slurm
             self.previous_run_files = previous_run_files
             self.previous_run_file_format = previous_run_file_format
             self.raw_results_file_path = raw_results_file_path

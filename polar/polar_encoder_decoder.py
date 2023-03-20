@@ -1,4 +1,5 @@
 import itertools
+
 import numpy as np
 
 from polar.polar_cfg import IndexType
@@ -48,7 +49,7 @@ class PolarEncoderDecoder:
         u_index = 0
         info_vec_index = 0
 
-        info_vec_list = np.full((self.cfg.scl_l * self.cfg.q, self.cfg.num_info_indices), -1, dtype=np.int64)
+        info_vec_list = np.full((self.cfg.list_size * self.cfg.q, self.cfg.num_info_indices), -1, dtype=np.int64)
         frozen_values_iterator = None
         if len(frozen_values):
             frozen_values_iterator = np.nditer(frozen_values, flags=['f_index'])
@@ -72,7 +73,7 @@ class PolarEncoderDecoder:
                                                             frozen_values_iterator,
                                                             in_list_size=1)
 
-        assert (1 <= final_list_size <= self.cfg.scl_l)
+        assert (1 <= final_list_size <= self.cfg.list_size)
         assert (len(encoded_vector_list) == final_list_size)
         assert (next_u_index == len(encoded_vector_list[0]) == self.cfg.N)
         assert (next_information_vector_index == self.cfg.num_info_indices)
@@ -161,7 +162,7 @@ class PolarEncoderDecoder:
 
     def recursive_list_decode(self, info_vec_list, u_index, info_vec_index,
                               xy_vec_dist_list, frozen_vec_iterator=None, in_list_size=1):
-        assert (in_list_size <= self.cfg.scl_l)
+        assert (in_list_size <= self.cfg.list_size)
         assert (in_list_size == len(self.prob_list))
         segment_size = len(xy_vec_dist_list[0])
 
@@ -185,11 +186,11 @@ class PolarEncoderDecoder:
                 next_u_index = u_index + 1
                 next_info_vec_index = info_vec_index + 1
 
-                if new_list_size > self.cfg.scl_l:
+                if new_list_size > self.cfg.list_size:
                     if self.cfg.use_log:
-                        new_list_size = min(new_list_size - np.isneginf(new_prob_list).sum(), self.cfg.scl_l)
+                        new_list_size = min(new_list_size - np.isneginf(new_prob_list).sum(), self.cfg.list_size)
                     else:
-                        new_list_size = min(np.count_nonzero(new_prob_list), self.cfg.scl_l)
+                        new_list_size = min(np.count_nonzero(new_prob_list), self.cfg.list_size)
                     indices_to_keep = np.argpartition(new_prob_list, -new_list_size)[-new_list_size:]
                     orig_indices_map = indices_to_keep % in_list_size
                     info_vec_list[0:new_list_size] = info_vec_list[indices_to_keep]
@@ -275,11 +276,11 @@ class PolarEncoderDecoder:
                                 [xy_vec_dist_list[i].probs[j, encoded_vec_splits[s, j]] for j in range(segment_size)])
                 new_list_size = in_list_size * self.cfg.q
 
-                if new_list_size > self.cfg.scl_l:
+                if new_list_size > self.cfg.list_size:
                     if self.cfg.use_log:
-                        new_list_size = min(new_list_size - np.isneginf(new_prob_list).sum(), self.cfg.scl_l)
+                        new_list_size = min(new_list_size - np.isneginf(new_prob_list).sum(), self.cfg.list_size)
                     else:
-                        new_list_size = min(np.count_nonzero(new_prob_list), self.cfg.scl_l)
+                        new_list_size = min(np.count_nonzero(new_prob_list), self.cfg.list_size)
                     indices_to_keep = np.argpartition(new_prob_list, -new_list_size)[-new_list_size:]
                     orig_indices_map = indices_to_keep % in_list_size
                     info_vec_list[0:new_list_size] = info_vec_list[indices_to_keep]
@@ -307,16 +308,16 @@ class PolarEncoderDecoder:
                     [j1, j2] = self.pick_least_reliable_indices(xy_vec_dist_list[i].probs, 2)
                     # Fork there
                     encoded_vec_list[fork_size * i: fork_size * (i + 1)], new_prob_list[fork_size * i: fork_size * (
-                                i + 1)] = self.fork_indices(self.prob_list[i], xy_vec_dist_list[i].probs, segment_size,
-                                                            [j1, j2])
+                            i + 1)] = self.fork_indices(self.prob_list[i], xy_vec_dist_list[i].probs, segment_size,
+                                                        [j1, j2])
                 new_list_size = in_list_size * fork_size
 
                 # Prune
-                if new_list_size > self.cfg.scl_l:
+                if new_list_size > self.cfg.list_size:
                     if self.cfg.use_log:
-                        new_list_size = min(new_list_size - np.isneginf(new_prob_list).sum(), self.cfg.scl_l)
+                        new_list_size = min(new_list_size - np.isneginf(new_prob_list).sum(), self.cfg.list_size)
                     else:
-                        new_list_size = min(np.count_nonzero(new_prob_list), self.cfg.scl_l)
+                        new_list_size = min(np.count_nonzero(new_prob_list), self.cfg.list_size)
                     indices_to_keep = np.argpartition(new_prob_list, -new_list_size)[-new_list_size:]
                     encoded_vec_list = encoded_vec_list[indices_to_keep]
                     new_prob_list = new_prob_list[indices_to_keep]

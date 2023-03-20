@@ -256,7 +256,7 @@ class LdpcDecoder(object):
                                     (encoded_value - encoding_row[j] * s - t) % self.m] if j_ord - 1 >= 0 else (
                 ((encoded_value - encoding_row[j] * s - t) % self.m) == 0))
                          * (rho_row[j_ord + 1, t] if (j_ord + 1 < self.sparsity and j_list[j_ord + 1] != -1) else (
-                    t == 0))
+                t == 0))
                          for t in range(self.m)]) for s in range(self.m)] if j != -1 else [-1.0] * self.m for j_ord, j
                 in enumerate(j_list)]
 

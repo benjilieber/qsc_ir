@@ -298,7 +298,7 @@ class Bob(object):
                     [prob + math.log(len(a_candidates_per_err_cnt[err])) for err, prob in probs_per_err_cnt.items()])
             else:
                 probs_per_err_cnt = {err: (self.cfg.p_err ** err) * (((1 - self.cfg.p_err) / (self.cfg.q - 1)) ** (
-                            len(new_candidates_raw[0]) * self.cfg.block_length - err))
+                        len(new_candidates_raw[0]) * self.cfg.block_length - err))
                                      for err in a_candidates_per_err_cnt.keys()}
                 total_prob = sum([prob * len(a_candidates_per_err_cnt[err]) for err, prob in probs_per_err_cnt.items()])
 
@@ -333,7 +333,7 @@ class Bob(object):
                                 [cur_pruned_weight, math.log(delta_split_part) + probs_per_err_cnt[err] - total_prob])
                     else:
                         delta_split_part = math.floor(len(a_candidates_per_err_cnt[err]) * (
-                                    cur_block_fail_prob - cur_pruned_weight) / weight_delta)
+                                cur_block_fail_prob - cur_pruned_weight) / weight_delta)
                         cur_pruned_weight += delta_split_part * probs_per_err_cnt[err] / total_prob
                     split_indices = random.sample(a_candidates_per_err_cnt[err], delta_split_part)
                     post_pruning_mask[split_indices] = False

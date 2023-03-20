@@ -31,24 +31,32 @@ class PolarCfg(Cfg):
                  raw_results_file_path=None,
                  agg_results_file_path=None,
                  verbosity=False):
-        super().__init__(orig_cfg=orig_cfg, q=q, N=N, p_err=p_err, use_log=use_log, code_strategy=CodeStrategy.polar,
-                         raw_results_file_path=raw_results_file_path, agg_results_file_path=agg_results_file_path,
+        super().__init__(orig_cfg=orig_cfg,
+                         q=q,
+                         N=N,
+                         p_err=p_err,
+                         use_log=use_log,
+                         check_length=check_length,
+                         code_strategy=CodeStrategy.polar,
+                         raw_results_file_path=raw_results_file_path,
+                         agg_results_file_path=agg_results_file_path,
                          verbosity=verbosity)
 
         self.n = int(math.log2(self.N))
 
-        assert ((key_rate is not None) + (relative_gap_rate is not None) + (success_rate is not None) + (num_info_indices is not None) == 1)
+        assert ((key_rate is not None) + (relative_gap_rate is not None) + (success_rate is not None) + (
+                    num_info_indices is not None) == 1)
         self.desired_key_rate = key_rate
         self.desired_relative_gap_rate = relative_gap_rate
         self.desired_success_rate = success_rate
         self.desired_num_info_indices = num_info_indices
-        self.check_length = int(check_length)
         if num_info_indices is not None:
             self.num_info_indices = num_info_indices
         elif key_rate is not None:
             self.num_info_indices = int(math.ceil(key_rate * math.log(2, self.q) * self.N)) + self.check_length
         elif relative_gap_rate is not None:
-            self.num_info_indices = int(math.ceil(self._theoretic_key_q_rate() * relative_gap_rate * self.N)) + self.check_length
+            self.num_info_indices = int(
+                math.ceil(self._theoretic_key_q_rate() * relative_gap_rate * self.N)) + self.check_length
         else:
             self.num_info_indices = None  # Will be set during the polar code construction below
         self.constr_l = constr_l
@@ -56,14 +64,12 @@ class PolarCfg(Cfg):
         self.xy_dist = qary_memoryless_distribution.makeQSC(self.q, self.qer)
         self.index_types, self.frozen_set, self.info_set = self._calc_index_types()
         self.num_frozen_indices = self.N - self.num_info_indices
-        self.key_rate = (self.num_info_indices - self.check_length) * math.log(self.q, 2) / self.N
-        self.leak_rate = (self.num_frozen_indices + self.check_length) * math.log(self.q, 2) / self.N
 
         if scl_l is not None:
-            self.scl_l = scl_l
+            self.list_size = scl_l
         else:
             mixing_factor = max(self.frozen_set) + 1 - len(self.frozen_set)
-            self.scl_l = mixing_factor ** self.q
+            self.list_size = mixing_factor ** self.q
 
     def log_dict(self):
         super_dict = super().log_dict()
@@ -74,11 +80,7 @@ class PolarCfg(Cfg):
                          "polar_desired_success_rate": self.desired_success_rate,
                          "polar_num_info_indices": self.num_info_indices,
                          "polar_num_frozen_indices": self.num_frozen_indices,
-                         "polar_constr_l": self.constr_l,
-                         "polar_key_rate": self.key_rate,
-                         "polar_leak_rate": self.key_rate,
-                         "polar_scl_l": self.scl_l,
-                         "polar_check_length": self.check_length}
+                         "polar_constr_l": self.constr_l}
         assert (set(specific_dict.keys()) == set(specific_log_header()))
         return {**super_dict, **specific_dict}
 
@@ -213,15 +215,9 @@ def specific_log_header():
             "polar_desired_success_rate",
             "polar_num_info_indices",
             "polar_num_frozen_indices",
-            "polar_constr_l",
-            "polar_key_rate",
-            "polar_leak_rate",
-            "polar_scl_l",
-            "polar_check_length"]
+            "polar_constr_l"]
 
 
 def specific_log_header_params():
     return ["polar_num_info_indices",
-            "polar_constr_l",
-            "polar_scl_l",
-            "polar_check_length"]
+            "polar_constr_l"]

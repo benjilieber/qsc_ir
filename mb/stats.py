@@ -162,7 +162,7 @@ class StatsTest(unittest.TestCase):
                         total_radius - (max(total_radius - (len(cur_single_block_avg_list_sizes) - 1), 0) + j)] for
                                                       j, avg_prefix_list_size in enumerate(cur_prefix_avg_list_sizes[
                                                                                            max(total_radius - (
-                                                                                                       len(cur_single_block_avg_list_sizes) - 1),
+                                                                                                   len(cur_single_block_avg_list_sizes) - 1),
                                                                                                0):total_radius + 1])])
                                                  for total_radius in range(cfg.prefix_radii[i])]
                     # print("after " + str(i) + " blocks:" + str(sum(cur_prefix_avg_list_sizes)))
@@ -202,7 +202,7 @@ class StatsTest(unittest.TestCase):
                     total_radius - (max(total_radius - (len(cur_single_block_avg_list_sizes) - 1), 0) + j)] for
                                                   j, avg_prefix_list_size in enumerate(cur_prefix_avg_list_sizes[
                                                                                        max(total_radius - (
-                                                                                                   len(cur_single_block_avg_list_sizes) - 1),
+                                                                                               len(cur_single_block_avg_list_sizes) - 1),
                                                                                            0):total_radius + 1])]) for
                                              total_radius in range(cfg.prefix_radii[i])]
                 # print("after " + str(i) + " blocks:" + str(sum(cur_prefix_avg_list_sizes)))

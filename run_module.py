@@ -1,32 +1,32 @@
 import csv
+import math
+import multiprocessing
 import os
 import sys
+import time
+from itertools import product
+from timeit import default_timer as timer
 
+import numpy as np
 import pandas as pd
 
 import cfg
 import result
+from cfg import Cfg, CodeStrategy
+from key_generator import KeyGenerator
 from ldpc import ldpc_cfg
 from ldpc.ldpc_cfg import LdpcCfg
 from ldpc.ldpc_protocol import LdpcProtocol
 from mb import mb_cfg
+from mb.mb_cfg import IndicesToEncodeStrategy
+from mb.mb_cfg import MbCfg
+from mb.mb_protocol import MbProtocol
 from polar import polar_cfg
 from polar.polar_cfg import PolarCfg
 from polar.polar_protocol import PolarProtocol
+from result import Result
 
 sys.path.append(os.getcwd())
-import numpy as np
-import time
-import multiprocessing
-
-from timeit import default_timer as timer
-from mb.mb_cfg import IndicesToEncodeStrategy
-from mb.mb_cfg import MbCfg
-from cfg import Cfg, CodeStrategy
-from key_generator import KeyGenerator
-from mb.mb_protocol import MbProtocol
-from result import Result
-import math
 
 
 def write_header(file_name):
@@ -44,14 +44,9 @@ def write_header(file_name):
         raise AssertionError(f"Header of {file_name} is bad.")
 
 
-def write_results(result_list, is_slurm=False, verbosity=False):
+def write_results(result_list, verbosity=False):
     if verbosity:
         print("writing results")
-    if is_slurm:
-        for single_result in result_list:
-            print(single_result.get_row())
-        print(Result(result_list[0].cfg, result_list=result_list).get_row(), flush=True)
-        return
     raw_results_file_name = result_list[0].cfg.raw_results_file_path
     with open(raw_results_file_name, 'a', newline='') as f1:
         writer = csv.DictWriter(f1, fieldnames=result.get_header())
@@ -82,33 +77,30 @@ def single_run(cfg):
     return result_tuple
 
 
-def multi_run_series(cfg, sample_size, is_slurm, verbosity=False):
+def multi_run_series(cfg, sample_size, verbosity=False):
     result_tuple_list = []
     for single_sample_run in range(sample_size):
         result_tuple = single_run(cfg)
         result_tuple_list.append(result_tuple)
     for i in range(len(result_tuple_list[0])):
         result_i_list = [result_tuple[i] for result_tuple in result_tuple_list]
-        write_results(result_i_list, is_slurm=is_slurm, verbosity=verbosity)
+        write_results(result_i_list, verbosity=verbosity)
 
 
-def multi_run_parallel(cfg, sample_size, is_slurm, verbosity=False):
+def multi_run_parallel(cfg, sample_size, verbosity=False):
     values = [cfg] * sample_size
-    # partial_write_results = partial(write_results, is_slurm=is_slurm, verbosity=verbosity)
+    # partial_write_results = partial(write_results, verbosity=verbosity)
     with multiprocessing.Pool(sample_size) as pool:
         # with multiprocessing.Pool() as pool:
-        write_results(pool.map(single_run, values), is_slurm=is_slurm, verbosity=verbosity)
+        write_results(pool.map(single_run, values), verbosity=verbosity)
         if verbosity:
             print("starting to run")
         # return pool.map_async(single_run, values, callback=partial_write_results)
 
 
 def multi_run(args):
-    if args.is_slurm:
-        print(result.get_header())
-    else:
-        write_header(args.raw_results_file_path)
-        write_header(args.agg_results_file_path)
+    write_header(args.raw_results_file_path)
+    write_header(args.agg_results_file_path)
 
     start = timer()
     if args.run_mode == 'parallel':
@@ -123,6 +115,8 @@ def multi_run(args):
         if os.path.isfile(args.previous_run_files[0]):
             assert (len(args.previous_run_files) <= 1)
             previous_cfg_df = pd.read_csv(args.previous_run_files[0])
+            if previous_cfg_df.empty:
+                args.previous_run_files = None
         else:
             args.previous_run_files = None
 
@@ -143,10 +137,10 @@ def multi_run(args):
                             print(run_cfg)
                         if args.run_mode == 'parallel':
                             # r_list.append(multi_run_parallel(cfg, args.sample_size))
-                            multi_run_parallel(run_cfg, args.sample_size, is_slurm=args.is_slurm,
+                            multi_run_parallel(run_cfg, args.sample_size,
                                                verbosity=args.verbosity)
                         else:
-                            multi_run_series(run_cfg, args.sample_size, is_slurm=args.is_slurm,
+                            multi_run_series(run_cfg, args.sample_size,
                                              verbosity=args.verbosity)
 
     # print("started all runs")
@@ -217,10 +211,10 @@ def generate_ldpc_cfg(args, cfg):
     if args.ldpc_relative_gap_rate_list is None:
         args.ldpc_relative_gap_rate_list = [None]
 
-    for key_rate, syndrome_length, success_rate, relative_gap_rate in zip(args.ldpc_key_rate_list,
-                                                                          args.ldpc_syndrome_length_list,
-                                                                          args.ldpc_success_rate_list,
-                                                                          args.ldpc_relative_gap_rate_list):
+    for key_rate, syndrome_length, success_rate, relative_gap_rate in product(args.ldpc_key_rate_list,
+                                                                              args.ldpc_syndrome_length_list,
+                                                                              args.ldpc_success_rate_list,
+                                                                              args.ldpc_relative_gap_rate_list):
         for sparsity in args.ldpc_sparsity_range:
             for decoder in args.ldpc_decoder_list:
                 for max_num_rounds in args.ldpc_max_num_rounds_list:
@@ -250,10 +244,10 @@ def generate_polar_cfg(args, cfg):
     if args.polar_relative_gap_rate_list is None:
         args.polar_relative_gap_rate_list = [None]
 
-    for key_rate, num_info_indices, success_rate, relative_gap_rate in zip(args.polar_key_rate_list,
-                                                                           args.polar_num_info_indices_list,
-                                                                           args.polar_success_rate_list,
-                                                                           args.polar_relative_gap_rate_list):
+    for key_rate, num_info_indices, success_rate, relative_gap_rate in product(args.polar_key_rate_list,
+                                                                               args.polar_num_info_indices_list,
+                                                                               args.polar_success_rate_list,
+                                                                               args.polar_relative_gap_rate_list):
         if args.polar_scl_l_list is not None:
             scl_l_list = args.polar_scl_l_list
         else:

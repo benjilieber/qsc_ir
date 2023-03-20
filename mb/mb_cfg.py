@@ -79,7 +79,8 @@ class MbCfg(Cfg):
         self.N = num_blocks * block_length
         self.full_rank_encoding = full_rank_encoding
         self.use_zeroes_in_encoding_matrix = use_zeroes_in_encoding_matrix if self.q > 2 else True  # Whether to enable zeroes in encoding matrix
-        self.goal_candidates_num = goal_candidates_num or block_length ** 2
+        self.list_size = goal_candidates_num or block_length ** 2
+        self.check_length = int(math.floor(math.log(self.list_size, self.q)))
         self.indices_to_encode_strategy = indices_to_encode_strategy
         self.rounding_strategy = rounding_strategy
         self.pruning_strategy = pruning_strategy
@@ -115,7 +116,6 @@ class MbCfg(Cfg):
                          "mb_num_blocks": self.num_blocks,
                          "mb_full_rank_encoding": self.full_rank_encoding,
                          "mb_use_zeroes_in_encoding_matrix": self.use_zeroes_in_encoding_matrix,
-                         "mb_goal_candidates_num": self.goal_candidates_num,
                          "mb_indices_to_encode_strategy": str(self.indices_to_encode_strategy),
                          "mb_rounding_strategy": str(self.rounding_strategy),
                          "mb_pruning_strategy": str(self.pruning_strategy),
@@ -190,13 +190,13 @@ class MbCfg(Cfg):
             tot_num_encodings += cur_num_encodings
         return num_encodings_list
 
+
 def specific_log_header():
     return ["mb_desired_success_rate",
             "mb_block_length",
             "mb_num_blocks",
             "mb_full_rank_encoding",
             "mb_use_zeroes_in_encoding_matrix",
-            "mb_goal_candidates_num",
             "mb_indices_to_encode_strategy",
             "mb_rounding_strategy",
             "mb_pruning_strategy",
@@ -213,7 +213,6 @@ def specific_log_header_params():
             "mb_num_blocks",
             "mb_full_rank_encoding",
             "mb_use_zeroes_in_encoding_matrix",
-            "mb_goal_candidates_num",
             "mb_indices_to_encode_strategy",
             "mb_rounding_strategy",
             "mb_pruning_strategy",

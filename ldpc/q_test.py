@@ -1,11 +1,12 @@
 import unittest
+
 import numpy as np
 from scipy.sparse import csr_matrix
 
 from ldpc.f import F
-from ldpc_matrix import LdpcMatrix
 from ldpc.q import Q
 from ldpc.r import R
+from ldpc_matrix import LdpcMatrix
 
 
 class QTest(unittest.TestCase):

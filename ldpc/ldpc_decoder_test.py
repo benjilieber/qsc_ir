@@ -3,6 +3,7 @@ import sys
 import time
 
 import util
+from ldpc.ldpc_cfg import LdpcCfg, Decoder
 from ldpc.ldpc_matrix import LdpcMatrix
 
 sys.path.append(os.getcwd())
@@ -20,7 +21,7 @@ class LdpcDecoderTest(unittest.TestCase):
         indptr = [0, 2, 4, 6, 8, 10, 12, 14, 16]
         indices = [1, 3, 0, 1, 1, 2, 0, 3, 0, 3, 1, 2, 2, 3, 0, 2]
         data = [2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 2, 1]
-        encoding_matrix = LdpcMatrix(csr_matrix((data, indices, indptr), shape=(8, 4)), num_noise_symbols=4, base=3)
+        encoding_matrix = LdpcMatrix(matrix=csr_matrix((data, indices, indptr), shape=(8, 4)), num_noise_symbols=4, q=3)
         # encoding_matrix = [[0, 1, 0, 1, 1, 0, 0, 2],
         #                    [2, 1, 1, 0, 0, 1, 0, 0],
         #                    [0, 0, 1, 0, 0, 2, 1, 1],
@@ -223,26 +224,33 @@ class LdpcDecoderTest(unittest.TestCase):
 
 
 def run_single_test_bp(n, m, p_err, sparsity):
-    cfg = cfg(base=3, block_length=n, num_blocks=1, sparsity=sparsity)
+    cfg = LdpcCfg(q=3,
+                  p_err=p_err,
+                  N=n,
+                  syndrome_length=m,
+                  sparsity=sparsity,
+                  decoder=Decoder.bp,
+                  use_hints=False,
+                  use_forking=True)
     code_gen = LdpcGenerator(cfg)
     np.random.seed([os.getppid(), int(str(time.time() % 1)[2:10])])
     encoding_matrix = code_gen.generate_gallagher_matrix(m)
-    key_generator = KeyGenerator(p_err=p_err, key_length=n)
+    key_generator = KeyGenerator(p_err=p_err, N=n)
     a, b = key_generator.generate_keys()
     encoded_a = encoding_matrix * a
 
-    decoder = LdpcDecoder(3, p_err, encoding_matrix, encoded_a)
+    decoder = LdpcDecoder(cfg=cfg, encoding_matrix=encoding_matrix, encoded_a=encoded_a)
     _, stats = decoder.decode_belief_propagation(b, 20)
     a_guess = stats.a_guess_list[0]
     np.testing.assert_array_equal(a_guess, a)
 
 
 def run_single_test_it(n, m, p_err, sparsity, max_candidates_num=None, success_rate=None):
-    cfg = ldpcCfg(base=3, block_length=n, num_blocks=1, sparsity=sparsity)
+    cfg = LdpcCfg(base=3, block_length=n, num_blocks=1, sparsity=sparsity)
     code_gen = LdpcGenerator(cfg)
     np.random.seed([os.getppid(), int(str(time.time() % 1)[2:10])])
     encoding_matrix = code_gen.generate_gallagher_matrix(m)
-    key_generator = KeyGenerator(p_err=p_err, key_length=n)
+    key_generator = KeyGenerator(p_err=p_err, N=n)
     a, b = key_generator.generate_keys()
     encoded_a = encoding_matrix * a
 

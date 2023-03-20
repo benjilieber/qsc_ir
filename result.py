@@ -44,8 +44,8 @@ class Result(object):
                  result_type=None,
                  result_status=None,
                  list_result_status=None,
-                 ser=None,
-                 ser2=None,
+                 ser_b_key=None,
+                 ser_a_guess=None,
                  key_rate=None,
                  leak_rate=None,
                  matrix_size_rate=None,
@@ -62,34 +62,26 @@ class Result(object):
             self.is_abort = result_status == Status.abort
             is_completed = not self.is_abort
 
-            if result_type != ResultType.reduced:
-                if result_status == Status.abort:
-                    self.in_list_unique_max = False
-                    self.in_list_multi_max = False
-                    self.in_list_not_max = False
-                    self.out_of_list_and_gt = False
-                    self.out_of_list_and_in_range = False
-                    self.out_of_list_and_lt = False
-                else:
-                    assert (list_result_status is not None)
-                    self.in_list_unique_max = list_result_status == ListResultStatus.in_list_unique_max
-                    self.in_list_multi_max = list_result_status == ListResultStatus.in_list_multi_max
-                    self.in_list_not_max = list_result_status == ListResultStatus.in_list_not_max
-                    self.out_of_list_and_gt = list_result_status == ListResultStatus.out_of_list_and_gt
-                    self.out_of_list_and_in_range = list_result_status == ListResultStatus.out_of_list_and_in_range
-                    self.out_of_list_and_lt = list_result_status == ListResultStatus.out_of_list_and_lt
+            if result_status == Status.abort:
+                self.in_list_unique_max = False
+                self.in_list_multi_max = False
+                self.in_list_not_max = False
+                self.out_of_list_and_gt = False
+                self.out_of_list_and_in_range = False
+                self.out_of_list_and_lt = False
             else:
-                self.in_list_unique_max = None
-                self.in_list_multi_max = None
-                self.in_list_not_max = None
-                self.out_of_list_and_gt = None
-                self.out_of_list_and_in_range = None
-                self.out_of_list_and_lt = None
+                assert (list_result_status is not None)
+                self.in_list_unique_max = list_result_status == ListResultStatus.in_list_unique_max
+                self.in_list_multi_max = list_result_status == ListResultStatus.in_list_multi_max
+                self.in_list_not_max = list_result_status == ListResultStatus.in_list_not_max
+                self.out_of_list_and_gt = list_result_status == ListResultStatus.out_of_list_and_gt
+                self.out_of_list_and_in_range = list_result_status == ListResultStatus.out_of_list_and_in_range
+                self.out_of_list_and_lt = list_result_status == ListResultStatus.out_of_list_and_lt
 
-            self.ser_completed_only = ser if is_completed else None
-            self.ser_fail_only = ser if self.is_fail else None
-            self.ser2_completed_only = ser2 if is_completed else None
-            self.ser2_fail_only = ser2 if self.is_fail else None
+            self.ser_b_key_completed_only = ser_b_key if is_completed else None
+            self.ser_b_key_fail_only = ser_b_key if self.is_fail else None
+            self.ser_a_guess_completed_only = ser_a_guess if is_completed else None
+            self.ser_a_guess_fail_only = ser_a_guess if self.is_fail else None
             self.key_rate = key_rate
             self.key_rate_completed_only = key_rate if is_completed else None
             self.key_rate_success_only = key_rate if self.is_success else None
@@ -122,31 +114,26 @@ class Result(object):
             fail_result_list = [result for result in result_list if result.is_fail]
             completed_result_list = success_result_list + fail_result_list
 
-            if result_type != ResultType.reduced:
-                self.in_list_unique_max = np.mean([result.in_list_unique_max for result in completed_result_list])
-                self.in_list_multi_max = np.mean([result.in_list_multi_max for result in completed_result_list])
-                self.in_list_not_max = np.mean([result.in_list_not_max for result in completed_result_list])
-                self.out_of_list_and_gt = np.mean([result.out_of_list_and_gt for result in completed_result_list])
-                self.out_of_list_and_in_range = np.mean([result.out_of_list_and_in_range for result in completed_result_list])
-                self.out_of_list_and_lt = np.mean([result.out_of_list_and_lt for result in completed_result_list])
-            else:
-                self.in_list_unique_max = None
-                self.in_list_multi_max = None
-                self.in_list_not_max = None
-                self.out_of_list_and_gt = None
-                self.out_of_list_and_in_range = None
-                self.out_of_list_and_lt = None
+            self.in_list_unique_max = np.mean([result.in_list_unique_max for result in completed_result_list])
+            self.in_list_multi_max = np.mean([result.in_list_multi_max for result in completed_result_list])
+            self.in_list_not_max = np.mean([result.in_list_not_max for result in completed_result_list])
+            self.out_of_list_and_gt = np.mean([result.out_of_list_and_gt for result in completed_result_list])
+            self.out_of_list_and_in_range = np.mean(
+                [result.out_of_list_and_in_range for result in completed_result_list])
+            self.out_of_list_and_lt = np.mean([result.out_of_list_and_lt for result in completed_result_list])
 
-            self.ser_completed_only = np.mean(
-                [result.ser_completed_only for result in completed_result_list]) if has_completed else None
-            self.ser_fail_only = np.mean([result.ser_fail_only for result in fail_result_list]) if has_fail else None
-            has_ser2 = has_completed and completed_result_list[0].ser2_completed_only is not None
+            self.ser_b_key_completed_only = np.mean(
+                [result.ser_b_key_completed_only for result in completed_result_list]) if has_completed else None
+            self.ser_b_key_fail_only = np.mean([result.ser_b_key_fail_only for result in fail_result_list]) if has_fail else None
+            has_ser2 = has_completed and completed_result_list[0].ser_a_guess_completed_only is not None
             if has_ser2:
-                self.ser2_completed_only = np.mean([result.ser2_completed_only for result in completed_result_list]) if has_completed else None
-                self.ser2_fail_only = np.mean([result.ser2_fail_only for result in fail_result_list]) if has_fail else None
+                self.ser_a_guess_completed_only = np.mean(
+                    [result.ser_a_guess_completed_only for result in completed_result_list]) if has_completed else None
+                self.ser_a_guess_fail_only = np.mean(
+                    [result.ser_a_guess_fail_only for result in fail_result_list]) if has_fail else None
             else:
-                self.ser2_completed_only = None
-                self.ser2_fail_only = None
+                self.ser_a_guess_completed_only = None
+                self.ser_a_guess_fail_only = None
 
             self.key_rate = np.mean([result.key_rate for result in success_result_list] or [0.0])
             self.key_rate_completed_only = np.mean(
@@ -193,10 +180,10 @@ class Result(object):
                          "out_of_list_and_gt": self.out_of_list_and_gt,
                          "out_of_list_and_in_range": self.out_of_list_and_in_range,
                          "out_of_list_and_lt": self.out_of_list_and_lt,
-                         "ser_completed_only": self.ser_completed_only,
-                         "ser_fail_only": self.ser_fail_only,
-                         "ser2_completed_only": self.ser2_completed_only,
-                         "ser2_fail_only": self.ser2_fail_only,
+                         "ser_b_key_completed_only": self.ser_b_key_completed_only,
+                         "ser_b_key_fail_only": self.ser_b_key_fail_only,
+                         "ser_a_guess_completed_only": self.ser_a_guess_completed_only,
+                         "ser_a_guess_fail_only": self.ser_a_guess_fail_only,
                          "key_rate": self.key_rate,
                          "key_rate_completed_only": self.key_rate_completed_only,
                          "key_rate_success_only": self.key_rate_success_only,
@@ -260,10 +247,10 @@ def specific_log_header():
             "out_of_list_and_gt",
             "out_of_list_and_in_range",
             "out_of_list_and_lt",
-            "ser_completed_only",
-            "ser_fail_only",
-            "ser2_completed_only",
-            "ser2_fail_only",
+            "ser_b_key_completed_only",
+            "ser_b_key_fail_only",
+            "ser_a_guess_completed_only",
+            "ser_a_guess_fail_only",
             "key_rate",
             "key_rate_completed_only",
             "key_rate_success_only",

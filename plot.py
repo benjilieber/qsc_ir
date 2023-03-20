@@ -352,7 +352,7 @@ def plot_vs_qser(df, y_name, q_filter=None, n_filter=None):
     df["N"] = np.exp2(df.n).astype(int)
     add_yield(df)
     add_efficiency(df)
-    df['logL'] = np.log(df.goal_candidates_num)
+    df['logL'] = np.log(df.list_size)
     df['logI'] = np.log(df.max_num_indices_to_encode)
     df['Kbps'] = np.reciprocal(df.time_rate) * np.log2(df.q) / 1000
     df['total_communication_rate'] = df.total_communication_rate * np.log2(df.q)
