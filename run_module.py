@@ -33,8 +33,7 @@ def write_header(file_name):
     try:
         with open(file_name, 'r') as f:
             csv_reader = csv.DictReader(f)
-            dict_from_csv = dict(list(csv_reader)[0])
-            list_of_column_names = set(dict_from_csv.keys())
+            list_of_column_names = set(csv_reader.fieldnames)
             assert (list_of_column_names == set(result.get_header()))
     except FileNotFoundError:
         with open(file_name, 'a', newline='') as f:
@@ -58,6 +57,11 @@ def write_results(result_list, verbosity=False):
         writer = csv.DictWriter(f2, fieldnames=result.get_header())
         writer.writerow(Result(result_list[0].cfg, result_list=result_list).get_dict())
 
+
+def write_results_parallel_helper(result_tuple_list, verbosity=False):
+    for i in range(len(result_tuple_list[0])):
+        result_i_list = [result_tuple[i] for result_tuple in result_tuple_list]
+        write_results(result_i_list, verbosity=verbosity)
 
 def single_run(cfg):
     # print(f"Started process {os.getpid()}", flush=True)
@@ -92,7 +96,7 @@ def multi_run_parallel(cfg, sample_size, verbosity=False):
     # partial_write_results = partial(write_results, verbosity=verbosity)
     with multiprocessing.Pool(sample_size) as pool:
         # with multiprocessing.Pool() as pool:
-        write_results(pool.map(single_run, values), verbosity=verbosity)
+        write_results_parallel_helper(pool.map(single_run, values), verbosity=verbosity)
         if verbosity:
             print("starting to run")
         # return pool.map_async(single_run, values, callback=partial_write_results)

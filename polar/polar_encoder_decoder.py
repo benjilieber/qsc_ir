@@ -73,6 +73,8 @@ class PolarEncoderDecoder:
                                                             frozen_values_iterator,
                                                             in_list_size=1)
 
+        if final_list_size == 0:
+            return [], []
         assert (1 <= final_list_size <= self.cfg.list_size)
         assert (len(encoded_vector_list) == final_list_size)
         assert (next_u_index == len(encoded_vector_list[0]) == self.cfg.N)
@@ -191,6 +193,8 @@ class PolarEncoderDecoder:
                         new_list_size = min(new_list_size - np.isneginf(new_prob_list).sum(), self.cfg.list_size)
                     else:
                         new_list_size = min(np.count_nonzero(new_prob_list), self.cfg.list_size)
+                    if new_list_size == 0:
+                        return None, None, None, None, 0, None
                     indices_to_keep = np.argpartition(new_prob_list, -new_list_size)[-new_list_size:]
                     orig_indices_map = indices_to_keep % in_list_size
                     info_vec_list[0:new_list_size] = info_vec_list[indices_to_keep]
@@ -281,6 +285,8 @@ class PolarEncoderDecoder:
                         new_list_size = min(new_list_size - np.isneginf(new_prob_list).sum(), self.cfg.list_size)
                     else:
                         new_list_size = min(np.count_nonzero(new_prob_list), self.cfg.list_size)
+                    if new_list_size == 0:
+                        return None, None, None, None, 0, None
                     indices_to_keep = np.argpartition(new_prob_list, -new_list_size)[-new_list_size:]
                     orig_indices_map = indices_to_keep % in_list_size
                     info_vec_list[0:new_list_size] = info_vec_list[indices_to_keep]
@@ -318,6 +324,8 @@ class PolarEncoderDecoder:
                         new_list_size = min(new_list_size - np.isneginf(new_prob_list).sum(), self.cfg.list_size)
                     else:
                         new_list_size = min(np.count_nonzero(new_prob_list), self.cfg.list_size)
+                    if new_list_size == 0:
+                        return None, None, None, None, 0, None
                     indices_to_keep = np.argpartition(new_prob_list, -new_list_size)[-new_list_size:]
                     encoded_vec_list = encoded_vec_list[indices_to_keep]
                     new_prob_list = new_prob_list[indices_to_keep]
@@ -355,6 +363,8 @@ class PolarEncoderDecoder:
                                                                   frozen_vec_iterator,
                                                                   in_list_size)
 
+            if minus_list_size == 0:
+                return None, None, None, None, 0, None
             xy_plus_vec_dist_list = []
             for i in range(minus_list_size):
                 origI = minus_orig_indices_map[i]
@@ -373,6 +383,8 @@ class PolarEncoderDecoder:
                                                                  xy_plus_vec_dist_list,
                                                                  frozen_vec_iterator,
                                                                  minus_list_size)
+            if plus_list_size == 0:
+                return None, None, None, None, 0, None
 
             new_list_size = plus_list_size
 

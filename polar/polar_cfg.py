@@ -109,8 +109,8 @@ class PolarCfg(Cfg):
 
         # If the files with data exist, load them
         if os.path.isfile(tv_construction_name) and os.path.isfile(pe_construction_name):
-            tv = np.load(tv_construction_name)
-            pe = np.load(pe_construction_name)
+            tv = np.load(tv_construction_name, allow_pickle=True)
+            pe = np.load(pe_construction_name, allow_pickle=True)
             return tv, pe
 
         # Otherwise, obtain construction and save them to the files

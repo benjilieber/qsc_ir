@@ -7,30 +7,32 @@ from cfg import CodeStrategy
 from ldpc.ldpc_cfg import Decoder
 from mb.mb_cfg import RoundingStrategy, PruningStrategy
 
-verbosity = True
+verbosity = False
 run_mode = "parallel"
 p_err = float(sys.argv[1])
-# p_err = 0.001
+# p_err = 0.0
 
 # previous_run_files = [r'/tmp/history/{p_err}/slurm-*.out'.format(p_err=p_err)]
 # previous_run_file_format = "str"
-previous_run_files = ["results/run_results_agg.csv"]
+previous_run_files = ["results/ldpc_run_results_agg.csv"]
 previous_run_file_format = "csv"
-# previous_run_files = None
-# previous_run_file_format = None
+previous_run_files = None
+previous_run_file_format = None
 
-q_list = [3]
+code_strategy = CodeStrategy.polar  # [CodeStrategy.mb, CodeStrategy.polar, CodeStrategy.ldpc]
+code_strategy_list = [code_strategy]
+q = 3
+q_list = [q]
 p_err_range = [p_err]  # [0.0, 0.0001, 0.001, 0.01, 0.02, 0.05, 0.1]
+N_list = [16]
 N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
 use_log = True
 sample_size = 10
 # raw_results_file_path = "results/old/fake_results.csv"
 # agg_results_file_path = "results/old/fake_results_agg.csv"
-raw_results_file_path = "results/run_results.csv"
-agg_results_file_path = "results/run_results_agg.csv"
+raw_results_file_path = "results/{code_strategy},q={q},p_err={p_err}.csv".format(code_strategy=str(code_strategy), q=q, p_err=p_err)
+agg_results_file_path = "results/{code_strategy},q={q},p_err={p_err},agg.csv".format(code_strategy=str(code_strategy), q=q, p_err=p_err)
 
-code_strategy_list = [CodeStrategy.mb, CodeStrategy.polar, CodeStrategy.ldpc]
-code_strategy_list = [CodeStrategy.polar]
 
 # Multi-block parameters
 mb_success_rate_range = [0.9, 0.99, 0.999, 0.9999]
@@ -48,8 +50,8 @@ mb_encoding_sample_size = 1
 ldpc_key_rate_list = [None]
 ldpc_syndrome_length_list = [None]
 ldpc_success_rate_list = [None]
-ldpc_relative_gap_rate_list = [0.5, 0.6, 0.7, 0.8, 1.0]
-ldpc_sparsity_range = [3]
+ldpc_relative_gap_rate_list = [0.8, 0.9, 0.95, 1.0, 1.05]
+ldpc_sparsity_range = [3, 4, 5, 6]
 ldpc_decoder_list = [Decoder.bp]
 ldpc_max_num_rounds_list = [30]
 ldpc_L_list = [1]
@@ -61,8 +63,8 @@ polar_constr_l = 100
 polar_key_rate_list = None
 polar_num_info_indices_list = None
 polar_success_rate_list = None
-polar_relative_gap_rate_list = [0.95, 0.975, 1.0, 1.025, 1.05]
-polar_scl_l_list = [1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683, 59049]
+polar_relative_gap_rate_list = [0.8, 0.9, 0.95, 1.0, 1.05]
+polar_scl_l_list = [1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683]
 
 args = arg_module.create_args(N_list=N_list,
                               p_err_range=p_err_range,
