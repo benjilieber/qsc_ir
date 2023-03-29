@@ -2,6 +2,8 @@ import math
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import matplotlib.lines as mlines
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import colors
 from matplotlib import ticker
 
@@ -11,12 +13,32 @@ import seaborn as sns
 
 sns.set(style='ticks')
 
+def pre_process(df, q_filter=None, p_err_filter=None, qer_filter=None, N_filter=None, n_filter=None, success_rate_filter=None):
+    df["n_approx"] = np.ceil(np.log2(df.N)).astype(int)
+    df["N_approx"] = np.exp2(df.n_approx).astype(int)
+    df["FER"] = 1 - df.success_rate
+
+    if q_filter is not None:
+        df = df[df.q.isin(q_filter)]
+    if N_filter is not None:
+        df = df[df.N_approx.isin(N_filter)]
+    if n_filter is not None:
+        df = df[df.n_approx.isin(n_filter)]
+    if p_err_filter is not None:
+        df = df[df.p_err.isin(p_err_filter)]
+    if qer_filter is not None:
+        df = df[df.qer.isin(qer_filter)]
+    if success_rate_filter is not None:
+        df = df[df.success_rate.isin(success_rate_filter)]
+
+    return df
+
 
 def plot_results1(file_name, q_filter=None, qer_filter=None, snr_filter=None, n_filter=None, errorType="frame"):
     df = pd.read_csv(file_name)
     df["q"] = df.base
     df["qer"] = df.p_err * (-1) + 1
-    df["n"] = np.ceil(np.log2(df.key_length))
+    df["n"] = np.ceil(np.log2(df.N))
     df["N"] = np.exp2(df.n)
     df["frameErrorProb"] = df.is_success * (-1) + 1
 
@@ -187,7 +209,7 @@ def plot_results4(file_name):
     df = pd.read_csv(file_name)
     df["q"] = df.base
     df["qer"] = df.p_err * (-1) + 1
-    df["n"] = np.ceil(np.log2(df.key_length))
+    df["n"] = np.ceil(np.log2(df.N))
     df["N"] = np.exp2(df.n)
     df['key_rate_vs_theoretic_key_rate'] = df.key_rate / df.theoretic_key_rate
     n_list = sorted(df.n.unique())
@@ -214,7 +236,7 @@ def add_efficiency(df):
     df.loc[df.p_err.eq(0.0), 'optimal_leak'] = np.log2(df.q - 1)
     df.loc[df.p_err.ne(0.0), 'optimal_leak'] = -df.p_err * np.log2(df.p_err) - (1 - df.p_err) * np.log2(
         (1 - df.p_err) / (df.q - 1))
-    df['efficiency'] = df.encoding_size_rate * np.log2(df.q) / df.optimal_leak
+    df['efficiency'] = df.leak_rate / df.optimal_leak
 
 
 def get_theoretic_key_rate_single(q, p_err):
@@ -236,17 +258,7 @@ def get_theoretic_key_rate(q, p_err_array):
     return theoretic_key_rate
 
 
-def plot_error_exponent(df, q_filter=None, p_err_filter=None):
-    df["q"] = df.q
-    df["qer"] = df.p_err * (-1) + 1
-    df["n"] = np.ceil(np.log2(df.N))
-    df["N"] = np.exp2(df.n).astype(int)
-    df["FER"] = 1 - df.success_rate
-
-    if q_filter is not None:
-        df = df[df.q.isin(q_filter)]
-    if p_err_filter is not None:
-        df = df[df.p_err.isin(p_err_filter)]
+def plot_error_exponent(df):
 
     color_name = "key_rate"
     color_col = "key_rate_success_only"
@@ -261,9 +273,9 @@ def plot_error_exponent(df, q_filter=None, p_err_filter=None):
 
             fig, ax = plt.subplots()
 
-            max_key_rate_per_xy = cur_group.groupby(["N", "FER"]).key_rate_success_only.aggregate('max').reset_index()
+            max_key_rate_per_xy = cur_group.groupby(["N_approx", "FER"]).key_rate_success_only.aggregate('max').reset_index()
 
-            scatter = ax.scatter(max_key_rate_per_xy.N, max_key_rate_per_xy.FER, s=10,
+            scatter = ax.scatter(max_key_rate_per_xy.N_approx, max_key_rate_per_xy.FER, s=10,
                                  c=max_key_rate_per_xy.key_rate_success_only, cmap='gist_rainbow',
                                  norm=colors.Normalize())
 
@@ -279,24 +291,133 @@ def plot_error_exponent(df, q_filter=None, p_err_filter=None):
                                                                                            color_name=color_name))
             plt.show()
 
-
-def plot_scaling_exponent(df, q_filter=None, p_err_filter=None, success_rate_filter=None):
-    df["q"] = df.q
-    df["qer"] = df.p_err * (-1) + 1
-    df["n"] = np.ceil(np.log2(df.N))
-    df["N"] = np.exp2(df.n).astype(int)
+def plot_scaling_exponent(df):
     df["gap"] = df.theoretic_key_rate - df.key_rate_success_only
+    df["scaling_exponent"] = -np.log(df.N_approx) / np.log(df.gap)
 
-    if q_filter is not None:
-        df = df[df.q.isin(q_filter)]
-    if p_err_filter is not None:
-        df = df[df.p_err.isin(p_err_filter)]
-    if success_rate_filter is not None:
-        df = df[df.success_rate.isin(success_rate_filter)]
+    grouped_by_graph = df.groupby(["q", "success_rate", "p_err"])
+    for (q, success_rate, p_err) in grouped_by_graph.groups.keys():
+        cur_graph_group = grouped_by_graph.get_group((q, success_rate, p_err))
+        fig, ax = plt.subplots()
+
+        grouped_by_line = cur_graph_group.groupby(["mb_max_num_indices_to_encode", "mb_block_length", "list_size"])
+        cmap = plt.get_cmap('tab20')
+        colors = [cmap(i) for i in np.linspace(0, 1, len(grouped_by_line.groups.keys()))]
+        for i, (max_num_indices_to_encode, block_length, list_size) in enumerate(grouped_by_line.groups.keys()):
+            cur_line_group = grouped_by_line.get_group((max_num_indices_to_encode, block_length, list_size))
+            ax.plot(cur_line_group.N_approx, cur_line_group.scaling_exponent, linestyle='dashed', label=f"{max_num_indices_to_encode},{block_length},{list_size}-mb", c=colors[i], marker=mlines.Line2D.filled_markers[i])
+
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+        plt.xlabel('N')
+        plt.ylabel("scaling_exponent")
+        # plt.ylim(-0.1, 6.1)
+        plt.title("Scaling exponent - q={q},p_err={p_err},success_rate={success_rate}".format(q=q, p_err=p_err, success_rate=success_rate))
+        plt.savefig(
+            "scaling_exponent,q={q},p_err={p_err},success_rate={success_rate}.png".format(
+                q=q, p_err=p_err, success_rate=success_rate))
+        plt.show()
+
+def plot_time_rate(df):
+    grouped_by_graph = df.groupby(["q", "success_rate", "p_err"])
+    for (q, success_rate, p_err) in grouped_by_graph.groups.keys():
+        cur_graph_group = grouped_by_graph.get_group((q, success_rate, p_err))
+        fig, ax = plt.subplots()
+
+        grouped_by_line = cur_graph_group.groupby(["mb_max_num_indices_to_encode", "mb_block_length", "list_size"])
+        cmap = plt.get_cmap('tab20')
+        colors = [cmap(i) for i in np.linspace(0, 1, len(grouped_by_line.groups.keys()))]
+        for i, (max_num_indices_to_encode, block_length, list_size) in enumerate(grouped_by_line.groups.keys()):
+            cur_line_group = grouped_by_line.get_group((max_num_indices_to_encode, block_length, list_size))
+            ax.plot(cur_line_group.N_approx, cur_line_group.time_rate, linestyle='dashed', label=f"{max_num_indices_to_encode},{block_length},{list_size}-mb", c=colors[i], marker=mlines.Line2D.filled_markers[i])
+
+        plt.axhline(y=0.0, color="red")
+        # plt.legend()
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+        plt.xlabel('key length N')
+        plt.ylabel("time rate (sec/q-ary raw bit)")
+        # plt.ylim(-0.1, 3)
+        plt.title("Time rate - q = {q}, Q = {p_err}, success rate = {success_rate}".format(q=q, p_err=p_err, success_rate=success_rate))
+        plt.savefig(
+            "time_rate,q={q},p_err={p_err},success_rate={success_rate}.png".format(
+                q=q, p_err=p_err, success_rate=success_rate))
+        plt.show()
+
+def plot_key_rate(df):
+    grouped_by_graph = df.groupby(["q", "success_rate", "p_err"])
+    for (q, success_rate, p_err) in grouped_by_graph.groups.keys():
+        cur_graph_group = grouped_by_graph.get_group((q, success_rate, p_err))
+        fig, ax = plt.subplots()
+
+        grouped_by_line = cur_graph_group.groupby(["mb_max_num_indices_to_encode", "mb_block_length", "list_size"])
+        cmap = plt.get_cmap('tab20')
+        colors = [cmap(i) for i in np.linspace(0, 1, len(grouped_by_line.groups.keys()))]
+        for i, (max_num_indices_to_encode, block_length, list_size) in enumerate(grouped_by_line.groups.keys()):
+            cur_line_group = grouped_by_line.get_group((max_num_indices_to_encode, block_length, list_size))
+            ax.plot(cur_line_group.N_approx, cur_line_group.key_rate_success_only, linestyle='dashed', label=f"{max_num_indices_to_encode},{block_length},{list_size}-mb", c=colors[i], marker=mlines.Line2D.filled_markers[i])
+
+        if p_err == 0.0:
+            theoretic_key_rate = math.log2(q / (q - 1))
+        else:
+            theoretic_key_rate = p_err * np.log2(p_err) + (1 - p_err) * np.log2((1 - p_err) / (q - 1)) + math.log2(q)
+        plt.axhline(y=theoretic_key_rate, color="r", label="max key rate")
+        # plt.legend()
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+        plt.xlabel('N')
+        plt.ylabel("key_rate")
+        plt.ylim(-0.1, theoretic_key_rate+0.1)
+        plt.title("Key rate - q={q},p_err={p_err},success_rate={success_rate}".format(q=q, p_err=p_err, success_rate=success_rate))
+        plt.savefig(
+            "key_rate,q={q},p_err={p_err},success_rate={success_rate}.png".format(
+                q=q, p_err=p_err, success_rate=success_rate))
+        plt.show()
+
+def plot_ser(df):
+    grouped_by_graph = df.groupby(["q", "success_rate", "p_err"])
+    for (q, success_rate, p_err) in grouped_by_graph.groups.keys():
+        cur_graph_group = grouped_by_graph.get_group((q, success_rate, p_err))
+        fig, ax = plt.subplots()
+
+        grouped_by_line = cur_graph_group.groupby(["mb_max_num_indices_to_encode", "mb_block_length", "list_size"])
+        cmap = plt.get_cmap('tab20')
+        colors = [cmap(i) for i in np.linspace(0, 1, len(grouped_by_line.groups.keys()))]
+        for i, (max_num_indices_to_encode, block_length, list_size) in enumerate(grouped_by_line.groups.keys()):
+            cur_line_group = grouped_by_line.get_group((max_num_indices_to_encode, block_length, list_size))
+            ax.plot(cur_line_group.N_approx, cur_line_group.ser_b_key_completed_only, linestyle='dashed', label=f"{max_num_indices_to_encode},{block_length},{list_size}-mb", c=colors[i], marker=mlines.Line2D.filled_markers[i])
+
+        if p_err == 0.0:
+            theoretic_key_rate = math.log2(q / (q - 1))
+        else:
+            theoretic_key_rate = p_err * np.log2(p_err) + (1 - p_err) * np.log2((1 - p_err) / (q - 1)) + math.log2(q)
+        plt.axhline(y=theoretic_key_rate, color="r")
+        # plt.legend()
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+        plt.xlabel('N')
+        plt.ylabel("SER")
+        # plt.ylim(-0.1, 0.1)
+        plt.title("SER - q={q},p_err={p_err},success_rate={success_rate}".format(q=q, p_err=p_err, success_rate=success_rate))
+        plt.savefig(
+            "ser,q={q},p_err={p_err},success_rate={success_rate}.png".format(
+                q=q, p_err=p_err, success_rate=success_rate))
+        plt.show()
+
+def plot_gap_vs_N(df):
+    df["gap"] = df.theoretic_key_rate - df.key_rate_success_only
 
     # # color by L
     color_name = "L"
-    color_col = "goal_candidates_num"
+    color_col = "list_size"
     use_color_log = True
 
     # # color by block length
@@ -321,12 +442,12 @@ def plot_scaling_exponent(df, q_filter=None, p_err_filter=None, success_rate_fil
 
                 fig, ax = plt.subplots()
 
-                min_by_color = cur_group.groupby(["N", color_col]).gap.aggregate('min').reset_index()
+                min_by_color = cur_group.groupby(["N_approx", color_col]).gap.aggregate('min').reset_index()
                 if use_color_log:
-                    scatter = ax.scatter(min_by_color.N, min_by_color.gap, s=10, c=min_by_color[color_col],
+                    scatter = ax.scatter(min_by_color.N_approx, min_by_color.gap, s=10, c=min_by_color[color_col],
                                          cmap='gist_rainbow', norm=colors.LogNorm())
                 else:
-                    scatter = ax.scatter(min_by_color.N, min_by_color.gap, s=10,
+                    scatter = ax.scatter(min_by_color.N_approx, min_by_color.gap, s=10,
                                          c=min_by_color[color_col], cmap='gist_rainbow', norm=colors.Normalize())
 
                 plt.axhline(y=0.0, color="red")
@@ -337,29 +458,25 @@ def plot_scaling_exponent(df, q_filter=None, p_err_filter=None, success_rate_fil
                 ax.add_artist(legend)
                 # plt.title('q=' + str(q) + ', N=' + str(N))  # + ', max_block_length=' + str(grouped_by_N.block_length.max()))
 
-                plt.title("Scaling exponent - q={q},p_err={p_err},success_rate={success_rate}".format(q=q, p_err=p_err,
+                plt.title("Gap vs N - q={q},p_err={p_err},success_rate={success_rate}".format(q=q, p_err=p_err,
                                                                                                       success_rate=success_rate))
                 plt.savefig(
-                    "scaling_exponent,q={q},p_err={p_err},success_rate={success_rate},color={color_name}.png".format(
+                    "gap-vs-N,q={q},p_err={p_err},success_rate={success_rate},color={color_name}.png".format(
                         q=q, p_err=p_err, success_rate=success_rate, color_name=color_name))
                 plt.show()
 
 
-def plot_vs_qser(df, y_name, q_filter=None, n_filter=None):
-    df["q"] = df.q
-    df["qer"] = df.p_err * (-1) + 1
-    df["n"] = np.ceil(np.log2(df.N))
-    df["N"] = np.exp2(df.n).astype(int)
+def plot_vs_qser(df, y_name):
     add_yield(df)
     add_efficiency(df)
     df['logL'] = np.log(df.list_size)
-    df['logI'] = np.log(df.max_num_indices_to_encode)
+    df['logI'] = np.log(df.mb_max_num_indices_to_encode)
     df['Kbps'] = np.reciprocal(df.time_rate) * np.log2(df.q) / 1000
     df['total_communication_rate'] = df.total_communication_rate * np.log2(df.q)
 
     # # color by L
     color_name = "L"
-    color_col = "goal_candidates_num"
+    color_col = "list_size"
     use_color_log = True
 
     # # color by block length
@@ -372,15 +489,10 @@ def plot_vs_qser(df, y_name, q_filter=None, n_filter=None):
     # color_col = "max_num_indices_to_encode"
     # use_color_log = True
 
-    if n_filter is not None:
-        df = df[df.n.isin(n_filter)]
-    if q_filter is not None:
-        df = df[df.q.isin(q_filter)]
-
     grouped_by_q = df.groupby("q")
     for q in grouped_by_q.groups.keys():
         cur_q_group = grouped_by_q.get_group(q)
-        grouped_by_N = cur_q_group.groupby("N")
+        grouped_by_N = cur_q_group.groupby("N_approx")
         for N in grouped_by_N.groups.keys():
             cur_group = grouped_by_N.get_group(N)
 
@@ -407,7 +519,7 @@ def plot_vs_qser(df, y_name, q_filter=None, n_filter=None):
                     scatter = ax.scatter(max_by_color.p_err + 0.000001, max_by_color[y_col_name], s=10,
                                          c=max_by_color[color_col], cmap='gist_rainbow', norm=colors.Normalize())
 
-                # ax.scatter(Q + 0.000001, keyRate, s=1, c=cur_group.max_num_indices_to_encode, cmap='gist_rainbow', label=cur_group.max_num_indices_to_encode)
+                # ax.scatter(Q + 0.000001, keyRate, s=1, c=cur_group.mb_max_num_indices_to_encode, cmap='gist_rainbow', label=cur_group.mb_max_num_indices_to_encode)
                 theoretic_key_rate_zero = math.log2(q / (q - 1))
                 theoretic_key_rate_non_zero = Q_range_non_zero * np.log2(Q_range_non_zero) + (
                         1 - Q_range_non_zero) * np.log2(
@@ -500,18 +612,6 @@ def plot_efficiency_vs_qser(file_name):
 #     return plot_y_vs_x(df, "yield", "total_communication_rate", q_filter, n_filter, color_col=color_col)
 
 def plot_time_vs_yield(df, q_filter=None, n_filter=None, p_err_filter=None):
-    df["q"] = df.q
-    df["qer"] = df.p_err * (-1) + 1
-    df["n"] = np.ceil(np.log2(df.N))
-    df["N"] = np.exp2(df.n).astype(int)
-
-    if q_filter is not None:
-        df = df[df.q.isin(q_filter)]
-    if n_filter is not None:
-        df = df[df.n.isin(n_filter)]
-    if p_err_filter is not None:
-        df = df[df.p_err.isin(p_err_filter)]
-
     grouped_by_q = df.groupby("q")
     for q in grouped_by_q.groups.keys():
         cur_q_group = grouped_by_q.get_group(q)
@@ -523,8 +623,8 @@ def plot_time_vs_yield(df, q_filter=None, n_filter=None, p_err_filter=None):
 
             cur_group["yield_rate"] = cur_group.success_rate * cur_group.key_rate_success_only
 
-            min_by_color = cur_group.groupby(["N", "time_rate"]).yield_rate.aggregate('min').reset_index()
-            scatter = ax.scatter(min_by_color.yield_rate, min_by_color.time_rate, s=1, c=min_by_color.N,
+            min_by_color = cur_group.groupby(["N_approx", "time_rate"]).yield_rate.aggregate('min').reset_index()
+            scatter = ax.scatter(min_by_color.yield_rate, min_by_color.time_rate, s=1, c=min_by_color.N_approx,
                                  cmap='gist_rainbow', norm=colors.LogNorm())
 
             if p_err == 0:
@@ -545,19 +645,7 @@ def plot_time_vs_yield(df, q_filter=None, n_filter=None, p_err_filter=None):
             plt.show()
 
 
-def plot_time_vs_N(df, q_filter=None, n_filter=None, p_err_filter=None):
-    df["q"] = df.q
-    df["qer"] = df.p_err * (-1) + 1
-    df["n"] = np.ceil(np.log2(df.N))
-    df["N"] = np.exp2(df.n).astype(int)
-
-    if q_filter is not None:
-        df = df[df.q.isin(q_filter)]
-    if n_filter is not None:
-        df = df[df.n.isin(n_filter)]
-    if p_err_filter is not None:
-        df = df[df.p_err.isin(p_err_filter)]
-
+def plot_time_vs_N(df):
     grouped_by_q = df.groupby("q")
     for q in grouped_by_q.groups.keys():
         cur_q_group = grouped_by_q.get_group(q)
@@ -569,8 +657,8 @@ def plot_time_vs_N(df, q_filter=None, n_filter=None, p_err_filter=None):
 
             cur_group["yield_rate"] = cur_group.success_rate * cur_group.key_rate_success_only
 
-            max_by_color = cur_group.groupby(["N", "time_rate"]).yield_rate.aggregate('max').reset_index()
-            scatter = ax.scatter(max_by_color.N, max_by_color.time_rate, s=1, c=max_by_color.yield_rate,
+            max_by_color = cur_group.groupby(["N_approx", "time_rate"]).yield_rate.aggregate('max').reset_index()
+            scatter = ax.scatter(max_by_color.N_approx, max_by_color.time_rate, s=1, c=max_by_color.yield_rate,
                                  cmap='gist_rainbow', norm=colors.LogNorm())
 
             plt.xlabel('N, log scale')
@@ -586,17 +674,6 @@ def plot_time_vs_N(df, q_filter=None, n_filter=None, p_err_filter=None):
 
 
 def plot_time_vs_block_length(df, q_filter=None, n_filter=None, p_err_filter=None):
-    df["q"] = df.q
-    df["qer"] = df.p_err * (-1) + 1
-    df["n"] = np.ceil(np.log2(df.N))
-    df["N"] = np.exp2(df.n).astype(int)
-
-    if q_filter is not None:
-        df = df[df.q.isin(q_filter)]
-    if n_filter is not None:
-        df = df[df.n.isin(n_filter)]
-    if p_err_filter is not None:
-        df = df[df.p_err.isin(p_err_filter)]
 
     grouped_by_q = df.groupby("q")
     for q in grouped_by_q.groups.keys():
@@ -604,7 +681,7 @@ def plot_time_vs_block_length(df, q_filter=None, n_filter=None, p_err_filter=Non
         grouped_by_p_err = cur_q_group.groupby("p_err")
         for p_err in grouped_by_p_err.groups.keys():
             cur_p_err_group = grouped_by_p_err.get_group(p_err)
-            grouped_by_N = cur_p_err_group.groupby("N")
+            grouped_by_N = cur_p_err_group.groupby("N_approx")
             for N in grouped_by_N.groups.keys():
                 cur_group = grouped_by_N.get_group(N)
 
@@ -629,6 +706,78 @@ def plot_time_vs_block_length(df, q_filter=None, n_filter=None, p_err_filter=Non
                 plt.show()
 
 
+def plot_vs_num_indices_to_encode(df):
+    # y_col_name = "key_rate_success_only"
+    # agg = 'max'
+    y_col_name = "time_rate"
+    agg = 'min'
+    agg = None
+
+    df.mb_max_num_indices_to_encode = df.mb_max_num_indices_to_encode.astype(str)
+    df.mb_max_num_indices_to_encode[df.mb_max_num_indices_to_encode == df.mb_num_blocks.astype(str)] = "max"
+    df["line_cat"] = df[["list_size", "mb_block_length"]].apply(tuple, axis=1)
+
+    grouped_by_graph = df.groupby(["q", "p_err", "N_approx"])
+    for (q, p_err, N) in grouped_by_graph.groups.keys():
+        cur_graph_group = grouped_by_graph.get_group((q, p_err, N))
+        cur_graph_group["min_per_line"] = cur_graph_group.groupby("line_cat")[y_col_name].transform('min')
+        cur_graph_group["max_per_line"] = cur_graph_group.groupby("line_cat")[y_col_name].transform('max')
+        cur_graph_group["dist_to_min"] = cur_graph_group[y_col_name]-cur_graph_group.min_per_line
+        cur_graph_group["dist_to_max"] = cur_graph_group.max_per_line-cur_graph_group[y_col_name]
+        if agg is None:
+            g = sns.catplot(data=cur_graph_group, x="mb_max_num_indices_to_encode", y=y_col_name, hue="line_cat",
+                        kind="point")
+        elif agg == 'min':
+            g = sns.catplot(data=cur_graph_group, x="mb_max_num_indices_to_encode", y="dist_to_min", hue="line_cat")
+        elif agg == 'max':
+            g = sns.catplot(data=cur_graph_group, x="mb_max_num_indices_to_encode", y="dist_to_max", hue="line_cat")
+        # plt.setp(g._legend.get_title(), fontsize=1)
+        # plt.legend(fontsize='xx-small', title_fontsize='5')
+        plt.xlabel('mb_max_num_indices_to_encode')
+        plt.ylabel(y_col_name)
+
+        plt.title("Num indices to encode vs key rate - q={q},p_err={p_err},N={N}".format(q=q, p_err=p_err, N=N))
+        plt.savefig(
+            "num_indices_to_encode-vs-key_rate,q={q},p_err={p_err},N={N}.png".format(q=q, p_err=p_err, N=N))
+        plt.show()
+
+
+def plot_vs_3d_config(df):
+    y_col_name = "key_rate_success_only"
+    # y_col_name = "time_rate"
+
+    df.mb_max_num_indices_to_encode = df.mb_max_num_indices_to_encode.astype(str)
+    df.mb_max_num_indices_to_encode[df.mb_max_num_indices_to_encode == df.mb_num_blocks.astype(str)] = "max"
+    xs = ["2", "4", "8", "max"]
+    df.mb_max_num_indices_to_encode = df.mb_max_num_indices_to_encode.apply(lambda x: xs.index(x))
+
+    ys = [3, 9, 27, 81, 243, 729, 2187]
+    df = df[df.list_size.isin(ys)]
+    df.list_size = df.list_size.apply(lambda y: ys.index(y))
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    grouped_by_graph = df.groupby(["q", "p_err", "N_approx", "success_rate"])
+    for (q, p_err, N, success_rate) in grouped_by_graph.groups.keys():
+        cur_graph_group = grouped_by_graph.get_group((q, p_err, N, success_rate))
+        threedee = plt.figure().gca(projection='3d')
+        sc = threedee.scatter(cur_graph_group.mb_max_num_indices_to_encode, cur_graph_group.list_size, cur_graph_group.mb_block_length, c=cur_graph_group[y_col_name], cmap='gist_rainbow', s=10*cur_graph_group[y_col_name])
+        threedee.set_xlabel('Max num indices to encode')
+        threedee.set_ylabel('Goal list size')
+        threedee.set_zlabel('Block length')
+
+        ax.set(xticks=range(len(xs)), xticklabels=xs, yticks=range(len(ys)), yticklabels=ys)
+        plt.xticks(range(len(xs)), xs)
+        plt.yticks(range(len(ys)), ys)
+        plt.colorbar(sc, orientation='horizontal')
+
+        plt.title("Key rate - q={q},p_err={p_err},N={N},success_rate={success_rate}".format(q=q, p_err=p_err, N=N, success_rate=success_rate))
+        plt.savefig(
+            "3d-key_rate,q={q},p_err={p_err},N={N},success_rate={success_rate}.png".format(q=q, p_err=p_err, N=N, success_rate=success_rate))
+        plt.show()
+
+
 def sanity_checks(df):
     grouped_by_success_rate = df.groupby("success_rate")
     for success_rate in grouped_by_success_rate.groups.keys():
@@ -639,10 +788,36 @@ def sanity_checks(df):
         print("----------------------------------")
 
 
+# 3d plots of key rate
+# q_filter = [3]
+# file_name = "results/mb,q=3,agg.csv"
+# df = pd.read_csv(file_name)
+# df["success_rate"] = df.mb_desired_success_rate
+# df = pre_process(df, q_filter=q_filter)
+# df = df[df.N < 8000]
+# plot_vs_3d_config(df)
+
+# Focusing on our params of interest
 q_filter = [3]
-file_name = "results/history_agg.csv"
+file_name = "results/mb,q=3,agg.csv"
 df = pd.read_csv(file_name)
-df = df[df.key_length < 8000]
+df["success_rate"] = df.mb_desired_success_rate
+df = pre_process(df, q_filter=q_filter)
+df = df[df.N < 8000]
+df = df[df.mb_max_num_indices_to_encode.isin([4, 8])]
+df = df[df.mb_block_length.isin([3, 11, 19])]
+df = df[df.list_size.isin([243, 2187])]
+
+# Scaling exponent
+plot_scaling_exponent(df)
+# Time rate
+# plot_time_rate(df)
+# Key rate
+# plot_key_rate(df)
+# SER
+# plot_ser(df)
+
+
 
 # sanity_checks("fake_results.csv")
 
@@ -650,7 +825,10 @@ df = df[df.key_length < 8000]
 # plot_yield_vs_qser(df)
 # plot_efficiency_vs_qser(df)
 # plot_error_exponent(df)
+# plot_gap_vs_N(df)
 # plot_scaling_exponent(df)
+# plot_vs_num_indices_to_encode(df)
 # plot_time_vs_yield(df)
 # plot_time_vs_N(df)
-plot_time_vs_block_length(df)
+# plot_time_vs_block_length(df)
+# plot_vs_3d_config(df)

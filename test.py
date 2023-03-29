@@ -21,10 +21,9 @@ previous_run_file_format = None
 
 code_strategy = CodeStrategy.polar  # [CodeStrategy.mb, CodeStrategy.polar, CodeStrategy.ldpc]
 code_strategy_list = [code_strategy]
-q = 3
+q = 5
 q_list = [q]
 p_err_range = [p_err]  # [0.0, 0.0001, 0.001, 0.01, 0.02, 0.05, 0.1]
-N_list = [16]
 N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
 use_log = True
 sample_size = 10
@@ -59,7 +58,7 @@ ldpc_use_forking_list = [False]
 ldpc_use_hints_list = [False]
 
 # Polar codes parameters
-polar_constr_l = 100
+polar_constr_l = 50
 polar_key_rate_list = None
 polar_num_info_indices_list = None
 polar_success_rate_list = None
