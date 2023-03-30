@@ -12,19 +12,12 @@ run_mode = "parallel"
 p_err = float(sys.argv[1])
 # p_err = 0.0
 
-# previous_run_files = [r'/tmp/history/{p_err}/slurm-*.out'.format(p_err=p_err)]
-# previous_run_file_format = "str"
-previous_run_files = ["results/ldpc_run_results_agg.csv"]
-previous_run_file_format = "csv"
-previous_run_files = None
-previous_run_file_format = None
-
-code_strategy = CodeStrategy.polar  # [CodeStrategy.mb, CodeStrategy.polar, CodeStrategy.ldpc]
+code_strategy = CodeStrategy.mb  # [CodeStrategy.mb, CodeStrategy.polar, CodeStrategy.ldpc]
 code_strategy_list = [code_strategy]
 q = 5
 q_list = [q]
 p_err_range = [p_err]  # [0.0, 0.0001, 0.001, 0.01, 0.02, 0.05, 0.1]
-N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
+N_list = [1024, 2048, 4096, 8192]  # 128, 256, 512,
 use_log = True
 sample_size = 10
 # raw_results_file_path = "results/old/fake_results.csv"
@@ -32,13 +25,20 @@ sample_size = 10
 raw_results_file_path = "results/{code_strategy},q={q},p_err={p_err}.csv".format(code_strategy=str(code_strategy), q=q, p_err=p_err)
 agg_results_file_path = "results/{code_strategy},q={q},p_err={p_err},agg.csv".format(code_strategy=str(code_strategy), q=q, p_err=p_err)
 
+# previous_run_files = [r'/tmp/history/{p_err}/slurm-*.out'.format(p_err=p_err)]
+# previous_run_file_format = "str"
+previous_run_files = ["results/mb,q=5,agg.csv"]
+previous_run_file_format = "csv"
+# previous_run_files = None
+# previous_run_file_format = None
+
 
 # Multi-block parameters
 mb_success_rate_range = [0.9, 0.99, 0.999, 0.9999]
-mb_block_size_range = list(range(3, 20))
+mb_block_size_range = [3, 11, 19]  # list(range(3, 20))
 mb_goal_candidates_num = None
 mb_max_candidates_num = 100_000
-mb_max_num_indices_to_encode_range = [2, 4, 8, None]
+mb_max_num_indices_to_encode_range = [4, 8]  # [2, 4, 8, None]
 mb_fixed_number_of_encodings = False
 mb_radius_picking = False
 mb_rounding_strategy_list = [RoundingStrategy.floor]
