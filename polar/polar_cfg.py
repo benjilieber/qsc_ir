@@ -206,6 +206,21 @@ class PolarCfg(Cfg):
 
         return index_types, frozen_set, info_set
 
+    def get_num_info_indices_to_success_prob_map(self):
+        tv, pe = self._calc_tv_pe_degrading_upgrading()
+        tv_plus_pe = np.add(tv, pe)
+        sorted_indices = sorted(range(self.N), key=lambda k: tv_plus_pe[k])
+
+        error_sum = 0.0
+        i_ord = 1
+        success_rate_list = [0.0 for _ in range(self.N+1)]
+        while i_ord < self.N:
+            i = sorted_indices[i_ord-1]
+            error_sum += tv_plus_pe[i]
+            i_ord += 1
+            success_rate_list[i_ord] = 1.0-error_sum
+        return list(range(self.N+1)), success_rate_list
+
 
 def specific_log_header():
     return ["polar_n",
