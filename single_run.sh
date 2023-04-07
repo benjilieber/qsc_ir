@@ -1,4 +1,4 @@
 #!/bin/sh
-.  /cs/usr/benjilieber/PycharmProjects/multi_block_protocol/venv/bin/activate
+.  /cs/usr/benjilieber/PycharmProjects/qsc_ir/venv/bin/activate
 python3 test.py "$1"
 deactivate
