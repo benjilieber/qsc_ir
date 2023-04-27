@@ -166,10 +166,12 @@ def generate_cfg(code_strategy, args, cfg):
             yield mb_cfg
     elif code_strategy == CodeStrategy.ldpc:
         for ldpc_cfg in generate_ldpc_cfg(args, cfg):
-            yield ldpc_cfg
+            if ldpc_cfg.syndrome_length < ldpc_cfg.N:
+                yield ldpc_cfg
     elif code_strategy == CodeStrategy.polar:
         for polar_cfg in generate_polar_cfg(args, cfg):
-            yield polar_cfg
+            if polar_cfg.num_info_indices > 0:
+                yield polar_cfg
     else:
         raise "Unknown code strategy: " + str(code_strategy)
 

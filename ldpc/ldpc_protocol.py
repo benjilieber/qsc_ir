@@ -30,17 +30,18 @@ class LdpcProtocol(Protocol):
         encoded_a = encoding_matrix * self.a
         decoder = LdpcDecoder(self.cfg, encoding_matrix, encoded_a)
         if self.cfg.decoder == Decoder.bp:
-            _, stats = decoder.decode_belief_propagation(self.b, 20)
+            candidates_left, stats = decoder.decode_belief_propagation(self.b, 20)
         else:
             raise "No support for iterative ldpc decoder"
         end = time.time()
         leak_size = self.cfg.syndrome_length * math.log2(self.cfg.q)
         matrix_size = self.cfg.syndrome_length * self.cfg.sparsity * math.log2(self.cfg.N) * math.log2(self.cfg.q - 1)
         bob_communication_size = 1.0
+        a_guess_list = stats.a_guess_list if (len(candidates_left) > 0) else []
         return self.get_results(key_length=self.cfg.N,
-                                a_guess_list=stats.a_guess_list,
+                                a_guess_list=a_guess_list,
                                 a_key=self.a,
-                                b_key_list=stats.a_guess_list,
+                                b_key_list=a_guess_list,
                                 leak_size=leak_size,
                                 matrix_size=matrix_size,
                                 bob_communication_size=bob_communication_size,
