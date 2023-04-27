@@ -1,0 +1,26 @@
+function plot_success_rate_vs_key_rate(code_strategy, q, Q, save)
+    p_err = str2double(Q);
+    [A, max_qkd_leak] = get_data(code_strategy, q, Q, true);
+
+    min_key_rate = min(A.key_rate_success_only(:));
+    max_key_rate = max(A.key_rate_success_only(:));
+    max_key_rate = max(A.theoretic_key_rate(1), max_key_rate);
+
+    % hold on
+    A.N = 2.^nextpow2(A.N);
+    t = tiledlayout(3, 3);
+    N_list = unique(A.N(:));
+    for i = 1:length(N_list)
+        ax = nexttile;
+        hold on
+        xlim([min_key_rate max_key_rate])
+        cur_N = N_list(i, :);
+        plot_success_rate_vs_key_rate_helper(code_strategy, q, A(ismember(A.N(:), cur_N), :), cur_N, p_err, max_qkd_leak, ax);
+        hold off
+    end
+    % hold off
+
+    if save
+        saveas(f_kr, sprintf('PycharmProjects/qsc_ir/results/matlab/plots/success_vs_keyrate,%s,q=%d,Q=%f.svg', code_strategy, q, p_err));
+        saveas(f_kr, sprintf('PycharmProjects/qsc_ir/results/matlab/plots/success_vs_keyrate,%s,q=%d,Q=%f.png', code_strategy, q, p_err));
+    end
