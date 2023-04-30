@@ -88,7 +88,7 @@ class MbCfg(Cfg):
         self.max_candidates_num = max_candidates_num
         self.encoding_sample_size = encoding_sample_size
         self.radius_picking = radius_picking
-        if p_err == 0.0:
+        if self.p_err == 0.0:
             self.fixed_radius = True
             self.radius = 0
             self.max_block_error = [0 for _ in range(num_blocks)]
