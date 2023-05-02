@@ -23,6 +23,7 @@ class PolarProtocol(Protocol):
 
     def run(self):
         start = timer()
+        cpu_start = time.process_time()
 
         encoder_decoder = PolarEncoderDecoder(self.cfg)
         w, u = encoder_decoder.calculate_syndrome_and_complement(self.a)
@@ -36,6 +37,7 @@ class PolarProtocol(Protocol):
                                                                frozen_values=frozen_vec)
 
         end = timer()
+        cpu_end = time.process_time()
 
         return self.get_results(key_length=self.cfg.num_info_indices,
                                 a_guess_list=a_guess_list,
@@ -44,7 +46,8 @@ class PolarProtocol(Protocol):
                                 leak_size=self.cfg.num_frozen_indices * math.log2(self.cfg.q),
                                 matrix_size=0.0,
                                 bob_communication_size=1.0,
-                                time=end - start)
+                                time=end - start,
+                                cpu_time=cpu_end - cpu_start)
 
     def xy_vec_dist_given_input_vec(self, received_vec):
         return self.cfg.xy_dist.makeQaryMemorylessVectorDistribution(self.cfg.N, received_vec, self.cfg.use_log)

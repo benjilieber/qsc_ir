@@ -42,6 +42,7 @@ class MbProtocol(Protocol):
 
     def run(self):
         start = timer()
+        cpu_start = time.process_time()
         for block_index in range(self.cfg.num_blocks):
             self.run_single_round(encode_new_block=True)
             if self.cur_candidates_num == 0:
@@ -50,6 +51,7 @@ class MbProtocol(Protocol):
             if self.cfg.max_candidates_num and (self.cur_candidates_num > self.cfg.max_candidates_num):
                 self.run_single_round(encode_new_block=False, goal_list_size=self.cfg.list_size)
         end = timer()
+        cpu_end = time.process_time()
         a_guess_list = [[int(a_guess_val) for a_guess_block in a_guess for a_guess_val in a_guess_block] for a_guess in
                         self.bob.a_candidates]
         return self.get_results(key_length=self.cfg.N,  # in q-ary bits
@@ -59,7 +61,8 @@ class MbProtocol(Protocol):
                                 leak_size=self.total_leak * math.log2(self.cfg.q),  # in bits
                                 matrix_size=self.matrix_communication_size,  # in bits
                                 bob_communication_size=self.bob_communication_size,  # in bits
-                                time=end - start)
+                                time=end - start,
+                                cpu_time=cpu_end - cpu_start)
 
     def run_single_round(self, encode_new_block, goal_list_size=None):
         encoded_blocks_indices = self.pick_indices_to_encode(self.num_candidates_per_block, encode_new_block)

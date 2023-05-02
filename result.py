@@ -52,6 +52,7 @@ class Result(object):
                  bob_communication_rate=None,
                  total_communication_rate=None,
                  time_rate=None,
+                 cpu_time_rate=None,
                  result_list=None):
         self.cfg = cfg
         self.result_type = result_type
@@ -96,6 +97,8 @@ class Result(object):
             self.total_communication_rate_success_only = total_communication_rate if self.is_success else None
             self.time_rate = time_rate
             self.time_rate_success_only = time_rate if self.is_success else None
+            self.cpu_time_rate = cpu_time_rate
+            self.cpu_time_rate_success_only = cpu_time_rate if self.is_success else None
             self.sample_size = 1
         else:
             self.result_type = result_list[0].result_type
@@ -163,6 +166,10 @@ class Result(object):
             self.time_rate_success_only = np.mean(
                 [result.time_rate for result in success_result_list]) if has_success else None
 
+            self.cpu_time_rate = np.mean([result.cpu_time_rate for result in result_list])
+            self.cpu_time_rate_success_only = np.mean(
+                [result.cpu_time_rate for result in success_result_list]) if has_success else None
+
             self.sample_size = len(result_list)
 
     def get_cfg_dict(self):
@@ -197,7 +204,9 @@ class Result(object):
                          "total_communication_rate": self.total_communication_rate,
                          "total_communication_rate_success_only": self.total_communication_rate_success_only,
                          "time_rate": self.time_rate,
-                         "time_rate_success_only": self.time_rate_success_only}
+                         "time_rate_success_only": self.time_rate_success_only,
+                         "cpu_time_rate": self.cpu_time_rate,
+                         "cpu_time_rate_success_only": self.cpu_time_rate_success_only}
         assert (set(specific_dict.keys()) == set(specific_log_header()))
         return specific_dict
 
@@ -264,7 +273,9 @@ def specific_log_header():
             "total_communication_rate",
             "total_communication_rate_success_only",
             "time_rate",
-            "time_rate_success_only"]
+            "time_rate_success_only",
+            "cpu_time_rate",
+            "cpu_time_rate_success_only"]
 
 
 def get_header():

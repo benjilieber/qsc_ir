@@ -23,7 +23,8 @@ class Protocol(object):
                     leak_size,  # in bits
                     matrix_size,  # in bits
                     bob_communication_size,  # in bits
-                    time):
+                    time,
+                    cpu_time):
         full_list_result = self.get_full_list_result(key_length=key_length,
                                                      a_guess_list=a_guess_list,
                                                      a_key=a_key,
@@ -31,7 +32,8 @@ class Protocol(object):
                                                      leak_size=leak_size,
                                                      matrix_size=matrix_size,
                                                      bob_communication_size=bob_communication_size,
-                                                     time=time)
+                                                     time=time,
+                                                     cpu_time=cpu_time)
         checked_list_result = self.get_checked_list_result(key_length=key_length,
                                                            a_guess_list=a_guess_list,
                                                            a_key=a_key,
@@ -39,7 +41,8 @@ class Protocol(object):
                                                            leak_size=leak_size,
                                                            matrix_size=matrix_size,
                                                            bob_communication_size=bob_communication_size,
-                                                           time=time)
+                                                           time=time,
+                                                           cpu_time=cpu_time)
         reduced_result = self.get_reduced_result(key_length=key_length,
                                                  a_guess_list=a_guess_list,
                                                  a_key=a_key,
@@ -47,7 +50,8 @@ class Protocol(object):
                                                  leak_size=leak_size,
                                                  matrix_size=matrix_size,
                                                  bob_communication_size=bob_communication_size,
-                                                 time=time)
+                                                 time=time,
+                                                 cpu_time=cpu_time)
         return [full_list_result, checked_list_result, reduced_result]
 
     def get_full_list_result(self,
@@ -58,7 +62,8 @@ class Protocol(object):
                              leak_size,  # in bits
                              matrix_size,  # in bits
                              bob_communication_size,  # in bits
-                             time):
+                             time,
+                             cpu_time):
         return self.get_result(result_type=ResultType.full_list,
                                key_length=key_length,
                                a_guess_list=a_guess_list,
@@ -67,7 +72,8 @@ class Protocol(object):
                                leak_size=leak_size,
                                matrix_size=matrix_size,
                                bob_communication_size=bob_communication_size,
-                               time=time)
+                               time=time,
+                               cpu_time=cpu_time)
 
     def get_checked_list_result(self,
                                 key_length,  # in q-ary bits
@@ -77,7 +83,8 @@ class Protocol(object):
                                 leak_size,  # in bits
                                 matrix_size,  # in bits
                                 bob_communication_size,  # in bits
-                                time):
+                                time,
+                                cpu_time):
         check_length = self.cfg.check_length
 
         if check_length != 0:
@@ -101,7 +108,8 @@ class Protocol(object):
                                leak_size=leak_size,
                                matrix_size=matrix_size,
                                bob_communication_size=bob_communication_size,
-                               time=time)
+                               time=time,
+                               cpu_time=cpu_time)
 
     def get_reduced_result(self,
                            key_length,  # in q-ary bits
@@ -111,7 +119,8 @@ class Protocol(object):
                            leak_size,  # in bits
                            matrix_size,  # in bits
                            bob_communication_size,  # in bits
-                           time):
+                           time,
+                           cpu_time):
         b_key_list = [list(b_key) for b_key in b_key_list]
         while len(a_guess_list) > 1:
             check_length = max(1, int(math.floor(math.log(len(a_guess_list), self.cfg.q))))
@@ -136,7 +145,8 @@ class Protocol(object):
                                leak_size=leak_size,
                                matrix_size=matrix_size,
                                bob_communication_size=bob_communication_size,
-                               time=time)
+                               time=time,
+                               cpu_time=cpu_time)
 
     def get_result(self,
                    result_type,
@@ -147,8 +157,10 @@ class Protocol(object):
                    leak_size,  # in bits
                    matrix_size,  # in bits
                    bob_communication_size,  # in bits
-                   time):
+                   time,
+                   cpu_time):
         time_rate = time / self.cfg.N
+        cpu_time_rate = cpu_time / self.cfg.N
         bob_communication_rate = bob_communication_size / self.cfg.N
         leak_rate = leak_size / self.cfg.N
         key_rate = math.log2(self.cfg.q) - leak_rate
@@ -164,7 +176,8 @@ class Protocol(object):
                           matrix_size_rate=matrix_size_rate,
                           bob_communication_rate=bob_communication_rate,
                           total_communication_rate=total_communication_rate,
-                          time_rate=time_rate)
+                          time_rate=time_rate,
+                          cpu_time_rate=cpu_time_rate)
 
         if self.cfg.p_err < 1 / self.cfg.q:
             actual_pm = util.closeness_single_block(self.b, self.a)
@@ -210,4 +223,5 @@ class Protocol(object):
                       matrix_size_rate=matrix_size_rate,
                       bob_communication_rate=bob_communication_rate,
                       total_communication_rate=total_communication_rate,
-                      time_rate=time_rate)
+                      time_rate=time_rate,
+                      cpu_time_rate=cpu_time_rate)

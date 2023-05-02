@@ -25,6 +25,7 @@ class LdpcProtocol(Protocol):
         assert (self.cfg.list_size == 1)
 
         start = time.time()
+        cpu_start = time.process_time()
         code_gen = LdpcGenerator(self.cfg)
         encoding_matrix = code_gen.generate_gallagher_matrix(self.cfg.syndrome_length)
         encoded_a = encoding_matrix * self.a
@@ -34,6 +35,7 @@ class LdpcProtocol(Protocol):
         else:
             raise "No support for iterative ldpc decoder"
         end = time.time()
+        cpu_end = time.process_time()
         leak_size = self.cfg.syndrome_length * math.log2(self.cfg.q)
         matrix_size = self.cfg.syndrome_length * self.cfg.sparsity * math.log2(self.cfg.N) * math.log2(self.cfg.q - 1)
         bob_communication_size = 1.0
@@ -45,4 +47,5 @@ class LdpcProtocol(Protocol):
                                 leak_size=leak_size,
                                 matrix_size=matrix_size,
                                 bob_communication_size=bob_communication_size,
-                                time=end - start)
+                                time=end - start,
+                                cpu_time=cpu_end - cpu_start)
