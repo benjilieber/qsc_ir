@@ -21,6 +21,6 @@ function plot_success_rate_vs_key_rate(code_strategy, q, Q, save)
     % hold off
 
     if save
-        saveas(f_kr, sprintf('PycharmProjects/qsc_ir/results/matlab/plots/success_vs_keyrate,%s,q=%d,Q=%f.svg', code_strategy, q, p_err));
-        saveas(f_kr, sprintf('PycharmProjects/qsc_ir/results/matlab/plots/success_vs_keyrate,%s,q=%d,Q=%f.png', code_strategy, q, p_err));
+        saveas(f_kr, sprintf('/cs/usr/benjilieber/PycharmProjects/qsc_ir/results/matlab/plots/success_vs_keyrate,%s,q=%d,Q=%f.svg', code_strategy, q, p_err));
+        saveas(f_kr, sprintf('/cs/usr/benjilieber/PycharmProjects/qsc_ir/results/matlab/plots/success_vs_keyrate,%s,q=%d,Q=%f.png', code_strategy, q, p_err));
     end

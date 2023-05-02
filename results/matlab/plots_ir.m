@@ -70,11 +70,11 @@ function plots_ir(code_strategy, q, Q, success_rate, save)
     hold off
 
     if save
-        saveas(f_kr, sprintf('PycharmProjects/qsc_ir/results/matlab/plots/key_rate,%s,q=%d,Q=%f,success_rate=%f.svg', code_strategy, q, p_err, success_rate));
-        saveas(f_kr, sprintf('PycharmProjects/qsc_ir/results/matlab/plots/key_rate,%s,q=%d,Q=%f,success_rate=%f.png', code_strategy, q, p_err, success_rate));
-        saveas(f_tr, sprintf('PycharmProjects/qsc_ir/results/matlab/plots/time_rate,%s,q=%d,Q=%f,success_rate=%f.svg', code_strategy, q, p_err, success_rate));
-        saveas(f_tr, sprintf('PycharmProjects/qsc_ir/results/matlab/plots/time_rate,%s,q=%d,Q=%f,success_rate=%f.png', code_strategy, q, p_err, success_rate));
-        saveas(f_se, sprintf('PycharmProjects/qsc_ir/results/matlab/plots/scaling_exponent,%s,q=%d,Q=%f,success_rate=%f.svg', code_strategy, q, p_err, success_rate));
-        saveas(f_se, sprintf('PycharmProjects/qsc_ir/results/matlab/plots/scaling_exponent,%s,q=%d,Q=%f,success_rate=%f.png', code_strategy, q, p_err, success_rate));
+        saveas(f_kr, sprintf('/cs/usr/benjilieber/PycharmProjects/qsc_ir/results/matlab/plots/key_rate,%s,q=%d,Q=%f,success_rate=%f.svg', code_strategy, q, p_err, success_rate));
+        saveas(f_kr, sprintf('/cs/usr/benjilieber/PycharmProjects/qsc_ir/results/matlab/plots/key_rate,%s,q=%d,Q=%f,success_rate=%f.png', code_strategy, q, p_err, success_rate));
+        saveas(f_tr, sprintf('/cs/usr/benjilieber/PycharmProjects/qsc_ir/results/matlab/plots/time_rate,%s,q=%d,Q=%f,success_rate=%f.svg', code_strategy, q, p_err, success_rate));
+        saveas(f_tr, sprintf('/cs/usr/benjilieber/PycharmProjects/qsc_ir/results/matlab/plots/time_rate,%s,q=%d,Q=%f,success_rate=%f.png', code_strategy, q, p_err, success_rate));
+        saveas(f_se, sprintf('/cs/usr/benjilieber/PycharmProjects/qsc_ir/results/matlab/plots/scaling_exponent,%s,q=%d,Q=%f,success_rate=%f.svg', code_strategy, q, p_err, success_rate));
+        saveas(f_se, sprintf('/cs/usr/benjilieber/PycharmProjects/qsc_ir/results/matlab/plots/scaling_exponent,%s,q=%d,Q=%f,success_rate=%f.png', code_strategy, q, p_err, success_rate));
     end
 end

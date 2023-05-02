@@ -7,7 +7,7 @@ function [A, max_qkd_leak] = get_data(code_strategy, q, Q, agg)
     else
         agg_str = '';
     end
-    A = readtable(sprintf("PycharmProjects/qsc_ir/results/%s,q=%d,p_err=%s%s.csv", code_strategy, q, Q, agg_str));
+    A = readtable(sprintf("/cs/usr/benjilieber/PycharmProjects/qsc_ir/results/%s,q=%d,p_err=%s%s.csv", code_strategy, q, Q, agg_str));
     switch q
         case 3
             switch Q
@@ -32,12 +32,12 @@ function [A, max_qkd_leak] = get_data(code_strategy, q, Q, agg)
 %                 A = fillmissing(A,'constant',0.0,'DataVariables',@isfloat);
 %                 A = fillmissing(A,'constant','','DataVariables',@isstring);
 %                 A = fillmissing(A,'constant',false,'DataVariables',@isboolean);
-%                 A1 = readtable(sprintf("PycharmProjects/qsc_ir/results/%s,q=5%s.csv", code_strategy, agg_str));
+%                 A1 = readtable(sprintf("/cs/usr/benjilieber/PycharmProjects/qsc_ir/results/%s,q=5%s.csv", code_strategy, agg_str));
 %                 A1.is_fail = A1.is_success;
 %                 A1.is_abort = A1.is_success;
 %                 A1 = A1(A1.N(:)<4000, :);
 %                 A = union(A, A1);
-                A = readtable(sprintf("PycharmProjects/qsc_ir/results/%s,q=5%s.csv", code_strategy, agg_str));
+                A = readtable(sprintf("/cs/usr/benjilieber/PycharmProjects/qsc_ir/results/%s,q=5%s.csv", code_strategy, agg_str));
             end
             switch Q
                 case "0.0"
@@ -50,9 +50,9 @@ function [A, max_qkd_leak] = get_data(code_strategy, q, Q, agg)
                     max_qkd_leak = 2.1678;
             end
         case 7
-            A = readtable(sprintf("PycharmProjects/qsc_ir/results/%s,q=7%s.csv", code_strategy, agg_str));
+            A = readtable(sprintf("/cs/usr/benjilieber/PycharmProjects/qsc_ir/results/%s,q=7%s.csv", code_strategy, agg_str));
             A = A(A.N(:)<1000, :);
-            A2 = readtable(sprintf("PycharmProjects/qsc_ir/results/%s,q=7,p_err=%s%s.csv", code_strategy, Q, agg_str));
+            A2 = readtable(sprintf("/cs/usr/benjilieber/PycharmProjects/qsc_ir/results/%s,q=7,p_err=%s%s.csv", code_strategy, Q, agg_str));
             A2 = A2(A2.N(:)>1000, :);
             A = union(A, A2);
     end
