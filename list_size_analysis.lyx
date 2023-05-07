@@ -1,0 +1,284 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Analysis of list size
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $n=c\cdot\log N$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\mathcal{N}=N/n$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $L=N^{a}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\alpha\rightarrow_{N\rightarrow\infty}1$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part
+Sources for inspiration:
+\end_layout
+
+\begin_layout Itemize
+Cascade algorithm analysis?
+\end_layout
+
+\begin_layout Part
+General
+\end_layout
+
+\begin_layout Section
+Is 
+\begin_inset Formula $0^{n}$
+\end_inset
+
+ as point of reference a good choice? Or 
+\begin_inset Formula $2^{n}$
+\end_inset
+
+?
+\end_layout
+
+\begin_layout Section
+The variance of the list size
+\end_layout
+
+\begin_layout Subsection
+Importance / influence
+\end_layout
+
+\begin_layout Subsection
+Properties / explicit derivation
+\end_layout
+
+\begin_layout Section
+The number of prefix blocks hashed per iteration (
+\begin_inset Formula $\bar{l}_{\text{max}}$
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Subsection
+MBO question: get stats on the number of possibilities in the 1st block
+ as we progress
+\end_layout
+
+\begin_layout Subsection
+Importance / influence
+\end_layout
+
+\begin_layout Subsection
+Properties / explicit derivation
+\end_layout
+
+\begin_layout Part
+Without noise (Q=0)
+\end_layout
+
+\begin_layout Section
+Dump
+\end_layout
+
+\begin_layout Subsection
+q=3 is special
+\end_layout
+
+\begin_layout Standard
+The space of interest has no linearly dependent vectors for 
+\begin_inset Formula $q=2,3$
+\end_inset
+
+ only.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\mathbb{F}_{2}^{n}\subseteq\mathbb{F}_{2}^{n}$
+\end_inset
+
+ has no lin.
+ dep.
+ vectors (except for 
+\begin_inset Formula $0^{n}$
+\end_inset
+
+ ofc)
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\left\{ 0,1\right\} ^{n}\subseteq\mathbb{F}_{3}^{n}$
+\end_inset
+
+ has no lin.
+ dep.
+ vectors (except for 
+\begin_inset Formula $0^{n}$
+\end_inset
+
+ ofc)
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\left\{ 0,1,\dots,q-2\right\} ^{n}\subseteq\mathbb{F}_{q}^{n},q>3$
+\end_inset
+
+ has lin.
+ dep.
+ vectorsthe end 
+\end_layout
+
+\begin_layout Part
+With noise (Q>0)
+\end_layout
+
+\begin_layout Standard
+We need to look within a certain radius 
+\begin_inset Formula $r=p+\epsilon$
+\end_inset
+
+ to have success rate 
+\begin_inset Formula $\alpha$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+MBO guesses:
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $\epsilon\sim\frac{1}{n}$
+\end_inset
+
+for a single block, question is if 
+\begin_inset Formula $\epsilon\sim\frac{1}{l\cdot n}$
+\end_inset
+
+ for 
+\begin_inset Formula $l$
+\end_inset
+
+ blocks
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $\left|B_{r}\right|$
+\end_inset
+
+ is polynomial
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $L=n^{c+\epsilon}$
+\end_inset
+
+ for a single block, 
+\begin_inset Formula $L=n^{c+\epsilon+\frac{\epsilon}{2}+\frac{\epsilon}{3}+\dots}\approx n^{c+\epsilon\cdot\log l}$
+\end_inset
+
+ for 
+\begin_inset Formula $l$
+\end_inset
+
+ blocks, so at most the list size we have at the last iteration 
+\begin_inset Formula $L=n^{c+\epsilon\cdot\log\mathcal{N}}$
+\end_inset
+
+.
+\end_layout
+
+\end_body
+\end_document

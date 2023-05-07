@@ -22,7 +22,7 @@ function plots_ir(code_strategy, q, Q, success_rate, save)
         yline(log2(q)-max_qkd_leak, 'DisplayName', sprintf('Bridge[%d,%d] Minimum', q-1, q),'LineWidth', 1.5, 'Color', 'r');
     end
     xlabel("Key Length, $N$",'Interpreter','latex','FontSize', 9);
-    ylabel("Key Rate, $R$ [secret bits per sifted pulse]",'Interpreter','latex','FontSize', 9) 
+    ylabel("Key Rate, $R$ [secret bits per sifted pulse]",'Interpreter','latex','FontSize', 9);
     axis padded
     box on
     legend('boxoff');

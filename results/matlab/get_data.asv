@@ -1,59 +1,103 @@
-function [A, max_qkd_leak] = get_data(code_strategy, q, Q, agg)
-    p_err = str2double(Q);
-    max_qkd_leak = 0.0;
-    tol = 5 * eps(100); % A very small value
+function A = get_data(code_strategy, q, p_err_str, agg, result_type, N)
     if agg
-        agg_str = ',agg';
-    else
-        agg_str = '';
+        error("Agg currently not supported in thesis_plots");
     end
-    A = readtable(sprintf("PycharmProjects/qsc_ir/results/%s,q=%d,p_err=%s%s.csv", code_strategy, q, Q, agg_str));
+
+    A = get_data_helper(code_strategy, q, p_err_str, agg);
+
+    % Basic filtering
+    tol = 5 * eps(100); % A very small value
+
+    p_err = str2double(p_err_str);
+    A = A(ismembertol(A.q, q, tol) & ...
+        ismembertol(A.p_err, p_err, tol) & ...
+        A.N(:) < 8000 & ...
+        ismember(A.result_type, result_type), :);
+
+    A.N_2(:,1) = 2.^nextpow2(A.N);
+    if exist('N', 'var')
+        A = A(ismembertol(A.N_2, N, tol), :);
+    end
+
+%     TODO: use elements of the following:
+%     A = A(A.is_success == "True", :);
+% When we want to filter by rate for ldpc and polar (some kind of relative_gap_rate)
+%     A = A(ismember(A.N(:), N) & ...
+%         ismembertol(A.key_rate(:), relative_gap_rate * theoretic_key_rate, 0.04), :);
+
+    % Add new columns
+    A.p_err_str(:,1) = p_err_str;
+
+    A.max_qkd_leak(:,1) = 0.0;
     switch q
         case 3
-            switch Q
+            switch p_err_str
                 case "0.0"
-                    max_qkd_leak = log2(3);
+                    A.max_qkd_leak(:,1) = log2(3);
                 case "0.0001"
-                    max_qkd_leak = 1.583713;
+                    A.max_qkd_leak(:,1) = 1.583713;
                 case "0.001"
-                    max_qkd_leak = 1.573464;
+                    A.max_qkd_leak(:,1) = 1.573464;
                 case "0.01"
-                    max_qkd_leak = 1.50306;
+                    A.max_qkd_leak(:,1) = 1.50306;
                 case "0.02"
-                    max_qkd_leak = 1.4411;
+                    A.max_qkd_leak(:,1) = 1.4411;
                 case "0.05"
-                    max_qkd_leak = 1.292;
+                    A.max_qkd_leak(:,1) = 1.292;
             end
         case 5
-            if strcmp(code_strategy, 'mb')
-%                 A = A(A.N(:)>4000, :);
-%                 A(isnan(A))=0;
-%                 A = fillmissing(A,'constant',0,'DataVariables',@isinteger);
-%                 A = fillmissing(A,'constant',0.0,'DataVariables',@isfloat);
-%                 A = fillmissing(A,'constant','','DataVariables',@isstring);
-%                 A = fillmissing(A,'constant',false,'DataVariables',@isboolean);
-%                 A1 = readtable(sprintf("PycharmProjects/qsc_ir/results/%s,q=5%s.csv", code_strategy, agg_str));
-%                 A1.is_fail = A1.is_success;
-%                 A1.is_abort = A1.is_success;
-%                 A1 = A1(A1.N(:)<4000, :);
-%                 A = union(A, A1);
-            end
-            switch Q
+            switch p_err_str
                 case "0.0"
-                    max_qkd_leak = log2(5);
+                    A.max_qkd_leak(:,1) = log2(5);
                 case "0.0001"
-                    max_qkd_leak = 2.31987;
+                    A.max_qkd_leak(:,1) = 2.31987;
                 case "0.001"
-                    max_qkd_leak = 2.3025;
+                    A.max_qkd_leak(:,1) = 2.3025;
                 case "0.01"
-                    max_qkd_leak = 2.1678;
+                    A.max_qkd_leak(:,1) = 2.1678;
             end
-        case 7
-            A = readtable(sprintf("PycharmProjects/qsc_ir/results/%s,q=7%s.csv", code_strategy, agg_str));
-            A = A(A.N(:)<1000, :);
-            A2 = readtable(sprintf("PycharmProjects/qsc_ir/results/%s,q=7,p_err=%s%s.csv", code_strategy, Q, agg_str));
-            A2 = A2(A2.N(:)>1000, :);
-            A = union(A, A2);
     end
-    A = A(ismembertol(A.q, q, tol) & ismembertol(A.p_err, p_err, tol) & A.N(:) < 8000, :);
+
+    switch code_strategy
+        case 'mb'
+            A.group_name(:,1) = string(A.mb_block_length) + ',' + string(A.list_size) + ',' + string(A.mb_max_num_indices_to_encode) + '-mb';
+            A.group_number(:,1) = A.mb_block_length * max(A.mb_block_length) + A.list_size * max(A.list_size) + A.mb_max_num_indices_to_encode;
+
+            A.mb_desired_success_rate_str(:,1) = strings;
+            success_rate_str_options = ["0.9", "0.99", "0.999", "0.9999", "1.0"];
+            for success_rate_str = success_rate_str_options
+                success_rate = str2double(success_rate_str);
+                A.mb_desired_success_rate_str(ismembertol(A.mb_desired_success_rate, success_rate, tol), :) = success_rate_str;
+            end
+
+            A.extra_cfg(:,1) = A.mb_desired_success_rate_str;
+        case 'ldpc'
+            A.group_name(:,1) = string(A.ldpc_sparsity) + '-ldpc,' +  string(A.ldpc_max_num_rounds) + '-bp';
+            A.group_number(:,1) = A.ldpc_sparsity * max(A.ldpc_sparsity) + A.ldpc_max_num_rounds;
+            A.extra_cfg(:,1) = string(A.ldpc_desired_relative_gap_rate);
+        case 'polar'
+            A.group_name(:,1) = string(A.list_size) + '-scl';
+            A.group_number(:,1) = A.list_size;
+            A.extra_cfg(:,1) = string(A.polar_desired_relative_gap_rate);
+    end
+
+    switch code_strategy
+        case 'mb'
+            A.goal_key_rate(:,1) = 0.0;
+        case 'ldpc'
+            A.goal_key_rate(:,1) = A.ldpc_desired_relative_gap_rate .* A.theoretic_key_rate;
+        case 'polar'
+            A.goal_key_rate(:,1) = A.polar_desired_relative_gap_rate .* A.theoretic_key_rate;
+    end
+
+    % Add scaling exponent
+    if agg
+        A.gap(:,1) = A.theoretic_key_rate - A.key_rate_success_only;
+        A.scalexp(:,1) = -log(A.N) ./ log(A.gap);
+    else
+        A.scalexp(:,1) = Inf;
+        gap = A.theoretic_key_rate - A.key_rate;
+        scalexp_rows = strcmp(A.is_success(:), 'True') & gap(:) > 0;
+        A.scalexp(scalexp_rows, 1) = -log(A.N(scalexp_rows, 1)) ./ log(gap(scalexp_rows, 1));
+    end
 end
