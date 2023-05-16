@@ -14,12 +14,12 @@ code_strategy = CodeStrategy[sys.argv[2]]
 
 # code_strategy = CodeStrategy.polar  # [CodeStrategy.mb, CodeStrategy.polar, CodeStrategy.ldpc]
 code_strategy_list = [code_strategy]
-q = 3
+q = 7
 q_list = [q]
 p_err_range = [p_err]  # [0.0, 0.0001, 0.001, 0.01, 0.02, 0.05, 0.1]
-N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
+N_list = [128, 256, 512, 1024]  # 2048, 4096, 8192
 use_log = True
-sample_size = 100
+sample_size = 10  # 100
 # raw_results_file_path = "results/old/fake_results.csv"
 # agg_results_file_path = "results/old/fake_results_agg.csv"
 raw_results_file_path = "results/{code_strategy},q={q},p_err={p_err}.csv".format(code_strategy=str(code_strategy), q=q, p_err=p_err)
@@ -35,7 +35,7 @@ previous_run_file_format = "csv"
 
 
 # Multi-block parameters
-mb_success_rate_range = [0.9, 0.99, 0.999, 0.9999]
+mb_success_rate_range = [0.999]  # [0.5, 0.75, 0.9, 0.99, 0.999, 0.9999]
 mb_block_size_range = [3, 11, 19]  # list(range(3, 20))
 mb_goal_candidates_num = None
 mb_max_candidates_num = 100_000
@@ -59,12 +59,12 @@ ldpc_use_forking_list = [False]
 ldpc_use_hints_list = [False]
 
 # Polar codes parameters
-polar_constr_l = 50
+polar_constr_l = 20  # 50
 polar_key_rate_list = None
 polar_num_info_indices_list = None
 polar_success_rate_list = None
-polar_relative_gap_rate_list = [0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05]
-polar_scl_l_list = [1, 3, 9, 27, 81, 243, 729, 2187, 6561]  # , 19683
+polar_relative_gap_rate_list = [0.5, 0.65, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05]  # [0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05]
+polar_scl_l_list = [1, 3, 9, 27, 81, 243, 729]  # , 2187, 6561, 19683
 
 args = arg_module.create_args(N_list=N_list,
                               p_err_range=p_err_range,

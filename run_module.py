@@ -191,7 +191,7 @@ def generate_mb_cfg(args, cfg):
                 if args.mb_goal_candidates_num is not None:
                     goal_candidates_num_range = [args.mb_goal_candidates_num]
                 else:
-                    goal_candidates_num_range = [3, 9, 27, 81, 243, 729, 2187, math.ceil(math.sqrt(actual_N))]
+                    goal_candidates_num_range = [3, 9, 27, 81, 243, 729]  # , 2187, math.ceil(math.sqrt(actual_N))
                 for goal_candidates_num in goal_candidates_num_range:
                     for max_num_indices_to_encode in args.mb_max_num_indices_to_encode_range:
                         yield MbCfg(orig_cfg=cfg, success_rate=success_rate, block_length=block_size,
