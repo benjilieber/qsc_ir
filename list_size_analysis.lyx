@@ -107,7 +107,14 @@ Analysis of list size
 
 \end_layout
 
-\begin_layout Part
+\begin_layout Standard
+\begin_inset Formula $k$
+\end_inset
+
+ is the code dimension
+\end_layout
+
+\begin_layout Section
 Sources for inspiration:
 \end_layout
 
@@ -115,11 +122,886 @@ Sources for inspiration:
 Cascade algorithm analysis?
 \end_layout
 
-\begin_layout Part
-General
+\begin_layout Section
+Less relevant concepts
+\end_layout
+
+\begin_layout Standard
+Sources:
+\end_layout
+
+\begin_layout Standard
+RW18: https://arxiv.org/pdf/1704.02420.pdf
+\end_layout
+
+\begin_layout Standard
+GLM20: https://arxiv.org/pdf/2004.13247.pdf
+\end_layout
+
+\begin_layout Subsection
+List-recoverability
+\end_layout
+
+\begin_layout Subsubsection
+Definitions
+\end_layout
+
+\begin_layout Itemize
+
+\bar under
+Noiseless case
+\bar default
+: A code 
+\begin_inset Formula $\mathcal{C}$
+\end_inset
+
+ is 
+\emph on
+
+\begin_inset Formula $\left(\ell,L\right)$
+\end_inset
+
+
+\emph default
+-
+\emph on
+list-recoverable
+\emph default
+ if for any 
+\begin_inset Formula $n$
+\end_inset
+
+ sets 
+\begin_inset Formula $S_{1},\ldots,S_{n}\subseteq\mathbb{F}_{q}$
+\end_inset
+
+ with 
+\begin_inset Formula $\left|S_{i}\right|\leq\ell$
+\end_inset
+
+ for all 
+\begin_inset Formula $i$
+\end_inset
+
+ (i.e.
+ of size at most 
+\begin_inset Formula $\ell$
+\end_inset
+
+),
+\begin_inset Formula 
+\[
+\left|\left\{ c\in\mathcal{C}:c_{i}\in S_{i}\forall i\right\} \right|\leq L
+\]
+
+\end_inset
+
+(i.e.
+ there are at most 
+\begin_inset Formula $L$
+\end_inset
+
+ codewords 
+\begin_inset Formula $c\in C$
+\end_inset
+
+ such that 
+\begin_inset Formula $c_{i}\in S_{i}$
+\end_inset
+
+ for all 
+\begin_inset Formula $i$
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Itemize
+
+\bar under
+Noiseful case
+\bar default
+: A code 
+\begin_inset Formula $\mathcal{C}$
+\end_inset
+
+ is 
+\emph on
+
+\begin_inset Formula $\left(\alpha,\ell,L\right)$
+\end_inset
+
+
+\emph default
+-
+\emph on
+list-recoverable
+\emph default
+ if for any 
+\begin_inset Formula $n$
+\end_inset
+
+ sets 
+\begin_inset Formula $S_{1},\ldots,S_{n}\subseteq\mathbb{F}_{q}$
+\end_inset
+
+ with 
+\begin_inset Formula $\left|S_{i}\right|\leq\ell$
+\end_inset
+
+ for all 
+\begin_inset Formula $i$
+\end_inset
+
+ (i.e.
+ of size at most 
+\begin_inset Formula $\ell$
+\end_inset
+
+),
+\begin_inset Formula 
+\[
+\left|\left\{ c\in\mathcal{C}:\left|\left\{ i:c_{i}\in S_{i}\right\} \right|\geq\alpha n\right\} \right|\leq L
+\]
+
+\end_inset
+
+(i.e.
+ there are at most 
+\begin_inset Formula $L$
+\end_inset
+
+ codewords 
+\begin_inset Formula $c\in C$
+\end_inset
+
+ such that 
+\begin_inset Formula $c_{i}\in S_{i}$
+\end_inset
+
+ for at least 
+\begin_inset Formula $\alpha n$
+\end_inset
+
+ indices).
+\end_layout
+
+\begin_layout Subsubsection
+Properties
+\end_layout
+
+\begin_layout Itemize
+
+\bar under
+Noiseless case
+\bar default
+:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\series bold
+List recovery capacity
+\series default
+: Given 
+\begin_inset Formula $q$
+\end_inset
+
+, there exists a maximal rate 
+\begin_inset Formula $R^{*}=1-\log_{q}\ell$
+\end_inset
+
+, s.t.
+ for all 
+\begin_inset Formula $R=R^{*}-\varepsilon$
+\end_inset
+
+ there exists codes 
+\begin_inset Formula $\mathcal{C}$
+\end_inset
+
+ and 
+\begin_inset Formula $L=L\left(q,\varepsilon\right)$
+\end_inset
+
+ (not depending on 
+\begin_inset Formula $n$
+\end_inset
+
+) which are 
+\emph on
+
+\begin_inset Formula $\left(\ell,L\right)$
+\end_inset
+
+
+\emph default
+-
+\emph on
+list-recoverable
+\emph default
+.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+GLM20
+\series default
+: A random code of rate 
+\begin_inset Formula $R=R^{*}-\varepsilon$
+\end_inset
+
+ requires 
+\begin_inset Formula $L=O\left(\ell/\varepsilon\right)$
+\end_inset
+
+ to be 
+\begin_inset Formula $\left(\ell,L\right)$
+\end_inset
+
+-list-recoverable.
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+NOTE: only proven for 
+\begin_inset Formula $q\gg\ell$
+\end_inset
+
+ (
+\begin_inset Formula $q=\ell^{t}$
+\end_inset
+
+ for 
+\begin_inset Formula $t\geq2$
+\end_inset
+
+, so that 
+\begin_inset Formula $\mathbb{F}_{\ell}$
+\end_inset
+
+ is a subfield of 
+\begin_inset Formula $\mathbb{F}_{q}$
+\end_inset
+
+)
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+
+\series bold
+GLM20
+\series default
+: A random linear code of rate 
+\begin_inset Formula $R=R^{*}-\varepsilon$
+\end_inset
+
+ requires 
+\begin_inset Formula $L=\ell^{\Omega\left(1/\varepsilon\right)}$
+\end_inset
+
+ to be 
+\begin_inset Formula $\left(\ell,L\right)$
+\end_inset
+
+-list-recoverable.
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+NOTE: only proven for 
+\begin_inset Formula $q\gg\ell$
+\end_inset
+
+ (
+\begin_inset Formula $q=\ell^{t}$
+\end_inset
+
+ for 
+\begin_inset Formula $t\geq2$
+\end_inset
+
+, so that 
+\begin_inset Formula $\mathbb{F}_{\ell}$
+\end_inset
+
+ is a subfield of 
+\begin_inset Formula $\mathbb{F}_{q}$
+\end_inset
+
+)
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Itemize
+
+\bar under
+Noiseful case
+\bar default
+:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\series bold
+List recovery capacity
+\series default
+: Given 
+\begin_inset Formula $q$
+\end_inset
+
+ and 
+\begin_inset Formula $\alpha$
+\end_inset
+
+, there exists a maximal rate 
+\begin_inset Formula $R^{*}=1-h_{q/\ell}\left(1-\alpha\right)-\log_{q}\ell$
+\end_inset
+
+, s.t.
+ for all 
+\begin_inset Formula $R=R^{*}-\varepsilon$
+\end_inset
+
+ there exists codes 
+\begin_inset Formula $\mathcal{C}$
+\end_inset
+
+ and 
+\begin_inset Formula $L=L\left(q,\varepsilon,\alpha\right)$
+\end_inset
+
+ (not depending on 
+\begin_inset Formula $n$
+\end_inset
+
+) which are 
+\emph on
+
+\begin_inset Formula $\left(\ell,L\right)$
+\end_inset
+
+
+\emph default
+-
+\emph on
+list-recoverable
+\emph default
+.
+\end_layout
+
+\end_deeper
+\begin_layout Subsection
+List-complement-decodability
+\end_layout
+
+\begin_layout Subsubsection
+Definitions
+\end_layout
+
+\begin_layout Itemize
+
+\bar under
+Noiseless case
+\emph on
+\bar default
+: 
+\begin_inset Formula $L$
+\end_inset
+
+
+\emph default
+-
+\emph on
+list-complement-decodable
+\emph default
+ = 
+\begin_inset Formula $\left(q-1,L\right)$
+\end_inset
+
+-list-recoverable
+\emph on
+ = 
+\begin_inset Formula $\begin{cases}
+\left|\mathcal{C}\cap\mathcal{B}_{n}^{C}\left[x\right]\right|\\
+\left|\mathcal{C}\cap\mathcal{B}_{1}^{C}\left[x\right]\right|
+\end{cases}=\begin{cases}
+\left|\mathcal{C}\backslash\mathcal{B}_{n}\left(x\right)\right|\\
+\left|\mathcal{C}\backslash\mathcal{B}_{1}\left(x\right)\right|
+\end{cases}\leq L$
+\end_inset
+
+ 
+\emph default
+for all 
+\begin_inset Formula $x\in\mathbb{F}_{q}^{n}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+
+\bar under
+Noiseful case
+\emph on
+\bar default
+: 
+\begin_inset Formula $\left(\alpha,L\right)$
+\end_inset
+
+
+\emph default
+-
+\emph on
+list-complement-decodable
+\emph default
+ = 
+\begin_inset Formula $\left(\alpha,q-1,L\right)$
+\end_inset
+
+-list-recoverable 
+\emph on
+= 
+\begin_inset Formula $\begin{cases}
+\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[x\right]\right|\\
+\left|\mathcal{C}\cap\mathcal{B}_{\alpha}^{C}\left[x\right]\right|
+\end{cases}=\begin{cases}
+\left|\mathcal{C}\backslash\mathcal{B}_{\alpha n}\left(x\right)\right|\\
+\left|\mathcal{C}\backslash\mathcal{B}_{\alpha}\left(x\right)\right|
+\end{cases}\leq L$
+\end_inset
+
+ 
+\emph default
+for all 
+\begin_inset Formula $x\in\mathbb{F}_{q}^{n}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Properties
+\end_layout
+
+\begin_layout Itemize
+
+\bar under
+Noiseless case
+\bar default
+:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\series bold
+List-complement-decoding capacity
+\series default
+: Given 
+\begin_inset Formula $q$
+\end_inset
+
+, there exists a maximal rate 
+\begin_inset Formula $R^{*}=1-\log_{q}\left(q-1\right)$
+\end_inset
+
+, s.t.
+ for all 
+\begin_inset Formula $R=R^{*}-\varepsilon$
+\end_inset
+
+ there exists codes 
+\begin_inset Formula $\mathcal{C}$
+\end_inset
+
+ and 
+\begin_inset Formula $L=L\left(q,\varepsilon\right)$
+\end_inset
+
+ (not depending on 
+\begin_inset Formula $n$
+\end_inset
+
+) which are 
+\begin_inset Formula $L$
+\end_inset
+
+-list-complement-decodable.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+
+\bar under
+Noiseful case
+\bar default
+:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\series bold
+List-complement-decoding capacity
+\series default
+: Given 
+\begin_inset Formula $q$
+\end_inset
+
+ and 
+\begin_inset Formula $\alpha$
+\end_inset
+
+, there exists a maximal rate 
+\begin_inset Formula $R^{*}=1-h_{q/\left(q-1\right)}\left(1-\alpha\right)-\log_{q}\left(q-1\right)$
+\end_inset
+
+, s.t.
+ for all 
+\begin_inset Formula $R=R^{*}-\varepsilon$
+\end_inset
+
+ there exists codes 
+\begin_inset Formula $\mathcal{C}$
+\end_inset
+
+ and 
+\begin_inset Formula $L=L\left(q,\varepsilon,\alpha\right)$
+\end_inset
+
+ (not depending on 
+\begin_inset Formula $n$
+\end_inset
+
+) which are 
+\begin_inset Formula $\left(\alpha,L\right)$
+\end_inset
+
+-list-complement-decodable.
+\end_layout
+
+\end_deeper
+\begin_layout Subsection
+Discussion
+\end_layout
+
+\begin_layout Standard
+Problems:
+\end_layout
+
+\begin_layout Standard
+- The definitions refer to worst case, but we want whp case.
+\end_layout
+
+\begin_layout Standard
+- The results from GLM20 are only proven for 
+\begin_inset Formula $q\gg\ell$
+\end_inset
+
+ (
+\begin_inset Formula $q=\ell^{t}$
+\end_inset
+
+ for 
+\begin_inset Formula $t\geq2$
+\end_inset
+
+, so that 
+\begin_inset Formula $\mathbb{F}_{\ell}$
+\end_inset
+
+ is a subfield of 
+\begin_inset Formula $\mathbb{F}_{q}$
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Section
+More relevant concepts
+\end_layout
+
+\begin_layout Subsection
+Definitions
+\end_layout
+
+\begin_layout Standard
+Two possible distributions for the RV 
+\begin_inset Formula $X$
+\end_inset
+
+ on 
+\begin_inset Formula $\mathbb{F}_{q}^{n}$
+\end_inset
+
+ to consider:
+\end_layout
+
+\begin_layout Itemize
+Uniform: 
+\begin_inset Formula $X=U\left(\mathbb{F}_{q}^{n}\right)=D_{U}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Bob's POV due to noise: 
+\begin_inset Formula $X=\text{QSC}_{q,p}\left(0^{n}\right)=D_{\text{QSC}}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Goal:
+\end_layout
+
+\begin_layout Itemize
+
+\bar under
+Noiseless case:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Given a family of codes 
+\begin_inset Formula $\mathcal{C}$
+\end_inset
+
+, determine the distribution of RV 
+\begin_inset Formula $L=\begin{cases}
+\left|\mathcal{C}\cap\mathcal{B}_{n}^{C}\left[x\right]\right|\\
+\left|\mathcal{C}\cap\mathcal{B}_{1}^{C}\left[x\right]\right|
+\end{cases}=\begin{cases}
+\left|\mathcal{C}\backslash\mathcal{B}_{n}\left(x\right)\right|\\
+\left|\mathcal{C}\backslash\mathcal{B}_{1}\left(x\right)\right|
+\end{cases}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+\begin_inset Formula $\left(L,\delta\right)$
+\end_inset
+
+
+\emph default
+-
+\emph on
+list-complement-decodable
+\emph default
+: 
+\emph on
+
+\begin_inset Formula $\Pr\bigl[\begin{cases}
+\left|\mathcal{C}\cap\mathcal{B}_{n}^{C}\left[X\right]\right|\\
+\left|\mathcal{C}\cap\mathcal{B}_{1}^{C}\left[X\right]\right|
+\end{cases}>L\bigr]=\Pr\bigl[\begin{cases}
+\left|\mathcal{C}\backslash\mathcal{B}_{n}\left(X\right)\right|\\
+\left|\mathcal{C}\backslash\mathcal{B}_{1}\left(X\right)\right|
+\end{cases}>L\bigr]\leq\delta$
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+
+\bar under
+Noiseful case:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Given a family of codes 
+\begin_inset Formula $\mathcal{C}$
+\end_inset
+
+, determine the distribution of RV 
+\begin_inset Formula $L=\begin{cases}
+\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[x\right]\right|\\
+\left|\mathcal{C}\cap\mathcal{B}_{\alpha}^{C}\left[x\right]\right|
+\end{cases}=\begin{cases}
+\left|\mathcal{C}\backslash\mathcal{B}_{\alpha n}\left(x\right)\right|\\
+\left|\mathcal{C}\backslash\mathcal{B}_{\alpha}\left(x\right)\right|
+\end{cases}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+\begin_inset Formula $\left(\alpha,L,\delta\right)$
+\end_inset
+
+
+\emph default
+-
+\emph on
+list-complement-decodable
+\emph default
+: 
+\emph on
+
+\begin_inset Formula $\Pr\bigl[\begin{cases}
+\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\\
+\left|\mathcal{C}\cap\mathcal{B}_{\alpha}^{C}\left[X\right]\right|
+\end{cases}>L\bigr]=\Pr\bigl[\begin{cases}
+\left|\mathcal{C}\backslash\mathcal{B}_{\alpha n}\left(X\right)\right|\\
+\left|\mathcal{C}\backslash\mathcal{B}_{\alpha}\left(X\right)\right|
+\end{cases}>L\bigr]\leq\delta$
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Subsection
+Properties
+\end_layout
+
+\begin_layout Subsubsection
+All codes
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\text{Var}\left[L\right]=\mathbb{E}\left[L^{2}\right]-\left(\mathbb{E}\left[L\right]\right)^{2}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+When 
+\begin_inset Formula $X\sim D_{U}$
+\end_inset
+
+:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+\begin_inset Formula $\mathbb{E}\left[\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\right]=\frac{\left|\mathcal{C}\right|}{\left|\mathbb{F}_{q}^{n}\right|}\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|=\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\mathbb{E}\left[L^{2}\right]=\mathbb{E}\left[L\right]+2\cdot\mathbb{E}\left[\sum_{c_{,},c_{2}\in\mathcal{C}:c_{1}\neq c_{2}}1_{c_{1},c_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]}\right]=\mathbb{E}\left[L\right]+2\cdot\mathbb{E}\left[\sum_{x_{,},x_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]:x_{1}\neq x_{2}}1_{x_{1},x_{2}\in\mathcal{C}}\right]$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Therefore: 
+\begin_inset Formula $\text{Var}\left[L\right]=\mathbb{E}\left[L^{2}\right]-\left(\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right)^{2}=\mathbb{E}\left[L\right]+2\cdot\mathbb{E}\left[\sum_{c_{,},c_{2}\in\mathcal{C}:c_{1}\neq c_{2}}1_{c_{1},c_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]}\right]-\left(\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right)^{2}=\mathbb{E}\left[L\right]+2\cdot\mathbb{E}\left[\sum_{x_{,},x_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]:x_{1}\neq x_{2}}1_{x_{1},x_{2}\in\mathcal{C}}\right]-\left(\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right)^{2}$
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Subsubsection
+Random codes
+\end_layout
+
+\begin_layout Itemize
+When 
+\begin_inset Formula $X\sim D_{U}$
+\end_inset
+
+: 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+\begin_inset Formula $\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\sim\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[x\right]\right|\sim\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[0^{n}\right]\right|$
+\end_inset
+
+ for any 
+\begin_inset Formula $x\in\mathbb{F}_{q}^{n}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $2\cdot\mathbb{E}\left[\sum_{x_{,},x_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]:x_{1}\neq x_{2}}1_{x_{1},x_{2}\in\mathcal{C}}\right]=2\cdot\sum_{x_{1},x_{2}\in\mathcal{B}_{\alpha n}^{C}\left[0^{n}\right]:x_{1}\neq x_{2}}\Pr\left[x_{1},x_{2}\in\mathcal{C}\right]=\left|\mathcal{B}_{\alpha n}^{C}\right|\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\frac{q^{k}}{q^{n}}\cdot\frac{q^{k}-1}{q^{n}-1}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Therefore: 
+\begin_inset Formula $\text{Var}\left[\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\right]=\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}+\left|\mathcal{B}_{\alpha n}^{C}\right|\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\frac{q^{k}}{q^{n}}\cdot\frac{q^{k}-1}{q^{n}-1}-\left(\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right)^{2}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+By Chebyshev: 
+\begin_inset Formula $\Pr\bigl[\left|\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|-\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right|>l\bigr]\leq\frac{\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}+\left|\mathcal{B}_{\alpha n}^{C}\right|\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\frac{q^{k}}{q^{n}}\cdot\frac{q^{k}-1}{q^{n}-1}-\left(\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right)^{2}}{l^{2}}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+More precisely: 
+\begin_inset Formula $\Pr\bigl[\left|\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\right|\geq L\bigr]=\sum_{l=L}^{\min\left\{ q^{k},\left|\mathcal{B}_{\alpha n}^{C}\right|\right\} }\binom{\left|\mathcal{B}_{\alpha n}^{C}\right|}{l}\cdot\Pi_{i=0}^{l-1}\frac{q^{k}-i}{q^{n}-i}$
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Subsubsection
+Random linear codes
+\end_layout
+
+\begin_layout Itemize
+When 
+\begin_inset Formula $p=1$
+\end_inset
+
+ (or for all 
+\begin_inset Formula $p$
+\end_inset
+
+?) and 
+\begin_inset Formula $X\sim D_{\text{QSC}}$
+\end_inset
+
+: 
+\begin_inset Formula $\mathbb{E}\left[\left|\mathcal{C}\cap\mathcal{B}_{n}^{C}\left[X\right]\right|\right]=1+\frac{\left|\mathcal{C}\right|-1}{\left|\mathbb{F}_{q}^{n}\right|-1}\cdot\left|\mathcal{B}_{n}^{C}\left[X\right]\right|=1+\frac{\left(q^{k}-1\right)\left(q-1\right)^{n}}{q^{n}-1}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+General approach for MB
+\end_layout
+
+\begin_layout Subsection
 Is 
 \begin_inset Formula $0^{n}$
 \end_inset
@@ -131,19 +1013,19 @@ Is
 ?
 \end_layout
 
-\begin_layout Section
+\begin_layout Subsection
 The variance of the list size
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Importance / influence
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Properties / explicit derivation
 \end_layout
 
-\begin_layout Section
+\begin_layout Subsection
 The number of prefix blocks hashed per iteration (
 \begin_inset Formula $\bar{l}_{\text{max}}$
 \end_inset
@@ -151,28 +1033,28 @@ The number of prefix blocks hashed per iteration (
 )
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 MBO question: get stats on the number of possibilities in the 1st block
  as we progress
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Importance / influence
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Properties / explicit derivation
 \end_layout
 
-\begin_layout Part
+\begin_layout Section
 Without noise (Q=0)
 \end_layout
 
-\begin_layout Section
+\begin_layout Subsection
 Dump
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 q=3 is special
 \end_layout
 
@@ -216,10 +1098,10 @@ The space of interest has no linearly dependent vectors for
 
  has lin.
  dep.
- vectorsthe end 
+ vectors
 \end_layout
 
-\begin_layout Part
+\begin_layout Section
 With noise (Q>0)
 \end_layout
 
