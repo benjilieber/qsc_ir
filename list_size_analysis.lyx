@@ -746,7 +746,7 @@ Two possible distributions for the RV
 
 \begin_layout Itemize
 Uniform: 
-\begin_inset Formula $X=U\left(\mathbb{F}_{q}^{n}\right)=D_{U}$
+\begin_inset Formula $X=U\left(\mathbb{F}_{q}^{n}\right)\sim D_{U}$
 \end_inset
 
 
@@ -754,10 +754,38 @@ Uniform:
 
 \begin_layout Itemize
 Bob's POV due to noise: 
-\begin_inset Formula $X=\text{QSC}_{q,p}\left(0^{n}\right)=D_{\text{QSC}}$
+\begin_inset Formula $X=\text{QSC}_{q,p}\left(0^{n}\right)\sim D_{\text{QSC}}$
 \end_inset
 
+ and 
+\begin_inset Formula $0^{n}\in\mathcal{C}$
+\end_inset
 
+ (explanation: 
+\begin_inset Formula $y-r\sim y-x\sim\text{QSC}_{q,p}\left(0^{n}\right)$
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Standard
+We define the RV of interest as 
+\begin_inset Formula $T=\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|$
+\end_inset
+
+ for 
+\begin_inset Formula $\alpha>0$
+\end_inset
+
+ (the case 
+\begin_inset Formula $\alpha=0$
+\end_inset
+
+ is trivial – 
+\begin_inset Formula $\left|\mathcal{C}\cap\mathcal{B}_{0}^{C}\left[X\right]\right|=q^{k}$
+\end_inset
+
+).
 \end_layout
 
 \begin_layout Standard
@@ -879,12 +907,29 @@ All codes
 \end_layout
 
 \begin_layout Itemize
-\begin_inset Formula $\text{Var}\left[L\right]=\mathbb{E}\left[L^{2}\right]-\left(\mathbb{E}\left[L\right]\right)^{2}$
+All 
+\begin_inset Formula $X$
+\end_inset
+
+:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+\begin_inset Formula $\text{Var}\left[T\right]=\mathbb{E}\left[T^{2}\right]-\left(\mathbb{E}\left[T\right]\right)^{2}$
 \end_inset
 
 
 \end_layout
 
+\begin_layout Itemize
+\begin_inset Formula $\mathbb{E}\left[T^{2}\right]=\mathbb{E}\left[T\right]+2\cdot\mathbb{E}\left[\sum_{c_{,},c_{2}\in\mathcal{C}:c_{1}\neq c_{2}}1_{c_{1},c_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]}\right]=\mathbb{E}\left[T\right]+2\cdot\mathbb{E}\left[\sum_{x_{,},x_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]:x_{1}\neq x_{2}}1_{x_{1},x_{2}\in\mathcal{C}}\right]$
+\end_inset
+
+
+\end_layout
+
+\end_deeper
 \begin_layout Itemize
 When 
 \begin_inset Formula $X\sim D_{U}$
@@ -902,15 +947,47 @@ When
 \end_layout
 
 \begin_layout Itemize
-\begin_inset Formula $\mathbb{E}\left[L^{2}\right]=\mathbb{E}\left[L\right]+2\cdot\mathbb{E}\left[\sum_{c_{,},c_{2}\in\mathcal{C}:c_{1}\neq c_{2}}1_{c_{1},c_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]}\right]=\mathbb{E}\left[L\right]+2\cdot\mathbb{E}\left[\sum_{x_{,},x_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]:x_{1}\neq x_{2}}1_{x_{1},x_{2}\in\mathcal{C}}\right]$
+Therefore: 
+\begin_inset Formula $\text{Var}\left[T\right]=\mathbb{E}\left[T^{2}\right]-\left(\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right)^{2}=\mathbb{E}\left[T\right]+2\cdot\mathbb{E}\left[\sum_{c_{,},c_{2}\in\mathcal{C}:c_{1}\neq c_{2}}1_{c_{1},c_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]}\right]-\left(\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right)^{2}=\mathbb{E}\left[T\right]+2\cdot\mathbb{E}\left[\sum_{x_{,},x_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]:x_{1}\neq x_{2}}1_{x_{1},x_{2}\in\mathcal{C}}\right]-\left(\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right)^{2}$
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+When 
+\begin_inset Formula $X\sim D_{\text{QSC}}$
+\end_inset
+
+:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+\begin_inset Formula $\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|=1_{0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]}\cdot\left(1+\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\backslash\left\{ 0^{n}\right\} \right|\right)+1_{0^{n}\notin\mathcal{B}_{\alpha n}^{C}\left[X\right]}\cdot\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|$
 \end_inset
 
 
 \end_layout
 
 \begin_layout Itemize
-Therefore: 
-\begin_inset Formula $\text{Var}\left[L\right]=\mathbb{E}\left[L^{2}\right]-\left(\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right)^{2}=\mathbb{E}\left[L\right]+2\cdot\mathbb{E}\left[\sum_{c_{,},c_{2}\in\mathcal{C}:c_{1}\neq c_{2}}1_{c_{1},c_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]}\right]-\left(\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right)^{2}=\mathbb{E}\left[L\right]+2\cdot\mathbb{E}\left[\sum_{x_{,},x_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]:x_{1}\neq x_{2}}1_{x_{1},x_{2}\in\mathcal{C}}\right]-\left(\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right)^{2}$
+\begin_inset Formula $\mathbb{E}\left[\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\right]=\Pr\left[0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\cdot\left(1+\mathbb{E}\left[\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\backslash\left\{ 0^{n}\right\} \right|\mid0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\right)+\Pr\left[0^{n}\notin\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\cdot\left(\mathbb{E}\left[\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\mid0^{n}\notin\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\right)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\Pr\left[0^{n}\notin\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]=\sum_{i=0}^{\left\lfloor \alpha n\right\rfloor }\binom{n}{i}p^{i}\left(1-p\right)^{n-i}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\begin{aligned}\mathbb{E}\left[\sum_{x_{,},x_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]:x_{1}\neq x_{2}}1_{x_{1},x_{2}\in\mathcal{C}}\right] & =\Pr\left[0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\cdot\mathbb{E}\left[\sum_{x_{,},x_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]:x_{1}\neq x_{2}}1_{x_{1},x_{2}\in\mathcal{C}}\mid0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]+\Pr\left[0^{n}\notin\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\cdot\mathbb{E}\left[\sum_{x_{,},x_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]:x_{1}\neq x_{2}}1_{x_{1},x_{2}\in\mathcal{C}}\mid0^{n}\notin\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\end{aligned}
+$
 \end_inset
 
 
@@ -958,20 +1035,143 @@ Therefore:
 
 \begin_layout Itemize
 By Chebyshev: 
-\begin_inset Formula $\Pr\bigl[\left|\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|-\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right|>l\bigr]\leq\frac{\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}+\left|\mathcal{B}_{\alpha n}^{C}\right|\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\frac{q^{k}}{q^{n}}\cdot\frac{q^{k}-1}{q^{n}-1}-\left(\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right)^{2}}{l^{2}}$
+\begin_inset Formula $\Pr\bigl[\left|\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|-\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right|>L\bigr]\leq\frac{\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}+\left|\mathcal{B}_{\alpha n}^{C}\right|\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\frac{q^{k}}{q^{n}}\cdot\frac{q^{k}-1}{q^{n}-1}-\left(\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{n-k}}\right)^{2}}{L^{2}}$
 \end_inset
 
 
 \end_layout
 
 \begin_layout Itemize
-More precisely: 
-\begin_inset Formula $\Pr\bigl[\left|\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\right|\geq L\bigr]=\sum_{l=L}^{\min\left\{ q^{k},\left|\mathcal{B}_{\alpha n}^{C}\right|\right\} }\binom{\left|\mathcal{B}_{\alpha n}^{C}\right|}{l}\cdot\Pi_{i=0}^{l-1}\frac{q^{k}-i}{q^{n}-i}$
+More precisely:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+\begin_inset Formula $\Pr\bigl[\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\geq L\bigr]=\sum_{l=L}^{\min\left\{ q^{k},\left|\mathcal{B}_{\alpha n}^{C}\right|\right\} }\binom{\left|\mathcal{B}_{\alpha n}^{C}\right|}{l}\cdot\Pi_{i=0}^{l-1}\frac{q^{k}-i}{q^{n}-i}=\sum_{l=L}^{\min\left\{ q^{k},\left|\mathcal{B}_{\alpha n}^{C}\right|\right\} }\binom{q^{k}}{l}\cdot\Pi_{i=0}^{l-1}\frac{\left|\mathcal{B}_{\alpha n}^{C}\right|-i}{q^{n}-i}=\sum_{l=L}^{\min\left\{ q^{k},\left|\mathcal{B}_{\alpha n}^{C}\right|\right\} }\binom{\min\left\{ q^{k},\left|\mathcal{B}_{\alpha n}^{C}\right|\right\} }{l}\cdot\Pi_{i=0}^{l-1}\frac{\max\left\{ q^{k},\left|\mathcal{B}_{\alpha n}^{C}\right|\right\} -i}{q^{n}-i}$
 \end_inset
 
 
 \end_layout
 
+\begin_layout Itemize
+Equivalently, 
+\begin_inset Formula $\Pr\bigl[\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\geq L\bigr]=\frac{\sum_{l=L}^{\min\left\{ q^{k},\left|\mathcal{B}_{\alpha n}^{C}\right|\right\} }\binom{\left|\mathcal{B}_{\alpha n}^{C}\right|}{l}\cdot\binom{q^{n}-\left|\mathcal{B}_{\alpha n}^{C}\right|}{q^{k}-l}}{\binom{q^{n}}{q^{k}}}$
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Itemize
+When 
+\begin_inset Formula $X\sim D_{\text{QSC}}$
+\end_inset
+
+:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Expected value:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+\begin_inset Formula $\mathbb{E}\left[\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\backslash\left\{ 0^{n}\right\} \right|\mid0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]=\frac{\left|\mathcal{C}\right|-1}{\left|\mathbb{F}_{q}^{n}\right|-1}\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)=\frac{q^{k}-1}{q^{n}-1}\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\mathbb{E}\left[\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\mid0^{n}\notin\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]=\frac{\left|\mathcal{C}\right|-1}{\left|\mathbb{F}_{q}^{n}\right|-1}\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|=\frac{q^{k}-1}{q^{n}-1}\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\mathbb{E}\left[\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\right]=\Pr\left[0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\cdot\left(1+\frac{q^{k}-1}{q^{n}-1}\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\right)+\Pr\left[0^{n}\notin\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\cdot\frac{q^{k}-1}{q^{n}-1}\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|=\frac{q^{k}-1}{q^{n}-1}\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|+\Pr\left[0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\cdot\left(1-\frac{q^{k}-1}{q^{n}-1}\right)=\frac{q^{k}-1}{q^{n}-1}\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-\Pr\left[0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\right)+\Pr\left[0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+For small enough 
+\begin_inset Formula $\alpha<p$
+\end_inset
+
+: 
+\begin_inset Formula $\mathbb{E}\left[\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\right]\approx\frac{q^{k}-1}{q^{n}-1}\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|-\frac{q^{k}-1}{q^{n}-1}+1$
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Variance:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+\begin_inset Formula $\begin{aligned}2\cdot\mathbb{E}\left[\sum_{x_{,},x_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]:x_{1}\neq x_{2}}1_{x_{1},x_{2}\in\mathcal{C}}\mid0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]\right] & =2\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\Pr\left[x_{2}\in\mathcal{C}\mid x_{2}\neq0^{n}\right]+\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-2\right)\cdot\Pr\left[x_{1},x_{2}\in\mathcal{C}\mid x_{1},x_{2}\neq0^{n}\right]\\
+ & =2\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\frac{q^{k}-1}{q^{n}-1}+\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-2\right)\cdot\left[\frac{q^{k}-1}{q^{n}-1}\cdot(\frac{q-2}{\left|\mathcal{B}_{\alpha n}^{C}\right|-1}+\left(1-\frac{q-2}{\left|\mathcal{B}_{\alpha n}^{C}\right|-1}\right)\cdot\frac{q^{k}-q}{q^{n}-q})\right]\\
+ & =\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\frac{q^{k}-1}{q^{n}-1}\cdot\left[2+\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-2\right)\cdot(\frac{q-2}{\left|\mathcal{B}_{\alpha n}^{C}\right|-1}+\left(1-\frac{q-2}{\left|\mathcal{B}_{\alpha n}^{C}\right|-1}\right)\cdot\frac{q^{k}-q}{q^{n}-q})\right]
+\end{aligned}
+$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\begin{aligned}2\cdot\mathbb{E}\left[\sum_{x_{,},x_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]:x_{1}\neq x_{2}}1_{x_{1},x_{2}\in\mathcal{C}}\mid0^{n}\notin\mathcal{B}_{\alpha n}^{C}\left[X\right]\right] & =\left|\mathcal{B}_{\alpha n}^{C}\right|\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\Pr\left[x_{1},x_{2}\in\mathcal{C}\mid x_{1},x_{2}\neq0^{n}\right]\\
+ & =\left|\mathcal{B}_{\alpha n}^{C}\right|\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\left[\frac{q^{k}-1}{q^{n}-1}\cdot(\frac{q-2}{\left|\mathcal{B}_{\alpha n}^{C}\right|-1}+\left(1-\frac{q-2}{\left|\mathcal{B}_{\alpha n}^{C}\right|-1}\right)\cdot\frac{q^{k}-q}{q^{n}-q})\right]
+\end{aligned}
+$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Therefore: 
+\begin_inset Formula $\begin{aligned}\text{Var}\left[T\right] & =\mathbb{E}\left[T\right]+2\cdot\mathbb{E}\left[\sum_{x_{,},x_{2}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]:x_{1}\neq x_{2}}1_{x_{1},x_{2}\in\mathcal{C}}\right]-\left(\mathbb{E}\left[T\right]\right)^{2}\\
+ & =\frac{q^{k}-1}{q^{n}-1}\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|+\Pr\left[0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\cdot\left(1-\frac{q^{k}-1}{q^{n}-1}\right)+\Pr\left[0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\frac{q^{k}-1}{q^{n}-1}\cdot\left[2+\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-2\right)\cdot(\frac{q-2}{\left|\mathcal{B}_{\alpha n}^{C}\right|-1}+\left(1-\frac{q-2}{\left|\mathcal{B}_{\alpha n}^{C}\right|-1}\right)\cdot\frac{q^{k}-q}{q^{n}-q})\right]\\
+ & \quad+\Pr\left[0^{n}\notin\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|\cdot\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\left[\frac{q^{k}-1}{q^{n}-1}\cdot(\frac{q-2}{\left|\mathcal{B}_{\alpha n}^{C}\right|-1}+\left(1-\frac{q-2}{\left|\mathcal{B}_{\alpha n}^{C}\right|-1}\right)\cdot\frac{q^{k}-q}{q^{n}-q})\right]-\left(\frac{q^{k}-1}{q^{n}-1}\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|+\Pr\left[0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\cdot\left(1-\frac{q^{k}-1}{q^{n}-1}\right)\right)^{2}
+\end{aligned}
+$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+For small enough 
+\begin_inset Formula $\alpha<p$
+\end_inset
+
+: 
+\begin_inset Formula $\begin{aligned}\text{Var}\left[T\right] & \approx\frac{q^{k}-1}{q^{n}-1}\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|+1+\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\frac{q^{k}-1}{q^{n}-1}\cdot\left[2+\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-2\right)\cdot(\frac{q-2}{\left|\mathcal{B}_{\alpha n}^{C}\right|-1}+\left(1-\frac{q-2}{\left|\mathcal{B}_{\alpha n}^{C}\right|-1}\right)\cdot\frac{q^{k}-q}{q^{n}-q})\right]-\left(\frac{q^{k}-1}{q^{n}-1}\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|-\frac{q^{k}-1}{q^{n}-1}+1\right)^{2}\end{aligned}
+$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Further approximations: 
+\begin_inset Formula $\begin{aligned}\text{Var}\left[T\right] & \approx\frac{q^{k}-1}{q^{n}-1}\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|+1+\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-1\right)\cdot\frac{q^{k}-1}{q^{n}-1}\cdot\left[2+(q-2+\left(\left|\mathcal{B}_{\alpha n}^{C}\right|-q\right)\cdot\frac{q^{k}-q}{q^{n}-q})\right]-\left(\frac{q^{k}-1}{q^{n}-1}\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|-\frac{q^{k}-1}{q^{n}-1}+1\right)^{2}\end{aligned}
+$
+\end_inset
+
+
+\end_layout
+
+\end_deeper
 \end_deeper
 \begin_layout Subsubsection
 Random linear codes
@@ -997,6 +1197,36 @@ When
 
 \end_layout
 
+\begin_layout Itemize
+When 
+\begin_inset Formula $X\sim D_{\text{QSC}}$
+\end_inset
+
+:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+By same logic as for random codes - 
+\begin_inset Formula $\mathbb{E}\left[\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\right]=\frac{q^{k}-1}{q^{n}-1}\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|+\Pr\left[0^{n}\in\mathcal{B}_{\alpha n}^{C}\left[X\right]\right]\cdot\left(1-\frac{q^{k}-1}{q^{n}-1}\right)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+For small enough 
+\begin_inset Formula $\alpha$
+\end_inset
+
+: 
+\begin_inset Formula $\mathbb{E}\left[\left|\mathcal{C}\cap\mathcal{B}_{\alpha n}^{C}\left[X\right]\right|\right]\approx\frac{q^{k}-1}{q^{n}-1}\cdot\left|\mathcal{B}_{\alpha n}^{C}\right|-\frac{q^{k}-1}{q^{n}-1}+1$
+\end_inset
+
+
+\end_layout
+
+\end_deeper
 \begin_layout Section
 General approach for MB
 \end_layout
