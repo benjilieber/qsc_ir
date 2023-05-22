@@ -8,13 +8,14 @@ function A = get_data(code_strategy, q, p_err_str, agg, result_type, N, min_key_
     % Basic filtering
     tol = 5 * eps(100); % A very small value
 
+    A.N_2(:,1) = 2.^nextpow2(A.N);
+
     p_err = str2double(p_err_str);
     A = A(ismembertol(A.q, q, tol) & ...
         ismembertol(A.p_err, p_err, tol) & ...
         A.N(:) < 8000 & ...
         ismember(A.result_type, result_type), :);
 
-    A.N_2(:,1) = 2.^nextpow2(A.N);
     if ~isempty(N)
         A = A(ismembertol(A.N_2, N, tol), :);
     end
@@ -72,7 +73,7 @@ function A = get_data(code_strategy, q, p_err_str, agg, result_type, N, min_key_
             end
         case 'ldpc'
             A.group_name(:,1) = string(A.ldpc_sparsity) + '-ldpc,' +  string(A.ldpc_max_num_rounds) + '-bp';
-            A.group_number(:,1) = A.ldpc_sparsity * max(A.ldpc_sparsity) + A.ldpc_max_num_rounds;
+            A.group_number(:,1) = A.ldpc_sparsity(:,1) * max(A.ldpc_sparsity) + A.ldpc_max_num_rounds(:,1);
             A.code_strategy_number(:, 1) = 2;
             A.extra_cfg(:,1) = string(A.ldpc_desired_relative_gap_rate);
         case 'polar'

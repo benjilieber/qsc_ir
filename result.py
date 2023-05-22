@@ -105,9 +105,9 @@ class Result(object):
             assert ([cfg == result_list[i].cfg for i in range(len(result_list))])
             assert ([result_type == result_list[i].result_type for i in range(len(result_list))])
 
-            self.is_success = np.mean([result.is_success for result in result_list])
-            self.is_fail = np.mean([result.is_fail for result in result_list])
-            self.is_abort = np.mean([result.is_abort for result in result_list])
+            self.is_success = np.mean([result.is_success for result in result_list] or [0.0])
+            self.is_fail = np.mean([result.is_fail for result in result_list] or [0.0])
+            self.is_abort = np.mean([result.is_abort for result in result_list] or [0.0])
 
             has_success = self.is_success > 0.0
             has_fail = self.is_fail > 0.0
@@ -117,13 +117,13 @@ class Result(object):
             fail_result_list = [result for result in result_list if result.is_fail]
             completed_result_list = success_result_list + fail_result_list
 
-            self.in_list_unique_max = np.mean([result.in_list_unique_max for result in completed_result_list])
-            self.in_list_multi_max = np.mean([result.in_list_multi_max for result in completed_result_list])
-            self.in_list_not_max = np.mean([result.in_list_not_max for result in completed_result_list])
-            self.out_of_list_and_gt = np.mean([result.out_of_list_and_gt for result in completed_result_list])
+            self.in_list_unique_max = np.mean([result.in_list_unique_max for result in completed_result_list]) if has_completed else None
+            self.in_list_multi_max = np.mean([result.in_list_multi_max for result in completed_result_list]) if has_completed else None
+            self.in_list_not_max = np.mean([result.in_list_not_max for result in completed_result_list]) if has_completed else None
+            self.out_of_list_and_gt = np.mean([result.out_of_list_and_gt for result in completed_result_list]) if has_completed else None
             self.out_of_list_and_in_range = np.mean(
-                [result.out_of_list_and_in_range for result in completed_result_list])
-            self.out_of_list_and_lt = np.mean([result.out_of_list_and_lt for result in completed_result_list])
+                [result.out_of_list_and_in_range for result in completed_result_list]) if has_completed else None
+            self.out_of_list_and_lt = np.mean([result.out_of_list_and_lt for result in completed_result_list] ) if has_completed else None
 
             self.ser_b_key_completed_only = np.mean(
                 [result.ser_b_key_completed_only for result in completed_result_list]) if has_completed else None
@@ -138,7 +138,7 @@ class Result(object):
                 self.ser_a_guess_completed_only = None
                 self.ser_a_guess_fail_only = None
 
-            self.key_rate = np.mean([result.key_rate for result in success_result_list] or [0.0])
+            self.key_rate = np.mean([result.key_rate for result in result_list])
             self.key_rate_completed_only = np.mean(
                 [result.key_rate for result in completed_result_list]) if has_completed else None
             self.key_rate_success_only = np.mean(
