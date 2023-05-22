@@ -114,6 +114,20 @@ Analysis of list size
  is the code dimension
 \end_layout
 
+\begin_layout Standard
+\begin_inset Formula $R=R^{*}-\delta$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\Pr\left[\cdot\right]\leq\varepsilon$
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
 Sources for inspiration:
 \end_layout
@@ -314,7 +328,7 @@ List recovery capacity
 
 , s.t.
  for all 
-\begin_inset Formula $R=R^{*}-\varepsilon$
+\begin_inset Formula $R=R^{*}-\delta$
 \end_inset
 
  there exists codes 
@@ -322,7 +336,7 @@ List recovery capacity
 \end_inset
 
  and 
-\begin_inset Formula $L=L\left(q,\varepsilon\right)$
+\begin_inset Formula $L=L\left(q,\delta\right)$
 \end_inset
 
  (not depending on 
@@ -350,11 +364,11 @@ list-recoverable
 GLM20
 \series default
 : A random code of rate 
-\begin_inset Formula $R=R^{*}-\varepsilon$
+\begin_inset Formula $R=R^{*}-\delta$
 \end_inset
 
  requires 
-\begin_inset Formula $L=O\left(\ell/\varepsilon\right)$
+\begin_inset Formula $L=O\left(\ell/\delta\right)$
 \end_inset
 
  to be 
@@ -396,11 +410,11 @@ NOTE: only proven for
 GLM20
 \series default
 : A random linear code of rate 
-\begin_inset Formula $R=R^{*}-\varepsilon$
+\begin_inset Formula $R=R^{*}-\delta$
 \end_inset
 
  requires 
-\begin_inset Formula $L=\ell^{\Omega\left(1/\varepsilon\right)}$
+\begin_inset Formula $L=\ell^{\Omega\left(1/\delta\right)}$
 \end_inset
 
  to be 
@@ -465,7 +479,7 @@ List recovery capacity
 
 , s.t.
  for all 
-\begin_inset Formula $R=R^{*}-\varepsilon$
+\begin_inset Formula $R=R^{*}-\delta$
 \end_inset
 
  there exists codes 
@@ -473,7 +487,7 @@ List recovery capacity
 \end_inset
 
  and 
-\begin_inset Formula $L=L\left(q,\varepsilon,\alpha\right)$
+\begin_inset Formula $L=L\left(q,\delta,\alpha\right)$
 \end_inset
 
  (not depending on 
@@ -614,7 +628,7 @@ List-complement-decoding capacity
 
 , s.t.
  for all 
-\begin_inset Formula $R=R^{*}-\varepsilon$
+\begin_inset Formula $R=R^{*}-\delta$
 \end_inset
 
  there exists codes 
@@ -622,7 +636,7 @@ List-complement-decoding capacity
 \end_inset
 
  and 
-\begin_inset Formula $L=L\left(q,\varepsilon\right)$
+\begin_inset Formula $L=L\left(q,\delta\right)$
 \end_inset
 
  (not depending on 
@@ -665,7 +679,7 @@ List-complement-decoding capacity
 
 , s.t.
  for all 
-\begin_inset Formula $R=R^{*}-\varepsilon$
+\begin_inset Formula $R=R^{*}-\delta$
 \end_inset
 
  there exists codes 
@@ -673,7 +687,7 @@ List-complement-decoding capacity
 \end_inset
 
  and 
-\begin_inset Formula $L=L\left(q,\varepsilon,\alpha\right)$
+\begin_inset Formula $L=L\left(q,\delta,\alpha\right)$
 \end_inset
 
  (not depending on 
@@ -820,7 +834,7 @@ Given a family of codes
 \begin_layout Itemize
 
 \emph on
-\begin_inset Formula $\left(L,\delta\right)$
+\begin_inset Formula $\left(L,\varepsilon\right)$
 \end_inset
 
 
@@ -838,7 +852,7 @@ list-complement-decodable
 \end{cases}>L\bigr]=\Pr\bigl[\begin{cases}
 \left|\mathcal{C}\backslash\mathcal{B}_{n}\left(X\right)\right|\\
 \left|\mathcal{C}\backslash\mathcal{B}_{1}\left(X\right)\right|
-\end{cases}>L\bigr]\leq\delta$
+\end{cases}>L\bigr]\leq\varepsilon$
 \end_inset
 
 
@@ -873,7 +887,7 @@ Given a family of codes
 \begin_layout Itemize
 
 \emph on
-\begin_inset Formula $\left(\alpha,L,\delta\right)$
+\begin_inset Formula $\left(\alpha,L,\varepsilon\right)$
 \end_inset
 
 
@@ -891,7 +905,7 @@ list-complement-decodable
 \end{cases}>L\bigr]=\Pr\bigl[\begin{cases}
 \left|\mathcal{C}\backslash\mathcal{B}_{\alpha n}\left(X\right)\right|\\
 \left|\mathcal{C}\backslash\mathcal{B}_{\alpha}\left(X\right)\right|
-\end{cases}>L\bigr]\leq\delta$
+\end{cases}>L\bigr]\leq\varepsilon$
 \end_inset
 
 
